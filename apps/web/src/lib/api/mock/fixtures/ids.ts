@@ -23,6 +23,20 @@ export const EVM = {
   error: evm('ff'),
 } as const;
 
+/** Official addresses that appear only through project profiles. */
+export const PROJECT_EVM = {
+  bridge: evm('b1'),
+  exchange: evm('b2'),
+  stale: evm('b3'),
+  unavailable: evm('b4'),
+} as const;
+
+export const PROJECT_SOLANA = {
+  daoTreasury: 'DemoDaoTreasuryBLackListFixture33333333333',
+  nftMarket: 'DemoNftMarketBLackListFixture4444444444444',
+  exchange: 'DemoExchangeHotBLackListFixture55555555555',
+} as const;
+
 export const SOLANA = {
   lookalikeToken: 'DemoTokenMintBLackListFixture1111111111111',
   wallet: 'DemoWa11etBLackListFixture22222222222222222',
@@ -43,7 +57,11 @@ export const MOCK_AUTH = {
   rateLimitedEmail: 'limited@example.test',
   errorEmail: 'error@example.test',
   unavailableEmail: 'unavailable@example.test',
+  /** Sign-in asks for human verification first, then signs in as the member. */
+  challengeEmail: 'challenge@example.test',
   takenHandle: 'taken',
+  /** Reset tokens with this prefix belong to a staff account and need a passkey. */
+  staffResetTokenPrefix: 'staff',
 } as const;
 
 export const FIXED_NOW = '2026-09-28T10:15:00Z';

@@ -64,6 +64,11 @@ export function accountErrorCopy(error: AccountError): ErrorCopy {
         title: 'This is your current session',
         body: 'Use Sign out to end the session you are using now.',
       };
+    case 'enrollment_incomplete':
+      return {
+        title: 'Enrollment isn’t finished',
+        body: 'Your password and two authenticators must be set up first. No staff account was created.',
+      };
     case 'temporarily_unavailable':
       return TEMPORARILY_UNAVAILABLE;
   }

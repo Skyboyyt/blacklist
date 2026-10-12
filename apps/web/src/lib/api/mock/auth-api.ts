@@ -3,11 +3,12 @@
  *
  * It decides outcomes from the email address and token prefix only. It never
  * stores, compares, logs or returns passwords, and it creates no session: a mock
- * sign-in only switches the preview viewer cookie and grants nothing.
+ * sign-in only switches the preview viewer cookie and grants nothing. Passkey and
+ * human-verification steps are simulated; nothing is verified.
  */
-import type { AuthApi } from '../types';
+import type { AuthApi, HumanVerifierClient } from '../types';
 import { MOCK_AUTH } from './fixtures/ids';
-import { MOCK_COOKIES } from './scenario';
+import { MOCK_COOKIES, currentPasskeyResult } from './scenario';
 
 function setPreviewViewer(viewer: 'member' | 'moderator'): void {
   if (typeof document !== 'undefined')
@@ -29,6 +30,11 @@ function tokenProblem(token: string) {
 export const mockAuthApi: AuthApi = {
   async login(request, next) {
     await wait();
+    if (request.email === MOCK_AUTH.challengeEmail) {
+      if (request.humanVerification === undefined) return { kind: 'human_verification_required' };
+      setPreviewViewer('member');
+      return { kind: 'signed_in', redirectTo: next };
+    }
     switch (request.email) {
       case MOCK_AUTH.memberEmail:
         setPreviewViewer('member');
@@ -67,12 +73,26 @@ export const mockAuthApi: AuthApi = {
     if (request.email === MOCK_AUTH.unavailableEmail) return { kind: 'temporarily_unavailable' };
     return { kind: 'accepted' };
   },
-  async resetPassword(token) {
+  async resetPassword(token, _form, options) {
     await wait();
-    return tokenProblem(token) ?? { kind: 'success' };
+    const problem = tokenProblem(token);
+    if (problem) return problem;
+    // Identity §6.3: a staff reset never succeeds on token and password alone.
+    if (!token.startsWith(MOCK_AUTH.staffResetTokenPrefix)) return { kind: 'success' };
+    if (!options?.withPasskey) return { kind: 'passkey_required' };
+    const result = currentPasskeyResult(typeof document === 'undefined' ? '' : document.cookie);
+    return result === 'verified' ? { kind: 'success' } : { kind: 'passkey_not_verified', result };
   },
   async confirmEmailChange(token) {
     await wait();
     return tokenProblem(token) ?? { kind: 'success' };
+  },
+};
+
+/** Simulated challenge: always passes after a short wait. Renders nothing and verifies nothing. */
+export const mockHumanVerifier: HumanVerifierClient = {
+  async challenge() {
+    await wait();
+    return { kind: 'passed', response: 'mock-human-verification-response' };
   },
 };

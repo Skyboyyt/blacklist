@@ -25,6 +25,7 @@ export const riskConfidenceSchema = z.enum(['low', 'medium', 'high']);
  * from scoring ("Temporarily suspended pending review").
  */
 export const disputeStateSchema = z.enum(['none', 'under_appeal', 'suspended_pending_review']);
+export type DisputeState = z.infer<typeof disputeStateSchema>;
 
 /** Relative weight wording for a factor. Never a number (ARCHITECTURE §15.6). */
 export const factorWeightSchema = z.enum(['primary', 'contributing', 'minor']);
@@ -49,6 +50,17 @@ export const transferAuthorizationSchema = z.enum([
 ]);
 
 export const finalitySchema = z.enum(['pending', 'final', 'orphaned']);
+
+/**
+ * Public source reference for a fact or disclosure (review P1-05): a short, sanitized
+ * label naming the kind of source, e.g. "Finalized Ethereum node read". Never a URL,
+ * provider credential, internal receipt or private evidence reference.
+ */
+export const publicSourceSchema = z
+  .string()
+  .min(1)
+  .max(80)
+  .refine((v) => !/:\/\/|www\./i.test(v), { message: 'A source reference is a label, not a link.' });
 
 /** Untrusted, attacker-controllable text (token names, labels). Rendered as plain text only. */
 export const untrustedTextSchema = z.string().max(200);

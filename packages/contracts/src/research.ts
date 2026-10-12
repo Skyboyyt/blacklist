@@ -22,6 +22,7 @@ import {
   factorWeightSchema,
   finalitySchema,
   isoDateTimeSchema,
+  publicSourceSchema,
   riskConfidenceSchema,
   transferAuthorizationSchema,
   transferEvidenceLevelSchema,
@@ -84,6 +85,8 @@ export const disclosureSchema = z.strictObject({
   explanation: z.string(),
   /** On-chain capability (chain_fact) or third-party source verification status (external_source). */
   provenance: z.enum(['chain_fact', 'external_source']),
+  /** Where the capability fact or verification status came from (P1-05). */
+  source: publicSourceSchema,
   observedAt: isoDateTimeSchema,
 });
 export type Disclosure = z.infer<typeof disclosureSchema>;
@@ -108,6 +111,8 @@ export const chainFactSchema = z.strictObject({
   value: z.string(),
   provenance: z.literal('chain_fact'),
   finality: finalitySchema,
+  /** Where this fact was read (P1-05). */
+  source: publicSourceSchema,
   observedAt: isoDateTimeSchema,
 });
 export type ChainFact = z.infer<typeof chainFactSchema>;

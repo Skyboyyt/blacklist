@@ -7,6 +7,7 @@ import {
   ApiNotConnectedError,
   type AccountApi,
   type AuthApi,
+  type HumanVerifierClient,
   type ResearchApi,
   type StaffSecurityApi,
 } from './types';
@@ -19,6 +20,8 @@ export const notConnectedResearchApi: ResearchApi = {
   getAddressResearch: fail,
   getTransactionResearch: fail,
   getDashboard: fail,
+  listProjects: fail,
+  getProject: fail,
 };
 
 const unavailable = () => Promise.resolve({ kind: 'temporarily_unavailable' as const });
@@ -50,7 +53,13 @@ export const notConnectedStaffSecurityApi: StaffSecurityApi = {
   verifyPasskey: () => Promise.resolve({ kind: 'failed' }),
   startEnrollment: unavailable,
   registerAuthenticator: () => Promise.resolve({ kind: 'failed' }),
+  setEnrollmentPassword: accountUnavailable,
   completeEnrollment: accountUnavailable,
   removeAuthenticator: accountUnavailable,
   getRecoveryStatus: () => Promise.resolve(null),
+};
+
+/** No provider is chosen yet (O-6): the challenge fails closed. */
+export const notConnectedHumanVerifier: HumanVerifierClient = {
+  challenge: () => Promise.resolve({ kind: 'unavailable' }),
 };

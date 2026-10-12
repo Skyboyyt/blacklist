@@ -4,10 +4,12 @@ import {
   ENROLLMENT_CODE_LENGTH,
   enrollmentStartSchema,
   resetPasswordFormSchema,
+  type AccountActionResult,
   type EnrollmentStartResult,
 } from '@blacklist/contracts';
 import { useCallback, useState, type FormEvent } from 'react';
 import {
+  accountErrorAlert,
   FormAlert,
   rateLimitedAlert,
   unavailableAlert,
@@ -31,6 +33,17 @@ import { PasskeyPrompt } from './passkey-prompt';
 type Step = 'code' | 'password' | 'auth1' | 'auth2' | 'activating' | 'complete';
 type InvitationProblem = Extract<EnrollmentStartResult, { kind: 'invitation_problem' }>['status'];
 
+/** The bound enrollment flow ended (expired or abandoned): the invitation link starts a new one. */
+const FLOW_ENDED: FormAlertState = {
+  kind: 'error',
+  title: 'Your enrollment session has ended',
+  message: 'Open the invitation link from your email again to start over. No staff account was created.',
+};
+
+function enrollmentErrorAlert(result: Exclude<AccountActionResult, { kind: 'ok' }>): FormAlertState {
+  return result.code === 'session_expired' ? FLOW_ENDED : accountErrorAlert(result);
+}
+
 const STEP_INDEX: Record<Step, number> = {
   code: 0,
   password: 1,
@@ -44,8 +57,8 @@ const STEP_INDEX: Record<Step, number> = {
  * Staff enrollment (identity §10.4–§10.5): the emailed link (fragment token) AND the
  * one-time enrollment code from a separate channel, then a password and two
  * authenticators, then one atomic activation. Abandoning it leaves no account.
- * The password is validated here and handed to the API in the future; this preview
- * discards it immediately and never stores it.
+ * The password is sent once to the bound enrollment flow, which keeps only its hash
+ * until activation; the browser clears the fields and never stores it.
  */
 export function StaffEnrollmentFlow() {
   const token = useFragmentToken();
@@ -127,8 +140,9 @@ export function StaffEnrollmentFlow() {
     setPending(false);
   }
 
-  function submitPassword(event: FormEvent<HTMLFormElement>) {
+  async function submitPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     const form = event.currentTarget;
     const parsed = validateForm(
       resetPasswordFormSchema,
@@ -139,9 +153,21 @@ export function StaffEnrollmentFlow() {
       focusFirstError(form, parsed.errors, ['password', 'confirmPassword']);
       return;
     }
-    form.reset(); // preview: the password is not kept anywhere
     setErrors({});
-    setStep('auth1');
+    setAlert({ kind: 'none' });
+    setPending(true);
+    try {
+      const res = await (
+        await getStaffSecurityApi()
+      ).setEnrollmentPassword({ password: parsed.data.password });
+      if (res.kind === 'ok') {
+        form.reset(); // the browser keeps no copy
+        setStep('auth1');
+      } else setAlert(enrollmentErrorAlert(res));
+    } catch {
+      setAlert(unexpectedAlert('client-error'));
+    }
+    setPending(false);
   }
 
   async function activate() {
@@ -152,10 +178,10 @@ export function StaffEnrollmentFlow() {
         setStep('complete');
         return;
       }
+      setAlert(enrollmentErrorAlert(res));
     } catch {
-      // fall through
+      setAlert(unavailableAlert());
     }
-    setAlert(unavailableAlert());
     setStep('auth2');
   }
 
@@ -208,7 +234,7 @@ export function StaffEnrollmentFlow() {
               <PasswordInput {...control} name="confirmPassword" autoComplete="new-password" required />
             )}
           </Field>
-          <Button type="submit" size="lg" className="w-full">
+          <Button type="submit" size="lg" loading={pending} loadingLabel="Saving…" className="w-full">
             Continue
           </Button>
         </form>

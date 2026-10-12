@@ -8,6 +8,7 @@ import { isActive, type NavIcon, type NavSection } from '@/lib/nav/nav-items';
 
 const ICONS: Record<NavIcon, IconName> = {
   search: 'search',
+  projects: 'link',
   dashboard: 'dashboard',
   reports: 'reports',
   appeals: 'appeals',

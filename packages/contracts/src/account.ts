@@ -21,6 +21,8 @@ export const accountErrorCodeSchema = z.enum([
   'temporarily_unavailable',
   'session_not_found',
   'cannot_revoke_current_session',
+  /** Staff enrollment activation before the bound flow has a password and two authenticators. */
+  'enrollment_incomplete',
 ]);
 export type AccountErrorCode = z.infer<typeof accountErrorCodeSchema>;
 

@@ -5,7 +5,8 @@
  */
 import type { Viewer } from '@blacklist/contracts';
 
-export type NavIcon = 'search' | 'dashboard' | 'reports' | 'appeals' | 'settings' | 'shield' | 'book';
+export type NavIcon =
+  'search' | 'projects' | 'dashboard' | 'reports' | 'appeals' | 'settings' | 'shield' | 'book';
 
 export interface NavItem {
   readonly href: string;
@@ -26,6 +27,7 @@ export const PRIMARY_NAV: NavSection = {
   label: 'Main',
   items: [
     { href: '/search', label: 'Research', icon: 'search', matchPrefix: '/search' },
+    { href: '/projects', label: 'Projects', icon: 'projects', matchPrefix: '/project' },
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { href: '/reports', label: 'Reports', icon: 'reports', matchPrefix: '/reports' },
     { href: '/appeals/new', label: 'Appeals & responses', icon: 'appeals', matchPrefix: '/appeals' },

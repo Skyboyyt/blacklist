@@ -99,6 +99,7 @@ describe('staff enrollment', () => {
 
   it('needs the out-of-band code, then a password and two authenticators, then activates', async () => {
     open('demo-invite-token-0001');
+    const sendPassword = vi.spyOn(apis.staff, 'setEnrollmentPassword');
     const user = userEvent.setup();
     render(<StaffEnrollmentFlow />);
     const code = await screen.findByLabelText('Enrollment code');
@@ -113,6 +114,8 @@ describe('staff enrollment', () => {
     await user.type(await screen.findByLabelText('Password'), 'a long staff passphrase');
     await user.type(screen.getByLabelText('Confirm password'), 'a long staff passphrase');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
+    // P2-01: the chosen password reaches the bound enrollment flow, and only the password.
+    await waitFor(() => expect(sendPassword).toHaveBeenCalledWith({ password: 'a long staff passphrase' }));
 
     await user.click(await screen.findByRole('button', { name: 'Register first authenticator' }));
     expect(
@@ -121,6 +124,40 @@ describe('staff enrollment', () => {
     await user.click(screen.getByRole('button', { name: 'Register second authenticator' }));
     expect(await screen.findByText('Your staff account is ready')).toBeInTheDocument();
     expect(window.localStorage.length + window.sessionStorage.length).toBe(0);
+  });
+
+  async function reachPasswordStep(user: ReturnType<typeof userEvent.setup>) {
+    open('demo-invite-token-0001');
+    render(<StaffEnrollmentFlow />);
+    await user.type(await screen.findByLabelText('Enrollment code'), 'DEMO2026AB');
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.type(await screen.findByLabelText('Password'), 'a long staff passphrase');
+    await user.type(screen.getByLabelText('Confirm password'), 'a long staff passphrase');
+  }
+
+  it('does not activate when the password never reached the enrollment flow', async () => {
+    // A client that skips delivering the password: the flow refuses activation.
+    vi.spyOn(apis.staff, 'setEnrollmentPassword').mockResolvedValue({ kind: 'ok' });
+    const user = userEvent.setup();
+    await reachPasswordStep(user);
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(await screen.findByRole('button', { name: 'Register first authenticator' }));
+    await user.click(await screen.findByRole('button', { name: 'Register second authenticator' }));
+    expect(await screen.findByText('Enrollment isn’t finished')).toBeInTheDocument();
+    expect(screen.queryByText('Your staff account is ready')).toBeNull();
+  });
+
+  it('stays on the password step when the enrollment session has ended', async () => {
+    vi.spyOn(apis.staff, 'setEnrollmentPassword').mockResolvedValue({
+      kind: 'error',
+      code: 'session_expired',
+    });
+    const user = userEvent.setup();
+    await reachPasswordStep(user);
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Your enrollment session has ended')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Register first authenticator' })).toBeNull();
   });
 
   it('keeps the user on the step when the authenticator prompt is cancelled', async () => {

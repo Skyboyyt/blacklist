@@ -20,11 +20,14 @@ import type { ResearchApi, ResearchResult } from '../types';
 import { ADDRESS_FIXTURES } from './fixtures/addresses';
 import { DASHBOARD_FIXTURE, VIEWER_FIXTURES } from './fixtures/dashboard';
 import { EVM } from './fixtures/ids';
+import { PROJECT_ADDRESS_FIXTURES } from './fixtures/projects';
 import { TRANSACTION_FIXTURES } from './fixtures/transactions';
+import { createProjectCatalog } from './project-api';
 
-const addresses = addressResearchSchema.array().parse(ADDRESS_FIXTURES);
+const addresses = addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]);
 const transactions = transactionResearchSchema.array().parse(TRANSACTION_FIXTURES);
 const dashboard = dashboardSchema.parse(DASHBOARD_FIXTURE);
+const projects = createProjectCatalog(addresses);
 
 export interface MockOptions {
   /** Value of the mock viewer cookie: anonymous | member | moderator | admin. Defaults to member. */
@@ -176,6 +179,14 @@ export function createMockResearchApi(options: MockOptions = {}): ResearchApi {
     async getDashboard() {
       await delay(latency);
       return dashboard;
+    },
+    async listProjects(request) {
+      await delay(latency);
+      return projects.list(request);
+    },
+    async getProject(slug) {
+      await delay(latency);
+      return projects.get(slug);
     },
   };
 }

@@ -31,8 +31,8 @@ export function DisclosuresList({ disclosures }: { readonly disclosures: readonl
             <p className="text-sm font-medium text-text">{d.label}</p>
             <p className="text-sm text-muted">{d.explanation}</p>
             <p className="text-xs text-muted">
-              Observed <time dateTime={d.observedAt}>{formatDateTimeUtc(d.observedAt)}</time> · No effect on
-              the assessment
+              Observed <time dateTime={d.observedAt}>{formatDateTimeUtc(d.observedAt)}</time> · Source:{' '}
+              {d.source} · No effect on the assessment
             </p>
           </li>
         ))}

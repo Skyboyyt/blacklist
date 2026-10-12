@@ -24,3 +24,9 @@ export const mockStaffSecurityApi: typeof Mock.mockStaffSecurityApi = new Proxy(
     get: unavailable,
   },
 );
+export const mockHumanVerifier: typeof Mock.mockHumanVerifier = new Proxy(
+  {} as typeof Mock.mockHumanVerifier,
+  {
+    get: unavailable,
+  },
+);

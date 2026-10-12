@@ -18,6 +18,7 @@ const disclosures: Disclosure[] = [
     label: 'Upgrade authority present',
     explanation: 'Owner can replace logic.',
     provenance: 'chain_fact',
+    source: 'Finalized node read',
     observedAt: at,
   },
   {
@@ -26,6 +27,7 @@ const disclosures: Disclosure[] = [
     label: 'Pause authority present',
     explanation: 'Owner can pause.',
     provenance: 'chain_fact',
+    source: 'Finalized node read',
     observedAt: at,
   },
   {
@@ -34,6 +36,7 @@ const disclosures: Disclosure[] = [
     label: 'Mint authority active',
     explanation: 'Can mint.',
     provenance: 'chain_fact',
+    source: 'Finalized node read',
     observedAt: at,
   },
   {
@@ -42,6 +45,7 @@ const disclosures: Disclosure[] = [
     label: 'Source code not verified',
     explanation: 'Not published.',
     provenance: 'external_source',
+    source: 'Block explorer verification record',
     observedAt: at,
   },
 ];

@@ -9,9 +9,9 @@ Core principles:
 
 ## Current status
 
-> **Phase 2 (account and security frontend) implemented and under Codex review; no backend exists. Phase 3 is not authorized.**
+> **Phase 3 (research UI: project directory and profiles) implemented on mocks and awaiting Codex review; no backend exists. Phase 4 is not authorized.**
 >
-> This repository contains the product requirements, architecture (revision 3), normative design documents, a threat model, engineering rules and ADRs. The frontend includes a design system, application shell, research previews, and Phase 2 account and security screens running on typed contracts and a **mock adapter with fictional data** ([docs/design/frontend.md](docs/design/frontend.md)). **No real data, accounts or assessments exist.** Do not deploy this repository.
+> This repository contains the product requirements, architecture (revision 3), normative design documents, a threat model, engineering rules and ADRs. The frontend includes a design system, application shell, research previews, Phase 2 account and security screens, and Phase 3 project directory and profile pages running on typed contracts and a **mock adapter with fictional data** ([docs/design/frontend.md](docs/design/frontend.md)). **No real data, accounts or assessments exist.** Do not deploy this repository.
 >
 > **Development is frontend-first.** After Phase 0 closes:
 > 1. Phases 1–6 build and review the primary frontend against typed contracts and mocks.
@@ -57,7 +57,7 @@ docs/            Design documents, data model, testing, dependencies, ADRs, revi
 | [docs/data-model.md](docs/data-model.md) | Entity catalog and data rules |
 | [docs/testing-strategy.md](docs/testing-strategy.md) | Test layers, adversarial suites, Foundation acceptance spikes |
 | [docs/dependency-policy.md](docs/dependency-policy.md) | Dependency rules and planned register |
-| [docs/adr/](docs/adr/README.md) | Architecture Decision Records 0001–0007 |
+| [docs/adr/](docs/adr/README.md) | Architecture Decision Records 0001–0011 (0009–0011 Proposed) |
 | [docs/reviews/](docs/reviews/README.md) | Codex reviews and Claude's responses |
 
 ## Development prerequisites (from Phase 1, frontend first)

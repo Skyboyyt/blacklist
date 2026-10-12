@@ -8,5 +8,5 @@
 export { DemoBanner } from '@/components/layout/demo-banner';
 export { DEMO_EXAMPLES } from './fixtures/examples';
 export { mockAccountApi, mockStaffSecurityApi } from './account-api';
-export { mockAuthApi } from './auth-api';
+export { mockAuthApi, mockHumanVerifier } from './auth-api';
 export { createMockResearchApi } from './research-api';

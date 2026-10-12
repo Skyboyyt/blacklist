@@ -10,6 +10,7 @@ import { tokenStatusSchema } from './auth.ts';
 import { addressResearchSchema } from './research.ts';
 import { viewerSchema } from './session.ts';
 import {
+  enrollmentPasswordRequestSchema,
   enrollmentStartSchema,
   staffAuthenticatorSchema,
   staffRecoveryStatusSchema,
@@ -192,5 +193,20 @@ describe('email change and links', () => {
     });
     expect(enrollmentStartSchema.safeParse({ token, code: 'short' }).success).toBe(false);
     expect(enrollmentStartSchema.safeParse({ token, code: 'AB12CD34E!' }).success).toBe(false);
+  });
+});
+
+describe('staff enrollment password (identity §10.5 step 2)', () => {
+  it('sends only the password, under the new-password policy', () => {
+    expect(enrollmentPasswordRequestSchema.safeParse({ password: 'a long staff passphrase' }).success).toBe(
+      true,
+    );
+    expect(enrollmentPasswordRequestSchema.safeParse({ password: 'too short' }).success).toBe(false);
+    expect(
+      enrollmentPasswordRequestSchema.safeParse({
+        password: 'a long staff passphrase',
+        confirmPassword: 'a long staff passphrase',
+      }).success,
+    ).toBe(false);
   });
 });

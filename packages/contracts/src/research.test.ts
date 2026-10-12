@@ -101,6 +101,7 @@ describe('P1-01: capability disclosures contribute zero and are never risk facto
         label: 'L',
         explanation: 'E',
         provenance: 'chain_fact',
+        source: 'Finalized node read',
         observedAt: at,
       };
       expect(disclosureSchema.safeParse(disclosure).success).toBe(true);
@@ -109,6 +110,24 @@ describe('P1-01: capability disclosures contribute zero and are never risk facto
       expect(addressResearchSchema.safeParse({ ...research, disclosures: [disclosure] }).success).toBe(true);
     },
   );
+
+  it('requires a bounded source label that is never a link (P1-05)', () => {
+    const disclosure = {
+      id: 'd1',
+      code: 'mint_authority',
+      label: 'L',
+      explanation: 'E',
+      provenance: 'chain_fact',
+      source: 'Finalized node read',
+      observedAt: at,
+    };
+    expect(disclosureSchema.safeParse(disclosure).success).toBe(true);
+    const { source: _omitted, ...withoutSource } = disclosure;
+    expect(disclosureSchema.safeParse(withoutSource).success).toBe(false);
+    for (const source of ['', 'x'.repeat(81), 'https://rpc.example/key=abc', 'www.provider.example']) {
+      expect(disclosureSchema.safeParse({ ...disclosure, source }).success).toBe(false);
+    }
+  });
 
   it('a disclosure object is not accepted as a risk factor', () => {
     const disclosure = {

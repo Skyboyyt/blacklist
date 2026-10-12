@@ -59,6 +59,30 @@ test.describe('auth pages (mock)', () => {
     await expect(page.getByText('This link has expired')).toBeVisible();
   });
 
+  test('login asks for human verification, keeps the fields and then continues', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill('challenge@example.test');
+    await page.getByLabel('Password', { exact: true }).fill('a long enough passphrase');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('region', { name: 'Confirm you’re a person' })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
+  test('staff reset needs a passkey before the password changes', async ({ page, context }) => {
+    await context.addCookies([{ name: 'bl_mock_passkey', value: 'cancelled', url: 'http://localhost:3100' }]);
+    await page.goto('/reset-password#token=staff-reset-token-0001');
+    await page.getByLabel('New password', { exact: true }).fill('correct horse battery staple');
+    await page.getByLabel('Confirm new password').fill('correct horse battery staple');
+    await page.getByRole('button', { name: 'Set new password' }).click();
+    await expect(page.getByText(/This is a staff account/)).toBeVisible();
+    await expect(page.getByText('Password changed')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Verify and set new password' }).click();
+    await expect(page.getByText('Verification was cancelled')).toBeVisible();
+    await context.addCookies([{ name: 'bl_mock_passkey', value: 'verified', url: 'http://localhost:3100' }]);
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByText('Password changed')).toBeVisible();
+  });
+
   test('auth pages remind users that seed phrases are never requested', async ({ page }) => {
     for (const path of ['/login', '/register', '/forgot-password']) {
       await page.goto(path);

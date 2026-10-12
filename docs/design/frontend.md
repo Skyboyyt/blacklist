@@ -71,8 +71,9 @@ All wording comes from `src/lib/risk/copy.ts`:
 - **Disclosures** (mint/freeze authority, upgrade or pause authority, transfer hooks/fees, unverified source …) are capability facts with **zero contribution** in V1 (ADR 0005). They render in their own neutral "Disclosures" section (no band colours, no warning icons, "No effect on the assessment") and never appear among the assessment's factors or explain a band.
 - Disputes: "Disputed — under appeal" (finding stays visible); "Temporarily suspended pending review".
 - Provenance labels: Blockchain fact, Blacklist analysis, Community allegation, Moderator finding, AI observation, External source.
+- Transfer fixtures cover incoming, outgoing, delegated (victim of an approval), unknown-authorization, unvalidated-log and spoofed-log cases (P1-03). Delegated outgoing transfers say "Moved under an allowance or delegation granted by the sending address." with no guilt wording.
 - Transfers use neutral movement wording ("Incoming transfer of …"; "A log reports an outgoing transfer of …" when the evidence is only an unvalidated log), name the counterparty as Sender or Recipient, and describe authorization **relative to the sending side** ("Signed directly by the sending address."; "Who authorized this transfer is unknown."). Receiving a transfer is never presented as the recipient's action. The disclaimer that interacting with a flagged address does not mean wrongdoing is always shown.
-- Blockchain facts show finality and their own observation time. Per-fact provider/publisher attribution is a Phase 3 item (review P1-05); the copy does not promise it.
+- Blockchain facts and disclosures show finality (facts), their own observation time and a **public source label** (review P1-05): a short sanitized phrase naming the kind of source, such as "Finalized node read". The contract rejects links and over-long labels; provider names, credentials and internal receipts never appear.
 - Attacker-controlled names (token symbols, self-descriptions) are rendered as plain text and marked "unverified".
 
 ## 6. Search states
@@ -83,9 +84,9 @@ Remote states come from the results page (`/search?q=&chain=`): loading (skeleto
 
 ## 7. Auth UX (mock)
 
-- `/login`: email (`autocomplete=username`) + password (`current-password`), show/hide, forgot/register links, inline errors with focus on the first invalid field, no double submit, a generic "Email or password is incorrect", rate-limit and request-reference states, and a validated same-origin `next`.
+- `/login`: email (`autocomplete=username`) + password (`current-password`), show/hide, forgot/register links, inline errors with focus on the first invalid field, no double submit, a generic "Email or password is incorrect", rate-limit and request-reference states, a human-verification challenge when throttling escalates (identity §12), and a validated same-origin `next`.
 - `/register` is email-first and returns the same "Check your email" response whether or not an account exists. The handle is described as visible to the user and staff only (PRD §5.3: no public profiles in V1). `/register/complete`, `/reset-password` and `/email-change/confirm` read the token from the URL **fragment**, strip it with `history.replaceState`, keep it in memory only, and send it only on submit. They show missing, invalid, expired and used states and are served with `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
-- Mock rules: `member@` signs in, `staff@` goes to `/staff/verify`, `limited@` is rate-limited, `error@` returns an unexpected error (all `@example.test`). Tokens starting `expired`, `used` or `invalid` produce those states.
+- Mock rules: `member@` signs in, `staff@` goes to `/staff/verify`, `limited@` is rate-limited, `error@` returns an unexpected error, `challenge@` asks for human verification first (all `@example.test`). Tokens starting `expired`, `used` or `invalid` produce those states; reset tokens starting `staff` belong to a staff account and need a passkey (the demo banner's passkey control picks the result).
 
 ## 7a. Account and security UX (Phase 2, mock)
 
@@ -93,23 +94,37 @@ Normative source: [identity design](identity.md). Everything below is presentati
 
 | Area | Route | Behaviour |
 |---|---|---|
-| Login | `/login` | As above, plus "temporarily unavailable", and a calm banner when returning after `reason=session_expired` or `staff_verification_expired`. Unknown email and wrong password are the same message |
+| Login | `/login` | As above, plus "temporarily unavailable", and a calm banner when returning after `reason=session_expired` or `staff_verification_expired`. Unknown email and wrong password are the same message. **Human verification:** on `human_verification_required` the fields are kept, a provider-neutral challenge (`HumanVerifierClient`, provider O-6) renders, and sign-in is retried once with its opaque response. A failed check offers a retry; an unavailable check fails closed (sign-in stays paused, retry offered). Non-mock builds have no provider yet and always fail closed |
 | Logout | Sidebar, mobile menu, security page | POST-style action (no GET link), pending state, failure keeps you signed in and says so, then the public home page |
 | Session ended | `(app)` pages | `SessionExpiredPanel`: explains without implying data loss; "Sign in again" carries the current path through `safeNextPath` (unsafe paths become `/dashboard`) |
 | Registration | `/register`, `/register/complete` | Email-first; generic "Check your email"; invalid, expired, used and **superseded** link states; no terms checkbox (terms are a pending legal decision) |
-| Reset | `/forgot-password`, `/reset-password` | Generic request answer; superseded link state; success explains that every session ends and email change pauses for **72 hours** (identity §6.3) |
+| Reset | `/forgot-password`, `/reset-password` | Generic request answer; superseded link state; success explains that every session ends and email change pauses for **72 hours** (identity §6.3). **Staff reset:** `passkey_required` opens a WebAuthn step bound to the reset token; the password is resubmitted with the assertion and held only in component memory meanwhile. Cancelled, timed out, failed and unsupported (feature-detected) states retry without success; a link that expires meanwhile shows the expired state. Nothing changes until the assertion verifies |
 | Security overview | `/settings/security` | Password, email, sessions, recovery, recent activity; staff see a link to their security keys |
 | Password change | `/settings/security/password` | Current + new + confirm; reusing the current password rejected; incorrect current password marked on its field; other sessions end, this one stays (identity §6.4) |
 | Email change | `/settings/security/email` | Blocked during cooling; re-authentication (10 minutes) when the API asks; the same answer whether or not the new address has an account; link to the new address (1 hour); the old address is told after the change (identity §7) |
 | Sessions | `/settings/security/sessions` | Coarse device summary and times only; revoke one (confirmed); the current session can only sign out; already-ended sessions reported as done; revoke all others requires re-authentication |
 | Staff keys | `/settings/security/staff` | Authenticators with a synced flag and failure-domain guidance; fewer than two raises a banner (7-day suspension rule); removal needs an action-bound step-up, then confirmation |
 | Staff verify | `/staff/verify` | Passkey states: waiting, verified, cancelled, timed out, unsupported (feature-detected), failed, session ended; retry |
-| Staff enrollment | `/staff/enroll` | Fragment token + 10-character out-of-band code (attempts remaining), password, two authenticators with honest "two registrations ≠ two devices" guidance, atomic activation |
+| Staff enrollment | `/staff/enroll` | Fragment token + 10-character out-of-band code (attempts remaining), password (sent once to the bound enrollment flow, then cleared from the form), two authenticators with honest "two registrations ≠ two devices" guidance, atomic activation. Activation is refused (`enrollment_incomplete`) unless the flow holds the password and two authenticators; an ended enrollment flow explains how to start over |
 | Staff recovery | `/staff/recovery` | Explains the two-person process and shows the holder's own case progress (requested → identity verification (2) → second admin → 24-hour objection window → fresh enrollment → completed; rejected/cancelled). **No break-glass or bypass control exists in the UI** |
 
 Reusable patterns: `ConfirmDialog` (consequences, cancel, pending, error; no typed phrases), `ReauthDialog`, `StepUpDialog` (bound to one action and target), `PasskeyPrompt` + `usePasskeyCeremony`, `SecurityBanner` (session ended, re-auth, cooling, change pending, recovery pending, staff verification), `CoolingPeriodNotice`, `SecurityActivity`, typed account errors with plain-language copy (`lib/auth/account-error-copy.ts`). Member MFA is post-V1 and is not shown as available.
 
 Passwords: 15+ code points after NFKC, up to 128 and 512 bytes, no composition rules or expiry, paste and password managers supported. New-password fields show a live length count (not a strength meter) and a Caps Lock hint. Component state keeps at most a character count; passwords, tokens, codes and challenges never touch `localStorage`/`sessionStorage`.
+
+## 7b. Project research UX (Phase 3, mock)
+
+Normative sources: PRD §5.10 and §5.17 (V1 projects are staff-created profiles), ADR 0005 and P-11 (no public number). Proposed ADRs 0009–0011 (numeric score, project submissions and verification, extra EVM networks) are **not implemented**.
+
+| Area | Route | Behaviour |
+|---|---|---|
+| Directory | `/projects` | Plain GET form (works without JavaScript; the URL is the source of truth): text search over names and official domains, or an official address; **Network** (all supported, Ethereum, Solana; list from `CHAIN_SLUGS`); category; findings status (any, has published findings, none, finding under appeal or suspended); sort (name, recently reviewed, most findings); 6 per page with previous/next links. An address query needs a network and is matched on that network only (`choose_network` otherwise; a wrong-network address is invalid). An unknown `chain` value shows "Network not supported" and is never silently dropped. States: loading skeleton, results, no results ("does not mean safe or unsafe"), empty directory, choose network, invalid query, provider unavailable, route error boundary |
+| Cards | | Category, network badges, an official identifier (on the selected network when one is chosen), published-findings count, dispute state, partial/stale badge, last staff review date. **No band and no score:** projects have no combined rating in V1 |
+| Detail | `/project/[slug]` | Identity (name, category, networks, slug identifier, description); "What this profile means" notice (staff-reviewed evidence, not endorsement or verification, no guarantee of safety or returns, no combined rating); last reviewed (revision), last updated, data status; partial/stale notice; **official addresses**, each with full copyable identifier, link to its own address research, attribution basis with date ("not proof of ownership or control"), its own assessment (band, explanation, approved factors, confidence, as-of, dispute state; "Assessment unavailable right now" when it cannot be loaded, never shown as not assessed or low) and its capability disclosures in a **separate** section; official domains as plain text; published findings with dispute state; responses with their standing mechanism; profile history |
+| Entry points | | Signed out: "Sign in to respond, correct or appeal" → `/login?next=/project/<slug>`. Signed in: "Respond, correct or appeal" → `/appeals/new` and "Report a concern" → `/reports/new` (Phase 4 flows). A link choice only; the API authorizes (Phase 7) |
+| Universal search | `/search` | A non-identifier query offers "Search project profiles" → `/projects?q=…` |
+
+Mock rules: 14 fictional profiles (`fixtures/projects.ts`); each official address reuses or adds an address research record, so project and address pages agree. Directory query `provider-down-demo` → unavailable, `error-demo` → error boundary; detail slugs `demo-provider-down` and `demo-error` likewise.
 
 ## 8. Security headers
 
