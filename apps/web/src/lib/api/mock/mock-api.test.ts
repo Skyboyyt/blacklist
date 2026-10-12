@@ -1,9 +1,15 @@
-import { addressResearchSchema, searchResponseSchema, transactionResearchSchema } from '@blacklist/contracts';
-import { describe, expect, it } from 'vitest';
+import {
+  addressResearchSchema,
+  loginOutcomeSchema,
+  resetPasswordOutcomeSchema,
+  searchResponseSchema,
+  transactionResearchSchema,
+} from '@blacklist/contracts';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ADDRESS_FIXTURES } from './fixtures/addresses';
 import { AMBIGUOUS_INPUT, EVM, MOCK_AUTH, SOLANA } from './fixtures/ids';
 import { TRANSACTION_FIXTURES } from './fixtures/transactions';
-import { mockAuthApi } from './auth-api';
+import { mockAuthApi, mockHumanVerifier } from './auth-api';
 import { createMockResearchApi } from './research-api';
 
 const api = createMockResearchApi({ latencyMs: 0 });
@@ -128,5 +134,55 @@ describe('mock auth API', () => {
       status: 'used',
     });
     expect(await mockAuthApi.resetPassword('demo-valid-token-0001', form)).toEqual({ kind: 'success' });
+  });
+
+  describe('staff reset (identity §6.3)', () => {
+    const form = { password: 'correct horse battery', confirmPassword: 'correct horse battery' };
+    const token = 'staff-reset-token-0001';
+    afterEach(() => {
+      document.cookie = 'bl_mock_passkey=; path=/; max-age=0';
+    });
+
+    it('never succeeds on token and password alone', async () => {
+      expect(resetPasswordOutcomeSchema.parse(await mockAuthApi.resetPassword(token, form))).toEqual({
+        kind: 'passkey_required',
+      });
+      expect(await mockAuthApi.resetPassword(token, form, { withPasskey: false })).toEqual({
+        kind: 'passkey_required',
+      });
+    });
+
+    it('reports an unfinished ceremony and succeeds only after a verified passkey', async () => {
+      document.cookie = 'bl_mock_passkey=cancelled; path=/';
+      expect(await mockAuthApi.resetPassword(token, form, { withPasskey: true })).toEqual({
+        kind: 'passkey_not_verified',
+        result: 'cancelled',
+      });
+      document.cookie = 'bl_mock_passkey=verified; path=/';
+      expect(await mockAuthApi.resetPassword(token, form, { withPasskey: true })).toEqual({
+        kind: 'success',
+      });
+    });
+
+    it('still reports token problems first', async () => {
+      expect(await mockAuthApi.resetPassword('expired-staff-token-01', form, { withPasskey: true })).toEqual({
+        kind: 'token_problem',
+        status: 'expired',
+      });
+    });
+  });
+
+  it('asks for human verification before checking credentials, then accepts the retry', async () => {
+    const request = { email: MOCK_AUTH.challengeEmail, password: 'x' };
+    expect(loginOutcomeSchema.parse(await mockAuthApi.login(request, '/dashboard'))).toEqual({
+      kind: 'human_verification_required',
+    });
+    const check = await mockHumanVerifier.challenge(document.createElement('div'));
+    expect(check.kind).toBe('passed');
+    if (check.kind !== 'passed') return;
+    expect(await mockAuthApi.login({ ...request, humanVerification: check.response }, '/dashboard')).toEqual({
+      kind: 'signed_in',
+      redirectTo: '/dashboard',
+    });
   });
 });

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../test/a11y';
+import type { HumanVerificationResult } from '@/lib/api/types';
 import { LoginForm } from './login-form';
 
 const push = vi.fn();
@@ -10,11 +11,16 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
 let resolveLogin: ((outcome: LoginOutcome) => void) | undefined;
 const login = vi.fn(() => new Promise<LoginOutcome>((resolve) => (resolveLogin = resolve)));
-vi.mock('@/lib/api/browser', () => ({ getAuthApi: async () => ({ login }) }));
+const challenge = vi.fn<() => Promise<HumanVerificationResult>>();
+vi.mock('@/lib/api/browser', () => ({
+  getAuthApi: async () => ({ login }),
+  getHumanVerifier: async () => ({ challenge }),
+}));
 
 beforeEach(() => {
   push.mockClear();
   login.mockClear();
+  challenge.mockReset();
 });
 
 const email = () => screen.getByLabelText('Email');
@@ -135,6 +141,68 @@ describe('LoginForm', () => {
     render(<LoginForm next="/dashboard" endedReason={reason} />);
     expect(screen.getByRole('status')).toHaveTextContent(title);
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  describe('human verification (identity §12, P2-03)', () => {
+    async function submitChallenged(user: ReturnType<typeof userEvent.setup>) {
+      render(<LoginForm next="/dashboard" />);
+      await user.type(email(), 'challenge@example.test');
+      await user.type(password(), 'a long enough passphrase');
+      await user.click(screen.getByRole('button', { name: 'Sign in' }));
+      resolveLogin?.({ kind: 'human_verification_required' });
+    }
+
+    it('keeps the fields and retries once with the verification response', async () => {
+      challenge.mockResolvedValue({ kind: 'passed', response: 'opaque-check-response' });
+      const user = userEvent.setup();
+      await submitChallenged(user);
+      await waitFor(() => expect(login).toHaveBeenCalledTimes(2));
+      expect(login).toHaveBeenLastCalledWith(
+        {
+          email: 'challenge@example.test',
+          password: 'a long enough passphrase',
+          humanVerification: 'opaque-check-response',
+        },
+        '/dashboard',
+      );
+      resolveLogin?.({ kind: 'signed_in', redirectTo: '/dashboard' });
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/dashboard'));
+    });
+
+    it('does not retry sign-in when the check fails, and offers the check again', async () => {
+      challenge.mockResolvedValueOnce({ kind: 'failed' });
+      const user = userEvent.setup();
+      await submitChallenged(user);
+      expect(await screen.findByText('The check didn’t succeed. Try again.')).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Confirm you’re a person' })).toBeInTheDocument();
+      expect(password()).toHaveValue('a long enough passphrase');
+      expect(login).toHaveBeenCalledTimes(1);
+
+      challenge.mockResolvedValueOnce({ kind: 'passed', response: 'second-response' });
+      await user.click(screen.getByRole('button', { name: 'Try the check again' }));
+      await waitFor(() => expect(login).toHaveBeenCalledTimes(2));
+      expect(login.mock.calls[1]).toEqual([
+        expect.objectContaining({ humanVerification: 'second-response' }),
+        '/dashboard',
+      ]);
+    });
+
+    it('fails closed when the check is unavailable', async () => {
+      challenge.mockResolvedValue({ kind: 'unavailable' });
+      const user = userEvent.setup();
+      await submitChallenged(user);
+      expect(await screen.findByText(/sign-in is paused/)).toBeInTheDocument();
+      expect(login).toHaveBeenCalledTimes(1);
+      expect(push).not.toHaveBeenCalled();
+    });
+
+    it('has no detectable accessibility violations while challenging', async () => {
+      challenge.mockResolvedValue({ kind: 'failed' });
+      const user = userEvent.setup();
+      await submitChallenged(user);
+      await screen.findByText('The check didn’t succeed. Try again.');
+      await expectNoAxeViolations(document.body);
+    });
   });
 
   it('has no detectable accessibility violations', async () => {

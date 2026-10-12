@@ -6,7 +6,9 @@
  * rules so the UI is built against realistic behaviour: re-authentication lasts
  * 10 minutes, email change is blocked during the 72-hour cooling period and always
  * answers the same way, password change ends other sessions, and revoking all other
- * sessions needs fresh re-authentication (identity §6.4, §7, §9).
+ * sessions needs fresh re-authentication (identity §6.4, §7, §9). Staff enrollment
+ * activates only when its flow holds a password and two authenticators (§10.5); the
+ * mock records that a password was sent, never the password itself.
  * Mock outcomes never verify anything and grant nothing.
  */
 import {
@@ -54,6 +56,8 @@ interface Store {
   authenticators: StaffAuthenticator[];
   deficitSince: string | null;
   enrollmentAttemptsRemaining: number;
+  /** The bound enrollment flow (identity §10.4), or null before the code is accepted. */
+  enrollment: { passwordSet: boolean; authenticators: Set<1 | 2> } | null;
 }
 
 function newStore(): Store {
@@ -65,6 +69,7 @@ function newStore(): Store {
     authenticators: STAFF_AUTHENTICATOR_FIXTURES.map((a) => ({ ...a })),
     deficitSince: null,
     enrollmentAttemptsRemaining: 4,
+    enrollment: null,
   };
 }
 
@@ -214,14 +219,29 @@ export function createMockAccountApis(options: MockAccountOptions): {
         store.enrollmentAttemptsRemaining = Math.max(0, store.enrollmentAttemptsRemaining - 1);
         return { kind: 'code_incorrect', attemptsRemaining: store.enrollmentAttemptsRemaining };
       }
+      store.enrollment = { passwordSet: false, authenticators: new Set() };
       return { kind: 'ok', role: 'moderator' };
     },
-    async registerAuthenticator() {
+    async setEnrollmentPassword() {
+      await wait(latency);
+      if (!store.enrollment) return error('session_expired');
+      store.enrollment.passwordSet = true;
+      return ok;
+    },
+    async registerAuthenticator(step) {
       await wait(passkeyLatency);
-      return { kind: currentPasskeyResult(options.cookies()) };
+      if (!store.enrollment) return { kind: 'session_expired' };
+      const kind = currentPasskeyResult(options.cookies());
+      if (kind === 'verified') store.enrollment.authenticators.add(step);
+      return { kind };
     },
     async completeEnrollment() {
       await wait(latency);
+      const flow = store.enrollment;
+      if (!flow) return error('session_expired');
+      if (!flow.passwordSet || flow.authenticators.size < STAFF_MIN_AUTHENTICATORS)
+        return error('enrollment_incomplete');
+      store.enrollment = null; // the invitation is consumed
       return ok;
     },
     async removeAuthenticator(id) {

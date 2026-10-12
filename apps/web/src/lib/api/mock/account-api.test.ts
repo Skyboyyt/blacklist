@@ -155,6 +155,52 @@ describe('mock staff security API (identity §10)', () => {
     });
   });
 
+  describe('enrollment activation (identity §10.5)', () => {
+    const start = () => apis.staff.startEnrollment({ token: 'demo-invite-token-0001', code: 'DEMO2026AB' });
+    const password = { password: 'a long staff passphrase' };
+
+    it('cannot activate without a password delivered to the bound flow', async () => {
+      await start();
+      expect(await apis.staff.registerAuthenticator(1)).toEqual({ kind: 'verified' });
+      expect(await apis.staff.registerAuthenticator(2)).toEqual({ kind: 'verified' });
+      expect(accountActionResultSchema.parse(await apis.staff.completeEnrollment())).toEqual({
+        kind: 'error',
+        code: 'enrollment_incomplete',
+      });
+    });
+
+    it('cannot activate with fewer than two registered authenticators', async () => {
+      await start();
+      expect(await apis.staff.setEnrollmentPassword(password)).toEqual({ kind: 'ok' });
+      await apis.staff.registerAuthenticator(1);
+      cookies = 'bl_mock_viewer=member; bl_mock_passkey=cancelled';
+      await apis.staff.registerAuthenticator(2);
+      expect(await apis.staff.completeEnrollment()).toEqual({ kind: 'error', code: 'enrollment_incomplete' });
+      // Registering the same step twice still counts as one authenticator.
+      cookies = 'bl_mock_viewer=member';
+      await apis.staff.registerAuthenticator(1);
+      expect(await apis.staff.completeEnrollment()).toEqual({ kind: 'error', code: 'enrollment_incomplete' });
+    });
+
+    it('refuses every step before the invitation code is accepted', async () => {
+      expect(await apis.staff.setEnrollmentPassword(password)).toEqual({
+        kind: 'error',
+        code: 'session_expired',
+      });
+      expect(await apis.staff.registerAuthenticator(1)).toEqual({ kind: 'session_expired' });
+      expect(await apis.staff.completeEnrollment()).toEqual({ kind: 'error', code: 'session_expired' });
+    });
+
+    it('activates once with a password and two authenticators, then the flow is consumed', async () => {
+      await start();
+      await apis.staff.setEnrollmentPassword(password);
+      await apis.staff.registerAuthenticator(1);
+      await apis.staff.registerAuthenticator(2);
+      expect(await apis.staff.completeEnrollment()).toEqual({ kind: 'ok' });
+      expect(await apis.staff.completeEnrollment()).toEqual({ kind: 'error', code: 'session_expired' });
+    });
+  });
+
   it('flags an authenticator deficit after removal below two', async () => {
     cookies = 'bl_mock_viewer=moderator';
     await apis.staff.removeAuthenticator('auth_demo_passkey');

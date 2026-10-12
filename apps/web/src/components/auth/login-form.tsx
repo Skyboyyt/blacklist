@@ -1,9 +1,9 @@
 'use client';
 
-import { loginRequestSchema } from '@blacklist/contracts';
+import { loginRequestSchema, type LoginRequest } from '@blacklist/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import {
   unexpectedAlert,
   type FormAlertState,
 } from './form-alert';
+import { HumanVerification } from './human-verification';
 
 const FIELDS = ['email', 'password'] as const;
 
@@ -42,12 +43,17 @@ export function LoginForm({ next, endedReason }: LoginFormProps) {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [alert, setAlert] = useState<FormAlertState>({ kind: 'none' });
   const [submitting, setSubmitting] = useState(false);
+  /** Increments each time the API asks for human verification; remounts the challenge. */
+  const [challenge, setChallenge] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = event.currentTarget;
-    if (submitting) return;
+    void signIn(event.currentTarget);
+  }
 
+  async function signIn(form: HTMLFormElement, humanVerification?: string) {
+    if (submitting) return;
     const result = validateForm(loginRequestSchema, readFields(form, FIELDS));
     if (!result.ok) {
       setErrors(result.errors);
@@ -55,11 +61,14 @@ export function LoginForm({ next, endedReason }: LoginFormProps) {
       focusFirstError(form, result.errors, FIELDS);
       return;
     }
+    const request: LoginRequest =
+      humanVerification === undefined ? result.data : { ...result.data, humanVerification };
     setErrors({});
     setAlert({ kind: 'none' });
+    setChallenge(0);
     setSubmitting(true);
     try {
-      const outcome = await (await getAuthApi()).login(result.data, next);
+      const outcome = await (await getAuthApi()).login(request, next);
       switch (outcome.kind) {
         case 'signed_in':
           router.push(outcome.redirectTo);
@@ -76,6 +85,10 @@ export function LoginForm({ next, endedReason }: LoginFormProps) {
           setAlert(rateLimitedAlert(outcome.retryAfterSeconds));
           clearPassword(form);
           break;
+        case 'human_verification_required':
+          // Nothing was checked yet: keep the fields and retry once the check passes.
+          setChallenge((n) => n + 1);
+          break;
         case 'temporarily_unavailable':
           setAlert(unavailableAlert());
           break;
@@ -90,7 +103,7 @@ export function LoginForm({ next, endedReason }: LoginFormProps) {
   }
 
   return (
-    <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
       {endedReason && alert.kind === 'none' ? (
         <SecurityBanner kind="session_expired" title={ENDED_COPY[endedReason].title}>
           {ENDED_COPY[endedReason].body}
@@ -122,6 +135,14 @@ export function LoginForm({ next, endedReason }: LoginFormProps) {
       >
         {(control) => <PasswordInput {...control} name="password" autoComplete="current-password" required />}
       </Field>
+      {challenge > 0 ? (
+        <HumanVerification
+          key={challenge}
+          onPassed={(response) => {
+            if (formRef.current) void signIn(formRef.current, response);
+          }}
+        />
+      ) : null}
       <Button type="submit" size="lg" loading={submitting} loadingLabel="Signing in…" className="mt-2 w-full">
         Sign in
       </Button>

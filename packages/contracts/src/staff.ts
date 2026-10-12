@@ -7,7 +7,7 @@
  * future API reports after it verifies an assertion.
  */
 import { z } from './zod.ts';
-import { flowTokenSchema } from './auth.ts';
+import { flowTokenSchema, newPasswordSchema } from './auth.ts';
 import { isoDateTimeSchema } from './common.ts';
 
 /** Staff need at least two registered authenticators (identity §10.1). */
@@ -73,6 +73,15 @@ export const enrollmentStartResultSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('temporarily_unavailable') }),
 ]);
 export type EnrollmentStartResult = z.infer<typeof enrollmentStartResultSchema>;
+
+/**
+ * Step 2 of enrollment (identity §10.5): the chosen password, sent once to the bound
+ * server-side enrollment flow. The API keeps only its hash in the enrollment draft;
+ * activation (step 5) fails unless the flow holds a password and two authenticators.
+ * The confirmation field stays in the browser.
+ */
+export const enrollmentPasswordRequestSchema = z.strictObject({ password: newPasswordSchema });
+export type EnrollmentPasswordRequest = z.infer<typeof enrollmentPasswordRequestSchema>;
 
 /** Staff recovery stages (identity §10.11). No stage bypasses WebAuthn. */
 export const recoveryStageSchema = z.enum([

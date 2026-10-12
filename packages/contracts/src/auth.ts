@@ -78,9 +78,18 @@ export const handleSchema = z
   .max(30, 'Use at most 30 characters.')
   .regex(/^[a-z0-9_]+$/, 'Use lowercase letters, numbers and underscores only.');
 
+/**
+ * Opaque response from the human-verification widget (identity §12, `HumanVerifier`
+ * port; provider decision O-6). Single use and verified only by the API. It is not a
+ * credential, but it is still never logged or stored.
+ */
+export const humanVerificationResponseSchema = z.string().min(1).max(4096);
+
 export const loginRequestSchema = z.strictObject({
   email: emailSchema,
   password: currentPasswordSchema,
+  /** Present only when retrying after `human_verification_required`. */
+  humanVerification: humanVerificationResponseSchema.optional(),
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
@@ -129,6 +138,11 @@ export const loginOutcomeSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('invalid_credentials') }),
   z.strictObject({ kind: z.literal('rate_limited'), retryAfterSeconds: z.number().int().positive() }),
   z.strictObject({ kind: z.literal('staff_verification_required') }),
+  /**
+   * Throttling escalated (identity §12): nothing was checked yet. Retry the same request
+   * with a fresh `humanVerification` response. It says nothing about the account.
+   */
+  z.strictObject({ kind: z.literal('human_verification_required') }),
   z.strictObject({ kind: z.literal('temporarily_unavailable') }),
   z.strictObject({ kind: z.literal('unexpected_error'), requestId: z.string() }),
 ]);
@@ -151,6 +165,31 @@ export const tokenFlowOutcomeSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('unexpected_error'), requestId: z.string() }),
 ]);
 export type TokenFlowOutcome = z.infer<typeof tokenFlowOutcomeSchema>;
+
+/** Passkey outcomes that leave a staff reset unfinished (the browser may retry). */
+export const resetPasskeyProblemSchema = z.enum(['cancelled', 'timed_out', 'unsupported', 'failed']);
+export type ResetPasskeyProblem = z.infer<typeof resetPasskeyProblemSchema>;
+
+/**
+ * Password reset redemption (identity §6.3). A staff account's reset also needs a
+ * WebAuthn assertion whose challenge is bound to the reset token:
+ *
+ *   submit(token, password) ──► passkey_required ──► submit with passkey ──► success
+ *                                                          └──► passkey_not_verified (retry)
+ *
+ * `passkey_required` and `passkey_not_verified` change nothing: the token stays usable
+ * and no password, session or cooling state moves until the assertion verifies.
+ */
+export const resetPasswordOutcomeSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('success') }),
+  z.strictObject({ kind: z.literal('token_problem'), status: tokenStatusSchema.exclude(['valid']) }),
+  z.strictObject({ kind: z.literal('passkey_required') }),
+  z.strictObject({ kind: z.literal('passkey_not_verified'), result: resetPasskeyProblemSchema }),
+  z.strictObject({ kind: z.literal('rate_limited'), retryAfterSeconds: z.number().int().positive() }),
+  z.strictObject({ kind: z.literal('temporarily_unavailable') }),
+  z.strictObject({ kind: z.literal('unexpected_error'), requestId: z.string() }),
+]);
+export type ResetPasswordOutcome = z.infer<typeof resetPasswordOutcomeSchema>;
 
 /** "If an account exists, we sent instructions" — always the same response. */
 export const emailAcceptedOutcomeSchema = z.discriminatedUnion('kind', [

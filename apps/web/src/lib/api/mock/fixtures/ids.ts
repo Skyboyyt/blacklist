@@ -43,7 +43,11 @@ export const MOCK_AUTH = {
   rateLimitedEmail: 'limited@example.test',
   errorEmail: 'error@example.test',
   unavailableEmail: 'unavailable@example.test',
+  /** Sign-in asks for human verification first, then signs in as the member. */
+  challengeEmail: 'challenge@example.test',
   takenHandle: 'taken',
+  /** Reset tokens with this prefix belong to a staff account and need a passkey. */
+  staffResetTokenPrefix: 'staff',
 } as const;
 
 export const FIXED_NOW = '2026-09-28T10:15:00Z';

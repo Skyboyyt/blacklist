@@ -4,9 +4,11 @@ import {
   codePointLength,
   emailSchema,
   handleSchema,
+  loginOutcomeSchema,
   loginRequestSchema,
   newPasswordSchema,
   registerCompleteFormSchema,
+  resetPasswordOutcomeSchema,
   utf8ByteLength,
 } from './auth.ts';
 
@@ -73,6 +75,39 @@ describe('login request', () => {
   it('rejects unknown fields', () => {
     expect(
       loginRequestSchema.safeParse({ email: 'a@example.test', password: 'x', remember: true }).success,
+    ).toBe(false);
+  });
+
+  it('carries an optional, non-empty human-verification response (identity §12)', () => {
+    const base = { email: 'a@example.test', password: 'x' };
+    expect(loginRequestSchema.safeParse({ ...base, humanVerification: 'opaque' }).success).toBe(true);
+    expect(loginRequestSchema.safeParse({ ...base, humanVerification: '' }).success).toBe(false);
+    expect(loginRequestSchema.safeParse({ ...base, humanVerification: 'x'.repeat(4097) }).success).toBe(
+      false,
+    );
+  });
+
+  it('has a human-verification outcome that reveals nothing about the account', () => {
+    expect(loginOutcomeSchema.parse({ kind: 'human_verification_required' })).toEqual({
+      kind: 'human_verification_required',
+    });
+    expect(
+      loginOutcomeSchema.safeParse({ kind: 'human_verification_required', accountExists: true }).success,
+    ).toBe(false);
+  });
+});
+
+describe('password reset outcome (identity §6.3)', () => {
+  it('models the staff passkey step', () => {
+    expect(resetPasswordOutcomeSchema.parse({ kind: 'passkey_required' }).kind).toBe('passkey_required');
+    expect(resetPasswordOutcomeSchema.parse({ kind: 'passkey_not_verified', result: 'cancelled' }).kind).toBe(
+      'passkey_not_verified',
+    );
+  });
+
+  it('cannot report a verified passkey as an unfinished reset', () => {
+    expect(
+      resetPasswordOutcomeSchema.safeParse({ kind: 'passkey_not_verified', result: 'verified' }).success,
     ).toBe(false);
   });
 });
