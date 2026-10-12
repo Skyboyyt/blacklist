@@ -44,4 +44,4 @@ No ADR status authorizes starting a phase. Phase authorization is always a separ
 | [0009](0009-public-numeric-risk-score.md) | Public display of the numeric risk score (change to P-11) | **Proposed** |
 | [0010](0010-project-submission-and-verification-status.md) | Project submissions, update proposals and verification status | **Part A Accepted** (2026-10-12); Part B Proposed |
 | [0011](0011-additional-evm-networks.md) | Additional EVM networks (Base, Arbitrum, BNB Chain, Polygon) | **Proposed** |
-| [0012](0012-public-project-scoreboard.md) | Public project scoreboard | **Proposed** |
+| [0012](0012-public-project-scoreboard.md) | Public project scoreboard | **Accepted (band-only variant)** |

@@ -63,6 +63,49 @@ export const riskFactorSchema = z
   });
 export type RiskFactor = z.infer<typeof riskFactorSchema>;
 
+/** Analysis factors an administrator may suppress (signal:suppress). Findings are suspended or reversed instead. */
+export const SUPPRESSIBLE_FACTOR_CODES = ['token.symbol_impersonation', 'eoa.delegated_to_flagged'] as const;
+export type SuppressibleFactorCode = (typeof SUPPRESSIBLE_FACTOR_CODES)[number];
+
+/**
+ * An audited signal suppression, shown publicly with its reason (PRD §5.14: suppressions
+ * are audited and visible). The suppressed factor no longer contributes.
+ */
+export const publicSuppressionSchema = z.strictObject({
+  factorCode: z.enum(SUPPRESSIBLE_FACTOR_CODES),
+  publicReason: z.string().max(300),
+  at: isoDateTimeSchema,
+});
+export type PublicSuppression = z.infer<typeof publicSuppressionSchema>;
+
+/**
+ * A staff-managed public label (label:manage). It identifies an address; it is not
+ * a risk factor and contributes nothing to the band.
+ */
+export const publicLabelSchema = z.strictObject({
+  id: z.string(),
+  text: z.string().max(60),
+  provenance: z.enum(['moderator_finding', 'external_source']),
+  /** Named source for external labels; null for staff-verified labels. */
+  sourceName: z.string().max(80).nullable(),
+  addedAt: isoDateTimeSchema,
+});
+export type PublicLabel = z.infer<typeof publicLabelSchema>;
+
+/**
+ * A published right-of-reply response (moderation §9). Plain text, moderated for safety
+ * only. It records time-bound control, not identity: "a party that proved control of
+ * this address/domain on <standingProvenAt>".
+ */
+export const subjectResponseSchema = z.strictObject({
+  id: z.string(),
+  summary: z.string().max(5000),
+  standing: z.enum(['wallet_signature', 'authority_signature', 'dns_txt', 'documentary']),
+  standingProvenAt: isoDateTimeSchema,
+  publishedAt: isoDateTimeSchema,
+});
+export type SubjectResponse = z.infer<typeof subjectResponseSchema>;
+
 /**
  * Capability facts shown as context with ZERO risk contribution in V1 (PRD glossary
  * "Disclosure"; ADR 0005 item 4). None of these codes is a risk factor code.
@@ -102,6 +145,8 @@ export const publicAssessmentSchema = z.strictObject({
   asOf: isoDateTimeSchema,
   rulesetVersion: z.string(),
   disputeState: disputeStateSchema,
+  /** Audited suppressions affecting this assessment, with their public reason. */
+  suppressions: z.array(publicSuppressionSchema),
 });
 export type PublicAssessment = z.infer<typeof publicAssessmentSchema>;
 
@@ -164,7 +209,12 @@ export const timelineEventSchema = z.strictObject({
     'finding_superseded',
     'appeal_filed',
     'finding_suspended',
+    'finding_reinstated',
+    'finding_reversed',
     'appeal_decided',
+    'response_published',
+    'signal_suppressed',
+    'suppression_lifted',
   ]),
   label: z.string(),
   at: isoDateTimeSchema,
@@ -185,7 +235,11 @@ export const addressResearchSchema = z.strictObject({
   facts: z.array(chainFactSchema),
   /** Capability context. Never part of `assessment.factors`. */
   disclosures: z.array(disclosureSchema),
+  /** Staff-managed identification labels (never risk factors). */
+  labels: z.array(publicLabelSchema),
   findings: z.array(findingSummarySchema),
+  /** Published right-of-reply responses from parties with standing. */
+  responses: z.array(subjectResponseSchema),
   transfers: z.array(transferSchema),
   evidence: z.array(evidenceItemSchema),
   timeline: z.array(timelineEventSchema),

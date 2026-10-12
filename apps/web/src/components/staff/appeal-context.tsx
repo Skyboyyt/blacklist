@@ -2,15 +2,9 @@ import type { CaseDetail } from '@blacklist/contracts';
 import { Badge } from '@/components/ui/badge';
 import { formatDateUtc } from '@/lib/format/date';
 import { SEVERITY_LABEL } from '@/lib/staff/copy';
+import { STANDING_MECHANISM_LABEL as MECHANISM } from './case-type-context';
 
 type Appeal = Extract<CaseDetail, { type: 'appeal_review' }>;
-
-const MECHANISM = {
-  signature: 'Fresh wallet signature',
-  authority_signature: 'Authority signature',
-  dns_txt: 'DNS record',
-  documentary: 'Staff-reviewed documents',
-} as const;
 
 /** The decision under appeal, the appellant's grounds and the standing decision. */
 export function AppealContext({ appeal }: { readonly appeal: Appeal }) {

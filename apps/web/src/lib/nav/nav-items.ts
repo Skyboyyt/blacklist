@@ -28,6 +28,7 @@ export const PRIMARY_NAV: NavSection = {
   items: [
     { href: '/search', label: 'Research', icon: 'search', matchPrefix: '/search' },
     { href: '/projects', label: 'Projects', icon: 'projects', matchPrefix: '/project' },
+    { href: '/scoreboard', label: 'Risk ranking', icon: 'projects' },
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { href: '/reports', label: 'Reports', icon: 'reports', matchPrefix: '/reports' },
     { href: '/appeals/new', label: 'Appeals & responses', icon: 'appeals', matchPrefix: '/appeals' },
@@ -56,7 +57,8 @@ export const STAFF_NAV: NavSection = {
     { href: '/mod', label: 'Review dashboard', icon: 'shield' },
     { href: '/mod/approvals', label: 'Approvals', icon: 'shield' },
     { href: '/mod/appeals', label: 'Appeal reviews', icon: 'shield' },
-    { href: '/admin/audit', label: 'Audit history', icon: 'book' },
+    { href: '/mod/findings', label: 'Published findings', icon: 'shield' },
+    { href: '/admin', label: 'Administration', icon: 'settings', matchPrefix: '/admin' },
   ],
 };
 
@@ -70,7 +72,7 @@ function staffNavFor(viewer: Viewer): NavSection {
   if (viewer.role === 'appeal_reviewer') {
     return { ...STAFF_NAV, items: STAFF_NAV.items.filter((i) => i.href === '/mod/appeals') };
   }
-  const items = STAFF_NAV.items.filter((i) => i.href !== '/admin/audit' || viewer.role === 'admin');
+  const items = STAFF_NAV.items.filter((i) => i.href !== '/admin' || viewer.role === 'admin');
   return { ...STAFF_NAV, items };
 }
 

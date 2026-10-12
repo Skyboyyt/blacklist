@@ -94,6 +94,8 @@ describe('queue', () => {
       openAppeals: 2,
       openCorrections: 2,
       openSuggestions: 0,
+      openResponses: 0,
+      openSuspensionReviews: 0,
       unassigned: 5,
       pendingApprovals: 3,
     });

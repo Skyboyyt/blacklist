@@ -142,7 +142,9 @@ describe('project detail', () => {
   it('shows findings with dispute state, responses with standing, and history', () => {
     render(<ProjectDetailView project={project('demo-rewards-hub')} viewer={member} />);
     expect(screen.getAllByText('Disputed — under appeal').length).toBeGreaterThan(0);
-    expect(screen.getByText(/Standing: Staff-reviewed documents/)).toBeInTheDocument();
+    expect(screen.getByText(/proved standing for this project/)).toHaveTextContent(
+      /Staff-reviewed documents/,
+    );
     expect(screen.getByText('Appeal filed by the project (documentary standing)')).toBeInTheDocument();
   });
 

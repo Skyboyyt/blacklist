@@ -10,5 +10,5 @@ export { DEMO_EXAMPLES } from './fixtures/examples';
 export { mockAccountApi, mockStaffSecurityApi } from './account-api';
 export { mockAuthApi, mockHumanVerifier } from './auth-api';
 export { handleMockRpc } from './rpc-server';
-export { mockMemberApi, mockModerationApi, resetMockSession } from './rpc-client';
+export { mockAdminApi, mockMemberApi, mockModerationApi, resetMockSession } from './rpc-client';
 export { createMockResearchApi } from './research-api';

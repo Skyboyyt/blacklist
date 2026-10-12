@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { DataCard } from '@/components/app/data-card';
 import { PageHeader } from '@/components/app/page-header';
-import { NotAvailableYet } from '@/components/states/not-available';
 import { AppealForm } from '@/components/submissions/appeal-form';
 
 export const metadata: Metadata = { title: 'Appeals & responses' };
@@ -20,7 +19,7 @@ const OPTIONS = [
   },
   {
     title: 'Respond as the subject',
-    text: 'Add a public response to a finding without disputing it. The same standing routes apply.',
+    text: 'Add a public, plain-text response without disputing a finding: open the address or project page and choose “Respond as the subject”. The same standing routes apply, and staff check it for safety before it is published.',
   },
   {
     title: 'Request a correction',
@@ -60,7 +59,6 @@ export default async function AppealsPage({ searchParams }: PageProps) {
           </DataCard>
         ))}
       </div>
-      <NotAvailableYet feature="Public subject responses" icon="appeals" />
     </div>
   );
 }

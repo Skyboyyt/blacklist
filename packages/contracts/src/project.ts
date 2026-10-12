@@ -16,8 +16,13 @@
  * Strict objects reject unknown fields.
  */
 import { z } from './zod.ts';
-import { chainSlugSchema, disputeStateSchema, isoDateTimeSchema } from './common.ts';
-import { disclosureSchema, findingSummarySchema, publicAssessmentSchema } from './research.ts';
+import { assessmentBandSchema, chainSlugSchema, disputeStateSchema, isoDateTimeSchema } from './common.ts';
+import {
+  disclosureSchema,
+  findingSummarySchema,
+  publicAssessmentSchema,
+  subjectResponseSchema,
+} from './research.ts';
 
 export const PROJECT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const projectSlugSchema = z.string().min(2).max(64).regex(PROJECT_SLUG_PATTERN);
@@ -89,12 +94,7 @@ export const officialDomainSchema = z.strictObject({
 export type OfficialDomain = z.infer<typeof officialDomainSchema>;
 
 /** A published response from the subject, with the standing mechanism that admitted it (moderation §6). */
-export const projectResponseSchema = z.strictObject({
-  id: z.string(),
-  summary: z.string().max(1000),
-  standing: z.enum(['wallet_signature', 'authority_signature', 'dns_txt', 'documentary']),
-  publishedAt: isoDateTimeSchema,
-});
+export const projectResponseSchema = subjectResponseSchema;
 export type ProjectResponse = z.infer<typeof projectResponseSchema>;
 
 /** Public project history (PRD §5.17). Reports, drafts and moderation-internal events have no kind. */
@@ -223,3 +223,57 @@ export const projectDirectoryResponseSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('provider_unavailable'), retryAfterSeconds: z.number().int().positive() }),
 ]);
 export type ProjectDirectoryResponse = z.infer<typeof projectDirectoryResponseSchema>;
+
+/**
+ * Band ranking of reviewed projects (ADR 0012, accepted band-only). There is no numeric
+ * score anywhere (P-11): a project's band is the highest band among its official
+ * addresses (on the selected network, when one is chosen). Projects in the same band
+ * share a rank and are listed A–Z. Missing, stale or unreliable data is never ranked as
+ * low risk: such projects are listed separately as not ranked, with the reason.
+ */
+export const scoreboardRequestSchema = z.strictObject({ chain: chainSlugSchema.optional() });
+export type ScoreboardRequest = z.infer<typeof scoreboardRequestSchema>;
+
+export const scoreboardEntrySchema = z.strictObject({
+  /** 1 + the number of ranked projects in higher bands. Shared by every project in the band. */
+  rank: z.number().int().min(1),
+  /** Another project shares this rank (shown as "2="). */
+  tied: z.boolean(),
+  slug: projectSlugSchema,
+  name: z.string().min(1).max(80),
+  category: projectCategorySchema,
+  networks: z.array(chainSlugSchema).min(1),
+  band: assessmentBandSchema.exclude(['not_assessed']),
+  /** The official address whose assessment sets the band. */
+  decidingAddress: z.strictObject({
+    chain: chainSlugSchema,
+    address: z.string(),
+    displayAddress: z.string(),
+  }),
+  /** How many of the considered official addresses are assessed. */
+  basedOn: z.strictObject({ assessed: z.number().int().min(1), total: z.number().int().min(1) }),
+  disputeState: disputeStateSchema,
+  freshness: z.enum(['current', 'partial']),
+  lastReviewedAt: isoDateTimeSchema,
+});
+export type ScoreboardEntry = z.infer<typeof scoreboardEntrySchema>;
+
+export const scoreboardNotRankedReasonSchema = z.enum([
+  'stale_profile',
+  'assessment_unavailable',
+  'suspended_finding',
+  'not_assessed',
+  'low_confidence',
+  'no_official_addresses',
+]);
+export type ScoreboardNotRankedReason = z.infer<typeof scoreboardNotRankedReasonSchema>;
+
+export const scoreboardResponseSchema = z.strictObject({
+  /** The most recent assessment time among the ranked projects ("as of"). */
+  asOf: isoDateTimeSchema.nullable(),
+  ranked: z.array(scoreboardEntrySchema),
+  notRanked: z.array(
+    z.strictObject({ slug: projectSlugSchema, name: z.string(), reason: scoreboardNotRankedReasonSchema }),
+  ),
+});
+export type ScoreboardResponse = z.infer<typeof scoreboardResponseSchema>;

@@ -6,6 +6,7 @@ export const KIND_LABEL: Readonly<Record<SubmissionKind, string>> = {
   project_suggestion: 'Project suggestion',
   correction: 'Correction request',
   appeal: 'Appeal',
+  response: 'Response',
 };
 
 /** Shown to the submitter only, never on a public page. */
@@ -27,6 +28,8 @@ export function submissionHref(kind: SubmissionKind, id: string): string {
       return `/corrections/${id}`;
     case 'appeal':
       return `/appeals/${id}`;
+    case 'response':
+      return `/responses/${id}`;
   }
 }
 

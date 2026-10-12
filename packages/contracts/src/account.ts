@@ -124,3 +124,21 @@ export type PasswordChangeForm = z.infer<typeof passwordChangeFormSchema>;
 
 export const emailChangeRequestSchema = z.strictObject({ newEmail: emailSchema });
 export type EmailChangeRequest = z.infer<typeof emailChangeRequestSchema>;
+
+/** The minimal private profile (PRD §5.3): handle and display name. Not public in V1. */
+export const profileSchema = z.strictObject({
+  handle: z.string(),
+  displayName: z.string().max(50).nullable(),
+  updatedAt: isoDateTimeSchema,
+});
+export type Profile = z.infer<typeof profileSchema>;
+
+/** Only the display name can be changed in V1; the handle is fixed at registration. */
+export const profileUpdateSchema = z.strictObject({
+  displayName: z
+    .string()
+    .trim()
+    .max(50, 'Use at most 50 characters.')
+    .refine((v) => !/[<>]/.test(v), 'Angle brackets are not allowed.'),
+});
+export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;

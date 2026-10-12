@@ -11,9 +11,14 @@ import {
   appealRequestSchema,
   correctionRequestSchema,
   infoResponseSchema,
+  profileUpdateSchema,
   reportRequestSchema,
+  responseRequestSchema,
   suggestionRequestSchema,
   type AuditEntry,
+  type ResponseTargetRef,
+  type StandingProof,
+  type StandingRecord,
   type CaseDetail,
   type EvidenceFile,
   type MemberSubmissionDetail,
@@ -53,17 +58,30 @@ const STATUS_LABEL: Readonly<Record<string, string>> = {
   reversed: 'Decided: finding reversed',
   accepted_into_profile: 'Accepted: profile published',
   not_accepted: 'Not accepted',
+  published: 'Published',
 };
-const KIND_OF: Readonly<Record<CaseDetail['type'], SubmissionKind>> = {
+/** Member submission kinds. Suspension reviews are staff-only and never owned by a member. */
+const KIND_OF: Readonly<Partial<Record<CaseDetail['type'], SubmissionKind>>> = {
   report_review: 'report',
   project_suggestion: 'project_suggestion',
   correction_request: 'correction',
   appeal_review: 'appeal',
+  subject_response: 'response',
 };
 const WITHDRAWABLE: Readonly<Partial<Record<CaseDetail['type'], readonly string[]>>> = {
   report_review: ['submitted', 'screening', 'queued', 'in_review', 'needs_info'],
   appeal_review: ['submitted', 'in_review'],
+  subject_response: ['submitted', 'in_review'],
 };
+const SIMULATED_SCOPE = {
+  signature:
+    'SIMULATED in the demo: a fresh signature would prove control of the address at signing time only.',
+  authority: (role: string) =>
+    `SIMULATED in the demo: a signature by the ${role.replaceAll('_', ' ')} plus a finalized chain read would prove control of that on-chain authority at that block only.`,
+  dns: (domain: string) =>
+    `SIMULATED in the demo: a DNS TXT check on ${domain} would prove control of the domain at check time only.`,
+} as const;
+type SubjectKind = 'wallet' | 'contract' | 'token' | 'unknown' | 'project';
 
 interface Issues {
   readonly issues: readonly { readonly path: readonly PropertyKey[]; readonly message: string }[];
@@ -95,6 +113,83 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
   function handle(): string | null {
     const viewer = VIEWER_FIXTURES[currentViewerKey(options.cookies())];
     return viewer.kind === 'signed_in' ? viewer.handle : null;
+  }
+
+  /** An administrator suspended this member (user:suspend); they can read but not submit. */
+  const suspended = (me: string) => store.members.some((m) => m.handle === me && m.status === 'suspended');
+  const suspendedError = { kind: 'error', code: 'account_suspended' } as const;
+
+  /**
+   * Standing for an appeal or response (moderation §6.2), checked against the subject:
+   * a control signature for wallets, an authority signature for contracts and tokens,
+   * DNS for a project's official domains, documents for anyone. Simulated checks are
+   * granted and say SIMULATED; documentary standing waits for a staff standing reviewer.
+   */
+  function standingFor(
+    s: StandingProof,
+    subjectKind: SubjectKind,
+    domains: readonly string[] | null,
+  ): { ok: true; record: StandingRecord } | { ok: false; field: string; message: string } {
+    const decidedAt = at();
+    switch (s.mechanism) {
+      case 'documentary':
+        return {
+          ok: true,
+          record: { mechanism: 'documentary', outcome: 'pending', scopeStatement: s.explanation, decidedAt },
+        };
+      case 'signature':
+        if (subjectKind === 'contract' || subjectKind === 'token' || subjectKind === 'project') {
+          return {
+            ok: false,
+            field: 'standing',
+            message: 'A contract or token cannot sign. Use an authority signature or documents.',
+          };
+        }
+        return {
+          ok: true,
+          record: {
+            mechanism: 'signature',
+            outcome: 'granted',
+            scopeStatement: SIMULATED_SCOPE.signature,
+            decidedAt,
+          },
+        };
+      case 'authority_signature':
+        if (subjectKind !== 'contract' && subjectKind !== 'token') {
+          return {
+            ok: false,
+            field: 'standing',
+            message:
+              'Authority signatures are for contracts and tokens. Use a control signature or documents.',
+          };
+        }
+        return {
+          ok: true,
+          record: {
+            mechanism: 'authority_signature',
+            outcome: 'granted',
+            scopeStatement: SIMULATED_SCOPE.authority(s.authorityRole),
+            decidedAt,
+          },
+        };
+      case 'dns_txt':
+        if (domains !== null && !domains.includes(s.domain)) {
+          return {
+            ok: false,
+            field: 'standing.domain',
+            message: 'Use one of the profile’s official domains.',
+          };
+        }
+        return {
+          ok: true,
+          record: {
+            mechanism: 'dns_txt',
+            outcome: 'granted',
+            scopeStatement: SIMULATED_SCOPE.dns(s.domain),
+            decidedAt,
+          },
+        };
+    }
   }
 
   function record(caseId: string, action: AuditEntry['action'], changes: AuditEntry['changes'] = []): void {
@@ -160,6 +255,10 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
         return `/appeals/${c.id}`;
       case 'correction_request':
         return `/corrections/${c.id}`;
+      case 'subject_response':
+        return `/responses/${c.id}`;
+      case 'suspension_review':
+        return '/dashboard';
     }
   }
 
@@ -174,13 +273,13 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
   function owned(id: string): CaseDetail | null {
     const me = handle();
     const c = store.cases.get(id);
-    return c && me && store.owners.get(id) === me ? c : null;
+    return c && me && store.owners.get(id) === me && KIND_OF[c.type] ? c : null;
   }
 
   function summaryOf(c: CaseDetail): MemberSubmissionSummary {
     return {
       id: c.id,
-      kind: KIND_OF[c.type],
+      kind: KIND_OF[c.type] ?? 'report',
       title: c.title,
       status: STATUS_LABEL[c.status] ?? c.status,
       submittedAt: c.submittedAt,
@@ -188,7 +287,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       needsAction:
         c.status === 'needs_info' ||
         c.status === 'needs_information' ||
-        (c.type === 'appeal_review' && c.standing.outcome === 'denied'),
+        ((c.type === 'appeal_review' || c.type === 'subject_response') && c.standing.outcome === 'denied'),
     };
   }
 
@@ -227,6 +326,17 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
             value: `${c.standing.mechanism}: ${c.standing.outcome}. ${c.standing.scopeStatement}`,
           },
         ];
+      case 'subject_response':
+        return [
+          { label: 'Subject', value: subject },
+          { label: 'Your response (published as plain text if approved)', value: c.body },
+          {
+            label: 'Standing',
+            value: `${c.standing.mechanism}: ${c.standing.outcome}. ${c.standing.scopeStatement}`,
+          },
+        ];
+      case 'suspension_review':
+        return [];
     }
   }
 
@@ -240,7 +350,9 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       else if (
         e.action === 'case_status_changed' ||
         e.action === 'appeal_decided' ||
-        e.action === 'correction_decided'
+        e.action === 'correction_decided' ||
+        e.action === 'response_decided' ||
+        e.action === 'standing_decided'
       ) {
         const status = e.changes.find((ch) => ch.field === 'status')?.to;
         const standing = e.changes.find((ch) => ch.field === 'standing')?.to;
@@ -265,6 +377,11 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       return c.status === 'accepted' && c.subject.kind === 'project' ? `/project/${c.subject.slug}` : null;
     if (c.type === 'appeal_review' && c.subject.kind === 'address')
       return `/address/${c.subject.chain}/${c.subject.address}`;
+    if (c.type === 'subject_response' && c.status === 'published') {
+      return c.subject.kind === 'address'
+        ? `/address/${c.subject.chain}/${c.subject.address}`
+        : `/project/${c.subject.slug}`;
+    }
     return null;
   }
 
@@ -286,6 +403,47 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
   }
 
   const signIn = { kind: 'error', code: 'sign_in_required' } as const;
+
+  /** A response target as the store knows it: the case subject, kind, title and official domains. */
+  function resolveTarget(target: ResponseTargetRef): {
+    ref: ResponseTargetRef;
+    subject: CaseDetail['subject'];
+    kind: SubjectKind;
+    title: string;
+    domains: string[] | null;
+  } | null {
+    if (target.kind === 'address') {
+      const value = target.chain === 'ethereum' ? target.address.toLowerCase() : target.address;
+      const a = store.addresses.find((x) => x.chain === target.chain && x.address === value);
+      if (!a) return null;
+      return {
+        ref: { kind: 'address', chain: a.chain, address: a.address },
+        subject: { kind: 'address', chain: a.chain, address: a.address, displayAddress: a.displayAddress },
+        kind: a.kind,
+        title: a.displayAddress,
+        domains: null,
+      };
+    }
+    const p = store.projects.find((x) => x.slug === target.slug);
+    if (!p) return null;
+    return {
+      ref: { kind: 'project', slug: p.slug },
+      subject: { kind: 'project', slug: p.slug, name: p.name },
+      kind: 'project',
+      title: p.name,
+      domains: p.domains.map((d) => d.hostname),
+    };
+  }
+
+  function openResponse(me: string, subject: CaseDetail['subject']): boolean {
+    return [...store.cases.values()].some(
+      (c) =>
+        c.type === 'subject_response' &&
+        store.owners.get(c.id) === me &&
+        ['submitted', 'in_review'].includes(c.status) &&
+        JSON.stringify(c.subject) === JSON.stringify(subject),
+    );
+  }
 
   return {
     async listSubmissions() {
@@ -310,6 +468,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       await wait();
       const me = handle();
       if (!me) return signIn;
+      if (suspended(me)) return suspendedError;
       const parsed = reportRequestSchema.safeParse(request);
       if (!parsed.success) return invalid(parsed.error);
       const r = parsed.data;
@@ -376,6 +535,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       await wait();
       const me = handle();
       if (!me) return signIn;
+      if (suspended(me)) return suspendedError;
       const parsed = suggestionRequestSchema.safeParse(request);
       if (!parsed.success) return invalid(parsed.error);
       const s = parsed.data;
@@ -410,6 +570,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       await wait();
       const me = handle();
       if (!me) return signIn;
+      if (suspended(me)) return suspendedError;
       const parsed = correctionRequestSchema.safeParse(request);
       if (!parsed.success) return invalid(parsed.error);
       const r = parsed.data;
@@ -468,6 +629,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       await wait();
       const me = handle();
       if (!me) return signIn;
+      if (suspended(me)) return suspendedError;
       const parsed = appealRequestSchema.safeParse(request);
       if (!parsed.success) return invalid(parsed.error);
       const r = parsed.data;
@@ -488,25 +650,11 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
           code: 'conflict',
           detail: 'You already have an open appeal against this finding.',
         };
-      const id = nextId(store, 'APL');
       const s = r.standing;
-      const standing =
-        s.mechanism === 'documentary'
-          ? {
-              mechanism: 'documentary' as const,
-              outcome: 'pending' as const,
-              scopeStatement: s.explanation,
-              decidedAt: at(),
-            }
-          : {
-              mechanism: s.mechanism === 'signature' ? ('signature' as const) : ('dns_txt' as const),
-              outcome: 'granted' as const,
-              scopeStatement:
-                s.mechanism === 'signature'
-                  ? 'SIMULATED in the demo: a fresh signature would prove control of the address at signing time only.'
-                  : `SIMULATED in the demo: a DNS TXT check on ${s.domain} would prove control of the domain at check time only.`,
-              decidedAt: at(),
-            };
+      const proof = standingFor(s, address.kind, null);
+      if (!proof.ok) return { kind: 'error', code: 'invalid', fieldErrors: { [proof.field]: proof.message } };
+      const standing = proof.record;
+      const id = nextId(store, 'APL');
       markUnderAppeal(store, r.findingId, at());
       return created(
         {
@@ -548,7 +696,9 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
 
     async respond(id, expectedVersion, response) {
       await wait();
-      if (!handle()) return signIn;
+      const me = handle();
+      if (!me) return signIn;
+      if (suspended(me)) return suspendedError;
       const c = owned(id);
       if (!c) return { kind: 'error', code: 'not_found' };
       if (c.version !== expectedVersion) {
@@ -564,7 +714,8 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
         needs_info: 'in_review',
         needs_information: 'submitted',
       };
-      const deniedStanding = c.type === 'appeal_review' && c.standing.outcome === 'denied';
+      const deniedStanding =
+        (c.type === 'appeal_review' || c.type === 'subject_response') && c.standing.outcome === 'denied';
       const next = reopen[c.status];
       if (!next && !deniedStanding) {
         return {
@@ -579,11 +730,17 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
         ...images(
           parsed.data.evidence,
           `${id}-r${c.submitterMessages.length}`,
-          c.type === 'appeal_review' ? 'appellant' : 'requester',
+          c.type === 'appeal_review'
+            ? 'appellant'
+            : c.type === 'subject_response'
+              ? 'responder'
+              : 'requester',
         ),
       );
       if (next) Object.assign(c, { status: next });
-      if (deniedStanding && c.type === 'appeal_review') c.standing = { ...c.standing, outcome: 'pending' };
+      if (deniedStanding && (c.type === 'appeal_review' || c.type === 'subject_response')) {
+        c.standing = { ...c.standing, outcome: 'pending' };
+      }
       c.infoRequest = null;
       c.version += 1;
       c.lastActivityAt = at();
@@ -654,6 +811,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
           title: finding.title,
           summary: finding.summary,
           subject: { chain: address.chain, address: address.address },
+          subjectKind: address.kind,
           disputeState: finding.disputeState,
           alreadyAppealed,
         },
@@ -681,6 +839,103 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
           ].join('\n'),
         },
       };
+    },
+
+    async getResponseTarget(target) {
+      await wait();
+      const me = handle();
+      if (!me) return signIn;
+      const t = resolveTarget(target);
+      if (!t) return { kind: 'error', code: 'not_found' };
+      return {
+        kind: 'ok',
+        data: {
+          target: t.ref,
+          title: t.title,
+          subjectKind: t.kind,
+          domains: t.domains ?? [],
+          alreadyResponding: openResponse(me, t.subject),
+        },
+      };
+    },
+
+    async getResponseChallenge(target) {
+      await wait();
+      if (!handle()) return signIn;
+      const t = resolveTarget(target);
+      if (!t || t.subject.kind !== 'address') return { kind: 'error', code: 'not_found' };
+      store.seq += 1;
+      return {
+        kind: 'ok',
+        data: {
+          message: [
+            'blacklist.example wants you to prove control of this address.',
+            `Address: ${t.subject.displayAddress}`,
+            `Network: ${t.subject.chain}`,
+            'Purpose: standing for a public response',
+            'This signature does not authorize any transaction or token approval and costs nothing.',
+            `Nonce: demo${String(store.seq).padStart(8, '0')}`,
+            'Expires: 10 minutes after issue',
+          ].join('\n'),
+        },
+      };
+    },
+
+    async submitResponse(request) {
+      await wait();
+      const me = handle();
+      if (!me) return signIn;
+      if (suspended(me)) return suspendedError;
+      const parsed = responseRequestSchema.safeParse(request);
+      if (!parsed.success) return invalid(parsed.error);
+      const r = parsed.data;
+      const t = resolveTarget(r.target);
+      if (!t) return { kind: 'error', code: 'not_found' };
+      if (openResponse(me, t.subject)) {
+        return {
+          kind: 'error',
+          code: 'conflict',
+          detail: 'You already have a response under review for this subject.',
+        };
+      }
+      const proof = standingFor(r.standing, t.kind, t.domains);
+      if (!proof.ok) return { kind: 'error', code: 'invalid', fieldErrors: { [proof.field]: proof.message } };
+      const id = nextId(store, 'RSP');
+      return created(
+        {
+          ...base(id, `Response: ${t.title}`, 5),
+          type: 'subject_response',
+          status: 'submitted',
+          subject: t.subject,
+          chain: t.subject.kind === 'address' ? t.subject.chain : null,
+          responderRef: `Responder ${me === 'demo_member' ? 'P-1000' : 'P-1001'}`,
+          body: r.body,
+          standing: proof.record,
+          evidence:
+            r.standing.mechanism === 'documentary' ? images(r.standing.evidence, id, 'responder') : [],
+        },
+        me,
+        'Your response was received. Staff check it for safety before it is published; nothing is public yet.',
+      );
+    },
+
+    async getProfile() {
+      await wait();
+      const me = handle();
+      if (!me) return signIn;
+      const p = store.profiles.get(me) ?? { displayName: null, updatedAt: at() };
+      return { kind: 'ok', data: { handle: me, displayName: p.displayName, updatedAt: p.updatedAt } };
+    },
+
+    async updateProfile(update) {
+      await wait();
+      const me = handle();
+      if (!me) return signIn;
+      const parsed = profileUpdateSchema.safeParse(update);
+      if (!parsed.success) return invalid(parsed.error);
+      const displayName = parsed.data.displayName === '' ? null : parsed.data.displayName;
+      store.profiles.set(me, { displayName, updatedAt: at() });
+      return { kind: 'ok', data: { handle: me, displayName, updatedAt: at() } };
     },
   };
 }

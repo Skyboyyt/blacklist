@@ -15,6 +15,8 @@ export const DECISIONS_BY_STATE: Readonly<Record<CaseType, Readonly<Record<strin
   appeal_review: { submitted: ['start_review'], in_review: ['uphold', 'amend', 'reverse'] },
   correction_request: { submitted: ['start_review'], in_review: ['accept_correction', 'reject_correction'] },
   project_suggestion: { submitted: ['request_info', 'accept_suggestion', 'reject_suggestion'] },
+  subject_response: { submitted: ['start_review'], in_review: ['publish_response', 'reject_response'] },
+  suspension_review: { open: ['reinstate_finding', 'reverse_finding'] },
 };
 
 /** Decisions that need a fresh action-bound passkey step-up (identity §10.7). */
@@ -29,6 +31,10 @@ export const STEP_UP_DECISIONS: ReadonlySet<Action> = new Set([
   'reject_correction',
   'accept_suggestion',
   'reject_suggestion',
+  'publish_response',
+  'reject_response',
+  'reinstate_finding',
+  'reverse_finding',
 ]);
 
 export function decisionsFor(type: CaseType, status: string): readonly Action[] {
@@ -36,12 +42,13 @@ export function decisionsFor(type: CaseType, status: string): readonly Action[] 
 }
 
 /**
- * Decisions for a loaded case. Once an appeal is in review, a pending documentary
- * standing is decided first; the appeal itself can only be decided after standing is granted.
+ * Decisions for a loaded case. Once an appeal or response is in review, a pending
+ * documentary standing is decided first; the case itself can only be decided after
+ * standing is granted.
  */
 export function decisionsForCase(c: CaseDetail): readonly Action[] {
   const base = decisionsFor(c.type, c.status);
-  if (c.type !== 'appeal_review' || c.status !== 'in_review') return base;
+  if ((c.type !== 'appeal_review' && c.type !== 'subject_response') || c.status !== 'in_review') return base;
   if (c.standing.outcome === 'pending') return ['grant_standing', 'deny_standing'];
   return c.standing.outcome === 'granted' ? base : [];
 }
@@ -59,6 +66,12 @@ export function roleLimitFor(role: StaffRole, action: Action): string | null {
     !hasPermission(role, 'standing:decide')
   ) {
     return 'Standing decisions are made by moderators or administrators. The service will refuse it for your role.';
+  }
+  if (
+    (action === 'publish_response' || action === 'reject_response') &&
+    !hasPermission(role, 'response:moderate')
+  ) {
+    return 'Responses are moderated by moderators or administrators. The service will refuse it for your role.';
   }
   return null;
 }

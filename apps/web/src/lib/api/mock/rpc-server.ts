@@ -9,16 +9,22 @@
  */
 import { createMockMemberApi } from './member-api';
 import { createMockModerationApi } from './moderation-api';
-import { MEMBER_METHODS, MODERATION_METHODS } from './rpc-methods';
+import { createMockAdminApi } from './admin-api';
+import { ADMIN_METHODS, MEMBER_METHODS, MODERATION_METHODS } from './rpc-methods';
 import { resetStore, sessionIdFrom, storeFor } from './store';
 
 type RpcCall =
-  | { readonly service: 'moderation' | 'member'; readonly method: string; readonly args: readonly unknown[] }
+  | {
+      readonly service: 'moderation' | 'member' | 'admin';
+      readonly method: string;
+      readonly args: readonly unknown[];
+    }
   | { readonly service: 'session'; readonly method: 'reset'; readonly args: readonly unknown[] };
 
 const ALLOWED: Readonly<Partial<Record<string, readonly string[]>>> = {
   moderation: MODERATION_METHODS,
   member: MEMBER_METHODS,
+  admin: ADMIN_METHODS,
   session: ['reset'],
 };
 
@@ -32,7 +38,7 @@ function parseCall(body: unknown): RpcCall | null {
   if (Object.keys(body).length !== 3) return null;
   return service === 'session'
     ? { service, method: 'reset', args }
-    : { service: service as 'moderation' | 'member', method, args };
+    : { service: service as 'moderation' | 'member' | 'admin', method, args };
 }
 
 const json = (body: unknown, status = 200) =>
@@ -63,7 +69,11 @@ export async function handleMockRpc(request: Request): Promise<Response> {
   const store = storeFor(sessionId);
   const options = { cookies: () => cookieHeader, store };
   const service =
-    call.service === 'moderation' ? createMockModerationApi(options) : createMockMemberApi(options);
+    call.service === 'moderation'
+      ? createMockModerationApi(options)
+      : call.service === 'admin'
+        ? createMockAdminApi(options)
+        : createMockMemberApi(options);
   try {
     const method = (service as unknown as Record<string, Callable>)[call.method];
     if (!method) return json({ error: 'unknown_method' }, 400);

@@ -5,8 +5,9 @@
  * project.ts and stay structurally unable to carry internal notes, reporter data,
  * numeric scores or private evidence.
  *
- * Statuses come from the data model. Correction-request statuses are not specified
- * there; `correctionStatusSchema` is an interim set recorded as a documentation gap.
+ * Statuses come from the data model. Correction-request and subject-response statuses
+ * are not specified there; `correctionStatusSchema` and `responseStatusSchema` are
+ * interim sets recorded as documentation gaps.
  */
 import { z } from './zod.ts';
 import { assessmentBandSchema, chainSlugSchema, isoDateTimeSchema } from './common.ts';
@@ -26,6 +27,8 @@ export const caseTypeSchema = z.enum([
   'appeal_review',
   'correction_request',
   'project_suggestion',
+  'subject_response',
+  'suspension_review',
 ]);
 export type CaseType = z.infer<typeof caseTypeSchema>;
 
@@ -66,6 +69,17 @@ export const suggestionStatusSchema = z.enum([
   'not_accepted',
 ]);
 export type SuggestionStatus = z.infer<typeof suggestionStatusSchema>;
+
+/** INTERIM: `subject_responses.status` is unspecified in the data model (documentation gap). */
+export const responseStatusSchema = z.enum(['submitted', 'in_review', 'published', 'rejected', 'withdrawn']);
+export type ResponseStatus = z.infer<typeof responseStatusSchema>;
+
+/**
+ * Review of an emergency suspension (moderation §8.3): a non-participant reinstates or
+ * reverses the finding within 72 hours.
+ */
+export const suspensionReviewStatusSchema = z.enum(['open', 'reinstated', 'reversed']);
+export type SuspensionReviewStatus = z.infer<typeof suspensionReviewStatusSchema>;
 
 /** PRD §5.11 report categories. */
 export const reportCategorySchema = z.enum([
@@ -120,6 +134,12 @@ export const caseSummarySchema = z.discriminatedUnion('type', [
   z.strictObject({ ...caseCommon, type: z.literal('appeal_review'), status: appealStatusSchema }),
   z.strictObject({ ...caseCommon, type: z.literal('correction_request'), status: correctionStatusSchema }),
   z.strictObject({ ...caseCommon, type: z.literal('project_suggestion'), status: suggestionStatusSchema }),
+  z.strictObject({ ...caseCommon, type: z.literal('subject_response'), status: responseStatusSchema }),
+  z.strictObject({
+    ...caseCommon,
+    type: z.literal('suspension_review'),
+    status: suspensionReviewStatusSchema,
+  }),
 ]);
 export type CaseSummary = z.infer<typeof caseSummarySchema>;
 
@@ -140,7 +160,7 @@ const evidenceCommon = {
   id: z.string(),
   description: z.string().max(300),
   /** The submitting party's role in the case, never their identity. */
-  submittedBy: z.enum(['reporter', 'appellant', 'requester', 'staff']),
+  submittedBy: z.enum(['reporter', 'appellant', 'requester', 'responder', 'staff']),
   submittedAt: isoDateTimeSchema,
   state: evidenceStateSchema,
   visibility: z.enum(['staff_only', 'published']),
@@ -238,6 +258,30 @@ export const auditEntrySchema = z.strictObject({
     'appeal_decided',
     'correction_decided',
     'profile_revised',
+    'standing_decided',
+    'response_decided',
+    'finding_suspended',
+    'finding_reinstated',
+    'finding_reversed',
+    'admin_alert',
+    'staff_invitation_created',
+    'staff_invitation_approved',
+    'staff_invitation_revoked',
+    'staff_role_requested',
+    'staff_role_approved',
+    'staff_role_revoked',
+    'staff_suspended',
+    'staff_offboarded',
+    'staff_recovery_opened',
+    'staff_recovery_verified',
+    'staff_recovery_approved',
+    'staff_recovery_completed',
+    'user_suspended',
+    'user_restored',
+    'label_added',
+    'label_retired',
+    'signal_suppressed',
+    'suppression_lifted',
   ]),
   caseId: z.string().nullable(),
   /** Internal reason recorded with the action (staff-only). */
@@ -288,6 +332,7 @@ export const standingRecordSchema = z.strictObject({
   scopeStatement: z.string(),
   decidedAt: isoDateTimeSchema,
 });
+export type StandingRecord = z.infer<typeof standingRecordSchema>;
 
 /** One field of a proposed project-profile correction, shown as current vs proposed. */
 export const profileChangeSchema = z.strictObject({
@@ -363,6 +408,26 @@ export const caseDetailSchema = z.discriminatedUnion('type', [
     /** Slug of the profile created on acceptance. */
     resultingSlug: z.string().nullable(),
   }),
+  z.strictObject({
+    ...caseCommon,
+    ...detailCommon,
+    type: z.literal('subject_response'),
+    status: responseStatusSchema,
+    responderRef: z.string(),
+    /** The response text, shown and published as plain text only. */
+    body: z.string().max(5000),
+    standing: standingRecordSchema,
+  }),
+  z.strictObject({
+    ...caseCommon,
+    ...detailCommon,
+    type: z.literal('suspension_review'),
+    status: suspensionReviewStatusSchema,
+    suspendedFinding: appealedDecisionSchema,
+    suspendedBy: staffRefSchema,
+    /** Internal reason given when suspending. */
+    suspensionReason: z.string().max(2000),
+  }),
 ]);
 export type CaseDetail = z.infer<typeof caseDetailSchema>;
 
@@ -422,6 +487,17 @@ export const caseDecisionSchema = z.discriminatedUnion('action', [
     internalRationale: rationale,
   }),
   z.strictObject({ action: z.enum(['grant_standing', 'deny_standing']), internalRationale: rationale }),
+  z.strictObject({ action: z.literal('publish_response'), internalRationale: rationale }),
+  z.strictObject({
+    action: z.literal('reject_response'),
+    reason: submitterReasonSchema,
+    internalRationale: rationale,
+  }),
+  z.strictObject({
+    action: z.enum(['reinstate_finding', 'reverse_finding']),
+    publicSummary: publicText,
+    internalRationale: rationale,
+  }),
 ]);
 export type CaseDecision = z.infer<typeof caseDecisionSchema>;
 
@@ -467,6 +543,8 @@ export const queueCountsSchema = z.strictObject({
   openAppeals: z.number().int().min(0),
   openCorrections: z.number().int().min(0),
   openSuggestions: z.number().int().min(0),
+  openResponses: z.number().int().min(0),
+  openSuspensionReviews: z.number().int().min(0),
   unassigned: z.number().int().min(0),
   pendingApprovals: z.number().int().min(0),
 });
@@ -487,4 +565,26 @@ export const STATUSES_BY_TYPE = {
   appeal_review: appealStatusSchema.options,
   correction_request: correctionStatusSchema.options,
   project_suggestion: suggestionStatusSchema.options,
+  subject_response: responseStatusSchema.options,
+  suspension_review: suspensionReviewStatusSchema.options,
 } as const;
+
+/** A published or suspended finding, as staff see it for emergency suspension (moderation §8.3). */
+export const staffFindingSchema = z.strictObject({
+  findingId: z.string(),
+  title: z.string(),
+  severity: findingSeveritySchema,
+  subject: caseSubjectSchema,
+  author: staffRefSchema,
+  approver: staffRefSchema,
+  publishedAt: isoDateTimeSchema,
+  status: z.enum(['published', 'suspended']),
+  /** Open suspension review, when suspended. */
+  reviewCaseId: z.string().nullable(),
+});
+export type StaffFinding = z.infer<typeof staffFindingSchema>;
+
+export const suspensionRequestSchema = z.strictObject({
+  reason: rationale,
+});
+export type SuspensionRequest = z.infer<typeof suspensionRequestSchema>;

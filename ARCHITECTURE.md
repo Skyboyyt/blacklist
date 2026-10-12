@@ -282,10 +282,10 @@ request
 
 | Group | Routes (V1) | Access |
 |---|---|---|
-| `(public)` | `/`, `/search`, `/address/[chain]/[address]`, `/tx/[chain]/[hash]`, `/projects`, `/project/[slug]`, `/finding/[id]`, `/methodology`, `/terms`, `/privacy`, `/security` | Anyone |
+| `(public)` | `/`, `/search`, `/address/[chain]/[address]`, `/tx/[chain]/[hash]`, `/projects`, `/project/[slug]`, `/scoreboard` (band ranking, ADR 0012), `/finding/[id]`, `/methodology`, `/terms`, `/privacy`, `/security` | Anyone |
 | `(auth)` | `/login`, `/register`, `/register/complete`, `/forgot-password`, `/reset-password`, `/email-change/confirm`, `/staff/enroll`, `/staff/verify` | Token/flow pages per [identity design](docs/design/identity.md); tokens travel in URL fragments |
-| `(app)` | `/dashboard`, `/reports`, `/reports/new`, `/reports/[id]`, `/appeals/new`, `/appeals/[id]`, `/responses/new`, `/corrections/new`, `/corrections/[id]`, `/projects/suggest`, `/projects/suggestions/[id]` (ADR 0010 Part A), `/notifications`, `/settings/profile`, `/settings/security` (password, email, sessions) | Signed-in member or staff |
-| `(staff)` | `/mod`, `/mod/cases/[id]`, `/mod/approvals`, `/mod/appeals`, `/mod/standing`, `/admin`, `/admin/staff`, `/admin/users`, `/admin/projects`, `/admin/labels`, `/admin/signals`, `/admin/audit` | Staff session with WebAuthn assurance |
+| `(app)` | `/dashboard`, `/reports`, `/reports/new`, `/reports/[id]`, `/appeals/new`, `/appeals/[id]`, `/responses/new`, `/responses/[id]`, `/corrections/new`, `/corrections/[id]`, `/projects/suggest`, `/projects/suggestions/[id]` (ADR 0010 Part A), `/notifications`, `/settings/profile`, `/settings/security` (password, email, sessions) | Signed-in member or staff |
+| `(staff)` | `/mod`, `/mod/cases/[id]`, `/mod/approvals`, `/mod/appeals`, `/mod/findings` (emergency suspension), `/mod/standing`, `/admin`, `/admin/staff`, `/admin/users`, `/admin/projects`, `/admin/labels`, `/admin/signals`, `/admin/audit` | Staff session with WebAuthn assurance. In the frontend phases standing is decided in the case workspace (`/mod/cases/[id]`) and project profiles are managed through correction and suggestion cases, so `/mod/standing` and `/admin/projects` have no separate page yet |
 | Deferred | `/u/[handle]`, `/watchlists/*`, `/investigations/*`, `/trace/*`, `/graph/*`, `/leaderboard`, `/claims/*` | — |
 
 ### 6.2 Authentication integration
@@ -340,7 +340,7 @@ Indicative V1 endpoint groups:
 | Auth | `POST /auth/register/start`, `POST /auth/register/complete`, `POST /auth/login`, `POST /auth/logout`, `POST /auth/password/forgot`, `POST /auth/password/reset/challenge`, `POST /auth/password/reset`, `POST /auth/reauth`, `GET /auth/session` |
 | Staff auth | `POST /auth/staff/webauthn/challenge`, `POST /auth/staff/webauthn/verify`, `POST /auth/staff/stepup/challenge`, `POST /staff/enroll/*` |
 | Account | `GET/PATCH /me`, `GET /me/sessions`, `DELETE /me/sessions/:id`, `POST /me/sessions/revoke-others`, `POST /me/password`, `POST /me/email-change`, `POST /me/email-change/confirm` |
-| Research | `GET /search`, `GET /addresses/:chain/:address`, `…/transactions`, `…/assessment`, `…/assessment/history`, `GET /transactions/:chain/:hash`, `GET /projects` (directory: query, chain-scoped address match, category, findings status, sort, page), `GET /projects/:slug`, `GET /findings/:id` |
+| Research | `GET /search`, `GET /addresses/:chain/:address`, `…/transactions`, `…/assessment`, `…/assessment/history`, `GET /transactions/:chain/:hash`, `GET /projects` (directory: query, chain-scoped address match, category, findings status, sort, page), `GET /projects/:slug`, `GET /projects/scoreboard` (band-only, ADR 0012), `GET /findings/:id` |
 | Reports | `POST /reports`, `PATCH /reports/:id`, `POST /reports/:id/evidence`, `POST /reports/:id/submit`, `POST /reports/:id/withdraw`, `GET /me/reports` |
 | Redress | `POST /standing/challenges`, `POST /standing/claims`, `POST /subjects/:id/responses`, `POST /findings/:id/appeals`, `POST /corrections` |
 | Notifications | `GET /me/notifications`, `POST /me/notifications/read` |
@@ -1310,7 +1310,7 @@ Rev-2 changes are marked; superseded wording is retained for history.
 
 **Phase order change (owner decision, 2026-10-12):** the Staff UI is built as Phase 4 and the Reporting & Redress UI as Phase 5, swapping the original order. Staff screens run on mock cases that stand in for member submissions until Phase 5 builds the member side. The phase contents and exit criteria are unchanged.
 
-**Phase 5 brief (owner, 2026-10-12):** run as "Frontend Completion and Integration Validation": the Reporting & Redress scope above, plus connected member↔staff journeys on a shared mock store, a requirements checklist ([docs/frontend-requirements-checklist.md](docs/frontend-requirements-checklist.md)) and backend integration contracts ([docs/design/api-integration-contracts.md](docs/design/api-integration-contracts.md)). The WCAG 2.2 AA audit stays in Phase 6. Items of Phases 4–5 above that were not built (emergency suspension, the admin console beyond the audit viewer, public subject responses, the authority standing mechanism, real upload processing states) are listed in the checklist and `AI_HANDOFF.md`.
+**Phase 5 brief (owner, 2026-10-12):** run as "Frontend Completion and Integration Validation": the Reporting & Redress scope above, plus connected member↔staff journeys on a shared mock store, a requirements checklist ([docs/frontend-requirements-checklist.md](docs/frontend-requirements-checklist.md)) and backend integration contracts ([docs/design/api-integration-contracts.md](docs/design/api-integration-contracts.md)). The WCAG 2.2 AA audit stays in Phase 6. A follow-up in the same phase (owner, 2026-10-12) built the remaining items: emergency suspension, the admin console (staff lifecycle, members, labels, suppressions), public subject responses, authority-signature standing and minimal profile settings. Real upload processing states remain Phase 7 (ADR 0004).
 
 **Frontend-first rules:**
 

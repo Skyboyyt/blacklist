@@ -11,6 +11,8 @@
 import {
   PROJECT_CATEGORIES,
   type AddressResearch,
+  type AdminLabel,
+  type SuppressibleFactorCode,
   type CaseDetail,
   type FindingRevision,
   type ProjectCategory,
@@ -152,6 +154,7 @@ export function applyAppealOutcome(
   const address = addressWithFinding(store, findingId);
   if (!address) return;
   if (outcome === 'reversed') {
+    store.suspended.delete(findingId);
     const factorId = store.findingFactors.get(findingId);
     address.findings = address.findings.filter((f) => f.id !== findingId);
     address.assessment.factors = address.assessment.factors.filter((f) => f.id !== factorId);
@@ -292,4 +295,208 @@ export function createProjectFromSuggestion(
     freshness: { state: 'current', note: null },
   });
   return slug;
+}
+
+const SUSPENDED_TITLE = 'Temporarily suspended pending review';
+const SUSPENDED_SUMMARY =
+  'This finding is suspended while a reviewer who did not take part in it re-examines it. It does not count toward the assessment meanwhile.';
+
+/**
+ * Emergency suspension (moderation §8.3): the finding shows only "Temporarily suspended
+ * pending review", its factor stops counting and a new assessment is produced. The
+ * original public text and factor are kept to restore on reinstatement.
+ */
+export function suspendFinding(store: MockStore, findingId: string, now: string): boolean {
+  const address = addressWithFinding(store, findingId);
+  const finding = address?.findings.find((f) => f.id === findingId);
+  if (!address || !finding || finding.disputeState === 'suspended_pending_review') return false;
+  const factorId = store.findingFactors.get(findingId);
+  const factor = address.assessment.factors.find((f) => f.id === factorId) ?? null;
+  store.suspended.set(findingId, { finding: structuredClone(finding), factor });
+  address.findings = address.findings.map((f) =>
+    f.id === findingId
+      ? { ...f, title: SUSPENDED_TITLE, summary: SUSPENDED_SUMMARY, disputeState: 'suspended_pending_review' }
+      : f,
+  );
+  address.assessment.factors = address.assessment.factors.filter((f) => f.id !== factorId);
+  address.timeline.push({
+    id: `${findingId}-suspended-${now}`,
+    kind: 'finding_suspended',
+    label: SUSPENDED_TITLE,
+    at: now,
+    actor: 'moderator',
+  });
+  setDispute(address);
+  recomputeAssessment(address, now);
+  return true;
+}
+
+/** A non-participant reinstated the suspended finding: public text and factor return. */
+export function reinstateFinding(
+  store: MockStore,
+  findingId: string,
+  publicSummary: string,
+  now: string,
+): void {
+  const address = addressWithFinding(store, findingId);
+  const saved = store.suspended.get(findingId);
+  if (!address || !saved) return;
+  store.suspended.delete(findingId);
+  const appealed = hasOpenAppeal(store, findingId);
+  address.findings = address.findings.map((f) =>
+    f.id === findingId ? { ...saved.finding, disputeState: appealed ? 'under_appeal' : 'none' } : f,
+  );
+  if (saved.factor) address.assessment.factors = [...address.assessment.factors, saved.factor];
+  address.timeline.push({
+    id: `${findingId}-reinstated-${now}`,
+    kind: 'finding_reinstated',
+    label: `Finding reinstated after review. ${publicSummary}`,
+    at: now,
+    actor: 'moderator',
+  });
+  setDispute(address);
+  recomputeAssessment(address, now);
+}
+
+/** A non-participant reversed the suspended finding (§8.2): it is removed; the history keeps why. */
+export function reverseSuspendedFinding(
+  store: MockStore,
+  findingId: string,
+  publicSummary: string,
+  now: string,
+): void {
+  const address = addressWithFinding(store, findingId);
+  if (!address) return;
+  store.suspended.delete(findingId);
+  address.findings = address.findings.filter((f) => f.id !== findingId);
+  address.timeline.push({
+    id: `${findingId}-reversed-${now}`,
+    kind: 'finding_reversed',
+    label: `Finding reversed after review. ${publicSummary}`,
+    at: now,
+    actor: 'moderator',
+  });
+  setDispute(address);
+  recomputeAssessment(address, now);
+}
+
+const RESPONSE_STANDING = {
+  signature: 'wallet_signature',
+  authority_signature: 'authority_signature',
+  dns_txt: 'dns_txt',
+  documentary: 'documentary',
+} as const;
+
+/** Publishes an approved right-of-reply response as plain text on the subject's public page. */
+export function publishResponse(
+  store: MockStore,
+  c: Extract<CaseDetail, { type: 'subject_response' }>,
+  now: string,
+): void {
+  const response = {
+    id: `resp-${c.id}`,
+    summary: c.body,
+    standing: RESPONSE_STANDING[c.standing.mechanism],
+    standingProvenAt: c.standing.decidedAt,
+    publishedAt: now,
+  };
+  const subject = c.subject;
+  if (subject.kind === 'address') {
+    const address = findAddress(store, subject.chain, subject.address);
+    if (!address) return;
+    address.responses = [...address.responses, response];
+    address.timeline.push({
+      id: `${c.id}-published`,
+      kind: 'response_published',
+      label: 'A response from a party with standing was published',
+      at: now,
+      actor: 'subject',
+    });
+  } else {
+    const project = store.projects.find((p) => p.slug === subject.slug);
+    if (!project) return;
+    project.responses = [...project.responses, response];
+    project.history = [
+      ...project.history,
+      {
+        id: `${c.id}-published`,
+        kind: 'response_published',
+        label: 'A response from a party with standing was published',
+        at: now,
+        actor: 'subject',
+      },
+    ];
+    project.updatedAt = now;
+  }
+}
+
+/** Adds or removes a staff-managed public label on the address record. Labels never affect the band. */
+export function syncLabel(store: MockStore, label: AdminLabel): void {
+  const address = findAddress(store, label.subject.chain, label.subject.address);
+  if (!address) return;
+  address.labels = address.labels.filter((l) => l.id !== label.id);
+  if (label.status === 'active') {
+    address.labels.push({
+      id: label.id,
+      text: label.text,
+      provenance: label.provenance,
+      sourceName: label.sourceName,
+      addedAt: label.createdAt,
+    });
+  }
+}
+
+/**
+ * An audited suppression of an analysis factor: the factor stops counting, the band is
+ * recomputed, and the public assessment shows the suppression with its reason.
+ * Returns the removed factor, or null when the address does not carry it.
+ */
+export function applySuppression(
+  store: MockStore,
+  chain: string,
+  addr: string,
+  factorCode: SuppressibleFactorCode,
+  publicReason: string,
+  now: string,
+): RiskFactor | null {
+  const address = findAddress(store, chain, addr);
+  const factor = address?.assessment.factors.find((f) => f.code === factorCode);
+  if (!address || !factor) return null;
+  address.assessment.factors = address.assessment.factors.filter((f) => f !== factor);
+  address.assessment.suppressions = [
+    ...address.assessment.suppressions,
+    { factorCode, publicReason, at: now },
+  ];
+  address.timeline.push({
+    id: `${chain}-${addr}-suppressed-${now}`,
+    kind: 'signal_suppressed',
+    label: `An indicator was suppressed by staff. ${publicReason}`,
+    at: now,
+    actor: 'moderator',
+  });
+  recomputeAssessment(address, now);
+  return factor;
+}
+
+export function liftSuppression(
+  store: MockStore,
+  chain: string,
+  addr: string,
+  factor: RiskFactor,
+  now: string,
+): void {
+  const address = findAddress(store, chain, addr);
+  if (!address) return;
+  address.assessment.factors = [...address.assessment.factors, factor];
+  address.assessment.suppressions = address.assessment.suppressions.filter(
+    (s) => s.factorCode !== factor.code,
+  );
+  address.timeline.push({
+    id: `${chain}-${addr}-lifted-${now}`,
+    kind: 'suppression_lifted',
+    label: 'A suppression was lifted; the indicator counts again',
+    at: now,
+    actor: 'moderator',
+  });
+  recomputeAssessment(address, now);
 }

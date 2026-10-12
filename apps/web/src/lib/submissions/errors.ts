@@ -40,5 +40,11 @@ export function memberErrorAlert(error: MemberError): FormAlertState {
         title: 'Submissions aren’t available right now',
         message: 'Nothing was saved. Try again in a few minutes.',
       };
+    case 'account_suspended':
+      return {
+        kind: 'error',
+        title: 'Your account is suspended',
+        message: 'An administrator suspended this account, so nothing can be submitted. Nothing was saved.',
+      };
   }
 }

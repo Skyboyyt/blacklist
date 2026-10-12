@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | **Proposed** (must not be implemented) |
+| Status | **Accepted, band-only variant** (owner, 2026-10-12). Numeric ordering remains rejected: P-11 and ADR 0009 are unchanged |
 | Proposed by | Claude, 2026-10-12, at the owner's request during Phase 5 planning |
 | Reviewed by | Claude recommendation below; Codex review pending |
-| Decided by | Pending (project owner) |
+| Decided by | Project owner, 2026-10-12 (chose the band-only ranking over numeric ranking, a findings-count board, or not building it) |
 | Affects | PRD §4.2 (project aggregate assessments, Post-V1), §5.14 (P-11); ADR 0005, 0009; ARCHITECTURE §15; research module; THREAT-MODEL (reputational harm, gaming, misreading rankings) |
 
 ## Problem
@@ -53,4 +53,13 @@ Depends on ADR 0009, a new aggregation ADR and O-12. Adds a public route, contra
 
 ## Decision (owner)
 
-Pending.
+**Accepted, band-only variant** (2026-10-12). After the recommendation above, the owner asked for the scoreboard and chose a band ranking with no numbers. This replaces the "Proposed solution" where they differ: there is no score, so the ranking does not depend on ADR 0009 or O-12, and the aggregation rule is defined here.
+
+1. **Route and name:** public page `/scoreboard`, titled "Project risk ranking", linked from navigation and the project directory. API: `GET /projects/scoreboard?chain=` (`scoreboardRequestSchema`, `scoreboardResponseSchema` in `project.ts`).
+2. **Aggregation rule (published):** a project's ranking band is the **highest band among its official addresses' own public assessments**, considering only official addresses on the selected network when one is chosen. The page names the address that sets the band and how many of the considered addresses are assessed. This is a ranking key only: project profiles and directory cards still show each official address's own assessment and **no combined project rating**.
+3. **Not ranked**, listed separately with the first reason that applies: the profile is stale; an official address's assessment could not be loaded; a finding is suspended pending review; no considered address is assessed; every address that would set the band has low confidence; no official addresses are listed. Missing or unreliable data is never ranked as low risk and never placed at 0. With a network selected, projects with no official address on that network are left out of that view.
+4. **Order and ties:** Severe → High → Moderate → Low. All projects in a band share one rank (1 + the number of ranked projects in higher bands), shown as "2="; within a band projects are listed A–Z by name, then slug. There is no tie-break by score, recency or popularity.
+5. **Wording:** "A higher place means more risk was found"; "There is no score"; a low band "never means safe, endorsed or verified"; methodology link; "as of" time; disputed findings keep their dispute state. No "safest", "best" or "worst" lists.
+6. **No numeric score anywhere** in the page, the contract (strict schemas reject score fields; tests) or the API.
+
+Implemented on mocks in the Phase 5 follow-up (`apps/web/src/lib/api/mock/scoreboard.ts` is the reference rule for the research read model). Threat note added to THREAT-MODEL T-31.

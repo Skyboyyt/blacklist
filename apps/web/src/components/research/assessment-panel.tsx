@@ -5,7 +5,7 @@ import { Notice } from '@/components/app/notice';
 import { ProvenanceLabel } from '@/components/app/provenance-label';
 import { RiskBadge } from '@/components/app/risk-badge';
 import { formatDateTimeUtc } from '@/lib/format/date';
-import { BAND_COPY, DISPUTE_COPY, FACTOR_WEIGHT_COPY } from '@/lib/risk/copy';
+import { BAND_COPY, DISPUTE_COPY, FACTOR_WEIGHT_COPY, SUPPRESSIBLE_FACTOR_LABEL } from '@/lib/risk/copy';
 
 /**
  * Public risk assessment: band + explanation + factors + confidence + coverage +
@@ -74,6 +74,25 @@ export function AssessmentPanel({ assessment }: { readonly assessment: PublicAss
             </ul>
           )}
         </div>
+
+        {assessment.suppressions.length > 0 ? (
+          <div className="border-t border-border pt-4">
+            <h3 className="mb-2 text-sm font-semibold text-text">Suppressed indicators</h3>
+            <ul className="flex flex-col gap-2">
+              {assessment.suppressions.map((s) => (
+                <li key={`${s.factorCode}-${s.at}`} className="rounded-md border border-border p-3 text-sm">
+                  <p className="text-text">
+                    {SUPPRESSIBLE_FACTOR_LABEL[s.factorCode]}: suppressed by staff and not counted.
+                  </p>
+                  <p className="break-words text-muted">Reason: {s.publicReason}</p>
+                  <p className="text-xs text-muted">
+                    <time dateTime={s.at}>{formatDateTimeUtc(s.at)}</time>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     </DataCard>
   );

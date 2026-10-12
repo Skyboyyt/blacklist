@@ -22,6 +22,7 @@ import { DASHBOARD_FIXTURE, VIEWER_FIXTURES } from './fixtures/dashboard';
 import { EVM } from './fixtures/ids';
 import { PROJECT_ADDRESS_FIXTURES } from './fixtures/projects';
 import { TRANSACTION_FIXTURES } from './fixtures/transactions';
+import { rankProjects } from './scoreboard';
 import { createProjectCatalog } from './project-api';
 import { createStore, sessionIdFrom, storeFor, type MockStore } from './store';
 
@@ -225,6 +226,10 @@ export function createMockResearchApi(options: MockOptions = {}): ResearchApi {
     async listProjects(request) {
       await delay(latency);
       return projects.list(request);
+    },
+    async getScoreboard(request) {
+      await delay(latency);
+      return rankProjects(projects.details, request.chain);
     },
     async getProject(slug) {
       await delay(latency);

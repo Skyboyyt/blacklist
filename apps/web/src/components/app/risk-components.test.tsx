@@ -32,6 +32,7 @@ const assessment: PublicAssessment = {
   asOf: '2026-09-28T10:15:00Z',
   rulesetVersion: 'v1-demo',
   disputeState: 'under_appeal',
+  suppressions: [],
 };
 
 describe('RiskBadge', () => {

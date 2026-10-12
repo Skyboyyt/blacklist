@@ -45,6 +45,7 @@ const STAFF_HANDLES = {
   moderator_b: 'demo_moderator_b',
   appeal_reviewer: 'demo_appeal_reviewer',
   admin: 'demo_admin',
+  admin_b: 'demo_admin_b',
 } as const;
 
 export interface MockAccountOptions {

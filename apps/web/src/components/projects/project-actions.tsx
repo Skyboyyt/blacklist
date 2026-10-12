@@ -26,6 +26,9 @@ export function ProjectActions({ viewer, slug }: { readonly viewer: Viewer; read
       <ButtonLink href={`/corrections/new?project=${encodeURIComponent(slug)}`} variant="secondary" size="sm">
         Propose a correction
       </ButtonLink>
+      <ButtonLink href={`/responses/new?project=${encodeURIComponent(slug)}`} variant="ghost" size="sm">
+        Respond as the project
+      </ButtonLink>
       <ButtonLink href="/reports/new" variant="ghost" size="sm">
         Report a concern
       </ButtonLink>

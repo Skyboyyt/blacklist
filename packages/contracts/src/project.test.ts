@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  scoreboardEntrySchema,
   projectDetailSchema,
   projectDirectoryRequestSchema,
   projectDirectoryResponseSchema,
@@ -16,6 +17,7 @@ const assessment = {
   asOf: at,
   rulesetVersion: 'v1-demo',
   disputeState: 'none',
+  suppressions: [],
 };
 const official = {
   chain: 'ethereum',
@@ -145,5 +147,33 @@ describe('project directory', () => {
       }).success,
     ).toBe(false);
     expect(projectDirectoryResponseSchema.parse({ kind: 'choose_network' }).kind).toBe('choose_network');
+  });
+});
+
+describe('scoreboard (ADR 0012, band-only)', () => {
+  const entry = {
+    rank: 1,
+    tied: false,
+    slug: 'demoswap',
+    name: 'DemoSwap',
+    category: 'defi',
+    networks: ['ethereum'],
+    band: 'high',
+    decidingAddress: { chain: 'ethereum', address: '0xabc', displayAddress: '0xAbc' },
+    basedOn: { assessed: 1, total: 2 },
+    disputeState: 'none',
+    freshness: 'current',
+    lastReviewedAt: '2026-09-01T00:00:00Z',
+  };
+
+  it('accepts a band-only entry and rejects any numeric score', () => {
+    expect(scoreboardEntrySchema.safeParse(entry).success).toBe(true);
+    expect(scoreboardEntrySchema.safeParse({ ...entry, score: 55 }).success).toBe(false);
+    expect(scoreboardEntrySchema.safeParse({ ...entry, riskScore: 55 }).success).toBe(false);
+  });
+
+  it('never ranks a project as not assessed or stale', () => {
+    expect(scoreboardEntrySchema.safeParse({ ...entry, band: 'not_assessed' }).success).toBe(false);
+    expect(scoreboardEntrySchema.safeParse({ ...entry, freshness: 'stale' }).success).toBe(false);
   });
 });

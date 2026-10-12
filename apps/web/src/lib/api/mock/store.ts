@@ -10,12 +10,27 @@
  */
 import type {
   AddressResearch,
+  AdminLabel,
   AuditEntry,
   CaseDetail,
   FindingRevision,
+  FindingSummary,
+  Invitation,
+  MemberAccount,
   MemberNotice,
+  RecoveryCase,
+  RiskFactor,
+  RoleRequest,
+  StaffMember,
   StaffRef,
+  Suppression,
 } from '@blacklist/contracts';
+import {
+  INVITATION_FIXTURES,
+  LABEL_FIXTURES,
+  MEMBER_ACCOUNT_FIXTURES,
+  STAFF_MEMBER_FIXTURES,
+} from './fixtures/admin';
 import { ADDRESS_FIXTURES } from './fixtures/addresses';
 import {
   CASE_FIXTURES,
@@ -46,12 +61,45 @@ export interface MockStore {
   notices: (MemberNotice & { handle: string })[];
   /** The one-time simulated concurrent edit on the conflict demo case. */
   conflictPending: boolean;
+  /** Suspended findings: the public text and factor to restore if reinstated (moderation §8.3). */
+  suspended: Map<string, { finding: FindingSummary; factor: RiskFactor | null }>;
+  staff: StaffMember[];
+  invitations: Invitation[];
+  roleRequests: RoleRequest[];
+  recoveries: RecoveryCase[];
+  members: MemberAccount[];
+  labels: AdminLabel[];
+  /** Suppressions, with the factor each removed (restored when lifted). */
+  suppressions: (Suppression & { removed: RiskFactor | null })[];
+  /** Alerts every administrator must see. */
+  alerts: { id: string; at: string; text: string }[];
+  /** handle → private profile fields (PRD §5.3). */
+  profiles: Map<string, { displayName: string | null; updatedAt: string }>;
   seq: number;
+}
+
+/** Puts active labels on their address records, as the public read model would. */
+function withLabels(addresses: AddressResearch[], labels: readonly AdminLabel[]): AddressResearch[] {
+  for (const l of labels) {
+    if (l.status !== 'active') continue;
+    const record = addresses.find((a) => a.chain === l.subject.chain && a.address === l.subject.address);
+    record?.labels.push({
+      id: l.id,
+      text: l.text,
+      provenance: l.provenance,
+      sourceName: l.sourceName,
+      addedAt: l.createdAt,
+    });
+  }
+  return addresses;
 }
 
 export function createStore(): MockStore {
   return {
-    addresses: structuredClone([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
+    addresses: withLabels(
+      structuredClone([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
+      LABEL_FIXTURES,
+    ),
     projects: structuredClone([...PROJECT_FIXTURES]),
     cases: new Map(CASE_FIXTURES.map((c) => [c.id, structuredClone(c)])),
     owners: new Map(Object.entries(CASE_OWNERS)),
@@ -70,6 +118,16 @@ export function createStore(): MockStore {
       },
     ],
     conflictPending: true,
+    suspended: new Map(),
+    staff: structuredClone([...STAFF_MEMBER_FIXTURES]),
+    invitations: structuredClone([...INVITATION_FIXTURES]),
+    roleRequests: [],
+    recoveries: [],
+    members: structuredClone([...MEMBER_ACCOUNT_FIXTURES]),
+    labels: structuredClone([...LABEL_FIXTURES]),
+    suppressions: [],
+    alerts: [],
+    profiles: new Map([['demo_member', { displayName: 'Demo Member', updatedAt: '2026-08-01T09:00:00Z' }]]),
     seq: 0,
   };
 }

@@ -14,6 +14,8 @@ import { AssessmentPanel } from './assessment-panel';
 import { DisclosuresList } from './disclosures-list';
 import { FactsList } from './facts-list';
 import { FindingsList } from './findings-list';
+import { LabelsList } from './labels-list';
+import { ResponsesList } from './responses-list';
 import { TransfersTable } from './transfers-table';
 
 const KIND_LABEL: Record<AddressResearch['kind'], string> = {
@@ -44,8 +46,12 @@ export function AddressResearchView({ data }: { readonly data: AddressResearch }
           </span>
         }
         actions={
-          <ButtonLink href="/appeals/new" variant="secondary" size="sm">
-            Appeal or respond
+          <ButtonLink
+            href={`/responses/new?chain=${data.chain}&address=${encodeURIComponent(data.address)}`}
+            variant="secondary"
+            size="sm"
+          >
+            Respond as the subject
           </ButtonLink>
         }
       />
@@ -60,18 +66,29 @@ export function AddressResearchView({ data }: { readonly data: AddressResearch }
           <DataCard title={DISCLOSURE_COPY.heading} id="disclosures">
             <DisclosuresList disclosures={data.disclosures} />
           </DataCard>
+          <DataCard
+            title="Public labels"
+            id="labels"
+            description="Identification added by staff. Labels never change the risk band."
+          >
+            <LabelsList labels={data.labels} />
+          </DataCard>
         </div>
       </div>
 
       <Tabs defaultValue="findings">
         <TabsList aria-label="Research details">
           <TabsTrigger value="findings">Findings ({data.findings.length})</TabsTrigger>
+          <TabsTrigger value="responses">Responses ({data.responses.length})</TabsTrigger>
           <TabsTrigger value="transfers">Transfers ({data.transfers.length})</TabsTrigger>
           <TabsTrigger value="evidence">Evidence ({data.evidence.length})</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
         <TabsContent value="findings">
           <FindingsList findings={data.findings} />
+        </TabsContent>
+        <TabsContent value="responses">
+          <ResponsesList responses={data.responses} subject="address" />
         </TabsContent>
         <TabsContent value="transfers">
           <TransfersTable chain={data.chain} transfers={data.transfers} />

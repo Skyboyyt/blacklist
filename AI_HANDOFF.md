@@ -10,16 +10,16 @@ Read this first at the start of every session. Update it at the end of every ses
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
 | **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 5 implemented, awaiting Codex review)** |
-| Current phase | **Phase 5 — Frontend Completion and Integration Validation: implemented on mocks, awaiting Codex review.** Phase 3 merged (PR Skyboyyt/blacklist#1); Phase 4 merged (PR Skyboyyt/blacklist#2) |
+| Current phase | **Phase 5 — Frontend Completion and Integration Validation: implemented on mocks, including the follow-up that closed the remaining gaps and built the administrator console; awaiting Codex review.** Phase 3 merged (PR Skyboyyt/blacklist#1); Phase 4 merged (PR Skyboyyt/blacklist#2); Phase 5 merged (PR Skyboyyt/blacklist#3); follow-up on `claude/amazing-goodall-drtbc9` |
 | Authorized phase | Phase 5 (explicit owner authorization, 2026-10-12). **Phase 6 and all backend work are NOT authorized.** |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Claude (primary engineer): Phase 5 implementation |
+| Last agent | Claude (primary engineer): project risk ranking (ADR 0012 accepted, band-only) |
 | Last updated | 2026-10-12 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
 >
-> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the default branch is `chore/initial-repository`; Phase 5 work is on `claude/amazing-goodall-drtbc9` (restarted from the Phase 4 merge).
+> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the default branch is `chore/initial-repository`; the Phase 5 follow-up is on `claude/amazing-goodall-drtbc9` (restarted from the Phase 5 merge).
 
 ---
 
@@ -38,11 +38,214 @@ Read this first at the start of every session. Update it at the end of every ses
 | 10 | Claude | **Phase 2: Account & security frontend** | Login/logout/session-ended, registration and reset states, security settings, password/email change, sessions, staff enrollment/verification/step-up/recovery; member and staff DTOs; 242 unit + 168 Chromium e2e passing; Firefox/WebKit 95/96 (one load timeout, passes in isolation) |
 | 9 | Codex | **Final Phase 1 closure check** | APPROVED FOR PHASE 2 AUTHORIZATION; required fixes verified; root check exit 0, 149 unit/component passes, focused E2E 25 passes/1 skip; Phase 2 NOT authorized |
 | 11 | Codex | **Phase 2 initial review** | Three open findings: staff enrollment password discarded (High), staff reset lacks WebAuthn (High), login lacks human-verification challenge (Medium). Static review only; see review file. |
+| 18 | Claude | **Project risk ranking (scoreboard)** | Owner asked to build the scoreboard and chose the band-only ranking. ADR 0012 accepted (band-only); `/scoreboard` on mocks; contracts 77 + web 354 unit tests, Chromium E2E 322 passed / 2 skipped |
+| 17 | Claude | **Phase 5 follow-up: remaining gaps and administrator console** | Owner chose "gaps + admin console" when the Phase 5 brief was re-sent after the merge. Public subject responses, authority-signature standing, emergency suspension with 72-hour review, minimal profile, and the admin console (staff lifecycle with two-person rules, members, labels, suppressions); contracts 75 + web 348 unit tests, Chromium E2E 314 passed / 2 skipped |
 | 16 | Claude | **Phase 5: Frontend completion and integration validation** | Owner-authorized with four decisions (scope, ADR 0010 Part A accepted, scoreboard → ADR 0012 Proposed, shared server mock). Member report, suggestion, correction and appeal flows with status, replies and withdrawal; connected member↔staff journeys on a per-session demo store; transparency pages (drafts); requirements checklist; integration contracts; contracts 70 + web 321 unit tests, Chromium E2E 280 passed / 2 skipped |
 | 15 | Claude | **Phase 4: Staff review UI** | Owner-authorized, with the roadmap swap recorded (Staff UI = Phase 4, Reporting & Redress = Phase 5). Review dashboard, case workspace, approvals and admin audit on a mock moderation service that enforces roles, scope, transitions, assignment, conflicts, independence and step-up; contracts 70 + web 287 unit tests, Chromium E2E 238 passed / 2 skipped |
 | 14 | Claude | **Phase 3: Research UI (projects)** | Owner-authorized. Project directory and profiles on mocks; P1-05 source labels; P1-03 transfer scenarios; Proposed ADRs 0009–0011 for the owner's out-of-scope requests (not implemented); contracts 70 + web 243 unit tests, Chromium E2E 212 passed / 2 skipped |
 | 13 | Claude | **Phase 2 review corrections** | P2-01, P2-02 and P2-03 fixed within the approved design, with negative tests; contracts 60 + web 209 unit tests, Chromium E2E 172 passed / 2 skipped; Codex closure check requested |
 | 12 | Codex | **GitHub repository setup** | Owner requested a public `blacklist` repository and push. Created `Skyboyyt/blacklist`, pushed `chore/initial-repository`, verified remote commit and enabled secret scanning/push protection. |
+
+---
+
+## Session 18: Claude project risk ranking — ADR 0012 accepted, band-only (2026-10-12)
+
+### Decision
+
+- The owner asked to "build the score board". Claude reported the conflict with P-11 (no public number) and "no combined project rating".
+- The owner chose the **band-only ranking** over three alternatives: a numeric ranking (which would reverse P-11 with an unsigned calibration), a findings-count board, or not building it.
+- ADR 0012 is now **Accepted (band-only variant)**, with the decision recorded in full. P-11 and ADR 0009 are unchanged.
+
+### The rule (ADR 0012 Decision)
+
+- **Band:** the highest band among the project's official addresses' own assessments, on the chosen network when one is selected.
+- **Not ranked**, with a reason: stale profile, unavailable assessment, suspended finding, nothing assessed, low confidence on every address that sets the band, or no official addresses. Missing data is never ranked as low risk.
+- **Ranks** are shared within a band and listed A–Z. There is no score and no tie-break by score.
+- Project pages and directory cards still have **no combined rating**.
+
+### Completed work
+
+- **Contracts:** `scoreboardRequestSchema`, `scoreboardEntrySchema`, `scoreboardResponseSchema` in `project.ts`. Strict schemas, so score fields are rejected (tested).
+- **Service:** `ResearchApi.getScoreboard`. Mock rule in `lib/api/mock/scoreboard.ts` (reference for the research read model). Not-connected adapter fails like other research reads.
+- **UI:**
+  - public `/scoreboard` "Project risk ranking";
+  - network filter as a plain GET form (works without JavaScript; unsupported networks get the standard message);
+  - ranked list showing the deciding address and how many addresses are assessed, a "Not ranked" list, a reading guide and the "as of" time;
+  - "Risk ranking" in the main navigation and on the projects directory.
+- **Docs:** ADR 0012 and the ADR index; PRD §4.2 note; ARCHITECTURE public route and research endpoint; THREAT-MODEL T-31 note; frontend.md §7b row; requirements checklist (the scoreboard row is now Done (mock)); integration contracts.
+
+### Validation (real output, 2026-10-12)
+
+| Check | Result |
+|---|---|
+| format, lint, typecheck | Pass |
+| `pnpm test` | contracts **77 passed**; web **354 passed** |
+| `build`, `build:mock`, `check:mock-exclusion` | Pass |
+| E2E (Chromium desktop + Pixel 7) | **322 passed, 2 skipped**, 0 failed |
+| Firefox / WebKit | Not run (not installed) |
+
+New tests:
+
+- `scoreboard.test.ts` (6): order and ties, not-ranked reasons, no score in the output, network scoping, low confidence, following published decisions.
+- Contract tests (2).
+- `scoreboard.spec.ts`: ties and the not-ranked list, the network filter and an unsupported network, an approved finding moving a project from Low to High (rank "2="), axe and 360 px.
+
+### Next step
+
+Codex review of PR Skyboyyt/blacklist#4, which now also contains the ranking. Owner confirmation of the published aggregation rule wording in ADR 0012.
+
+---
+
+## Session 17: Claude Phase 5 follow-up — remaining gaps and administrator console (2026-10-12)
+
+### Authorization and scope
+
+- The owner re-sent the Phase 5 brief after PR Skyboyyt/blacklist#3 had merged. Asked how to proceed, the owner chose **"Gaps + admin console"**: build the approved items Phase 5 had left as gaps, plus the administrator console from documented Phase 4. It runs as a follow-up inside Phase 5 on a fresh branch from the merge (`79a6ef9`).
+- No backend, Phase 6 or deployment work was done.
+- **Roadmap note:** ARCHITECTURE §36 now records that the follow-up built these items. Real upload processing stays Phase 7.
+
+### Completed work
+
+**Contracts**
+
+- `research.ts`:
+  - public `labels` (identification only, provenance `moderator_finding` | `external_source`, no score or weight);
+  - `responses` (`subjectResponseSchema` with `standingProvenAt`);
+  - `assessment.suppressions` (factor code and public reason only);
+  - `SUPPRESSIBLE_FACTOR_CODES` (analysis indicators only);
+  - timeline kinds `finding_reinstated`, `finding_reversed`, `response_published`, `signal_suppressed`, `suppression_lifted`.
+- `project.ts`: responses reuse the subject response schema.
+- `moderation.ts`:
+  - case types `subject_response` (interim statuses; documentation gap) and `suspension_review` (`open → reinstated / reversed`);
+  - decisions `publish_response`, `reject_response`, `reinstate_finding`, `reverse_finding`;
+  - `staffFindingSchema`; counts; audit actions for staff, admin and finding events; `StandingRecord`.
+- `submissions.ts`: authority-signature standing (`AUTHORITY_ROLES`), `responseRequestSchema`, `responseTargetSchema`, `subjectKind` on the appeal target, error `account_suspended`.
+- `account.ts`: `profileSchema` and `profileUpdateSchema` (display name only; markup refused).
+- `admin.ts` (new): staff members, invitations (with a one-time code), role requests, recovery cases, member accounts, labels, suppressions, overview with alerts.
+
+**Mock services (shared demo store)**
+
+- `moderation-api.ts`:
+  - staff identity requires an active account that holds the role, so suspension, offboarding and role removal take effect at once;
+  - response moderation (standing first);
+  - `listFindings` and `suspendFinding` (step-up `finding.suspend`, 72-hour review case, alert to every admin for a severe finding);
+  - suspension review independence: non-participant; a severe finding cannot be reversed by its suspender.
+- `member-api.ts`:
+  - `standingFor` checks the mechanism against the subject: signature for wallets, authority for contracts and tokens, DNS only on official project domains, documents for anyone;
+  - responses (one open response per subject per member), profile, and the account-suspended check on every submission.
+- `admin-api.ts` (new):
+  - active-admin check; step-up grants;
+  - invitations: the admin role needs a second, different admin; emails of existing accounts are refused;
+  - role changes: grants and removing another admin need a second admin; reductions apply at once; the last admin is kept;
+  - staff suspension; offboarding (not yourself; issued invitations revoked; cases released);
+  - recovery: two different verifiers, approver ≠ opener, 24-hour window, then a re-enrollment invitation;
+  - member suspension; labels; suppressions.
+- `public-effects.ts`:
+  - suspend (public text replaced by "Temporarily suspended pending review", factor withheld, band recomputed), reinstate, reverse;
+  - publish a response; sync a label;
+  - apply or lift a suppression.
+
+**UI**
+
+- Address pages:
+  - "Public labels" card;
+  - "Responses" tab with time-bound wording;
+  - "Suppressed indicators" in the assessment;
+  - "Respond as the subject" replaces the generic "Appeal or respond" link.
+- Project pages: shared `ResponsesList`; "Respond as the project".
+- Member pages:
+  - `/responses/new` and `/responses/[id]`;
+  - shared `StandingFields` used by appeals and responses (the appeal form now offers only the mechanisms that fit the subject);
+  - `/settings/profile` form;
+  - the appeals page no longer shows "not available yet".
+- Staff pages:
+  - `/mod/findings` (suspend);
+  - case workspace cards for responses and suspension reviews;
+  - queue counts and filters for all case types.
+- Administrator console: `/admin`, `/admin/staff`, `/admin/users`, `/admin/labels`, `/admin/signals` (route names follow ARCHITECTURE §6.1), plus the existing `/admin/audit`, with a shared sub-navigation.
+- `ProtectedAction` and `useProtectedAction`: confirmation, optional internal reason, action-bound step-up, then the action.
+- Navigation: "Published findings" for moderators and admins; "Administration" for admins only.
+- Preview viewer `admin_b` added as the second administrator.
+
+**Docs**
+
+- Requirements checklist: all items now Done (mock), Partial (stated limit) or the scoreboard Gap by decision.
+- Integration contracts: new `AdminApi` section; new member and moderation methods; transitions; effects; mock boundaries; open items.
+- frontend.md: §7c and §7d updates and a new §7e for the admin console.
+- ARCHITECTURE: route groups (with notes that `/mod/standing` and `/admin/projects` have no separate page yet) and the §36 note.
+- data-model: response statuses gap.
+- Mock-exclusion markers for the admin fixtures.
+
+### Bugs found and fixed during the follow-up
+
+1. **Confirmation closing the step-up:** the confirmation dialog's close handler read stale state, so moving on to the security key closed the whole action. Fixed with a synchronous ref.
+2. **Lost action:** a new action started while the previous one was still reloading was wiped by the old action's close. `useProtectedAction().close` now clears only the request that finished; a regression test covers it.
+3. **Invitation email check:** the duplicate-account check compared masked emails, which are not unique, and refused valid invitations. It now compares the full fictional account emails; a test covers it.
+4. **Decision panel fields:** which fields each decision needs is now derived from what the builder sends, so the two lists cannot drift again (the cause of the Phase 5 suggestion bug).
+
+### Validation (real output, 2026-10-12, Node 24.21.0)
+
+| Check | Result |
+|---|---|
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | Pass (0 problems) |
+| `pnpm test` | contracts **75 passed** (5 files); web **348 passed** (35 files) |
+| `build`, `build:mock`, `check:mock-exclusion` | Pass, rebuilt from clean caches |
+| E2E (Chromium desktop + Pixel 7) | **314 passed, 2 skipped** (the same two skips as before), 0 failed |
+| Firefox / WebKit | **Not run**: the browsers are not installed in this environment |
+
+New tests:
+
+- `admin-api.test.ts` (14): access, step-up, two-person rules, suspension, offboarding, recovery, member suspension effect, labels, suppressions, refusal to suppress findings.
+- `suspension-responses.test.ts` (12): suspension permissions and effects, the severe alert, review independence, reinstate and reverse, response standing by subject, DNS on official domains, publish, reject, profile.
+- `admin-public.test.ts` (5): public schemas cannot carry scores, internal text or responder identity; suppressions accept analysis codes only.
+- `protected-action.test.tsx` (1).
+- `admin.spec.ts`: a response with authority standing, then publication; suspension, then reinstatement; console access denied to moderators; the admin-invitation two-person rule; a suspended member blocked; a label and a suppression visible publicly; the profile; axe and 360 px checks on 9 pages.
+- Existing tests updated for intentional changes: nav links, response wording on project pages, queue counts.
+
+During development a route-rename `sed` touched build-cache files in `.next`. The caches were deleted (they are git-ignored), both builds were rebuilt from scratch, and the full suite was re-run.
+
+### Security check (AGENTS §9)
+
+- **Authorization:** every new mock method checks role, account state, ownership, transition, independence and step-up. The UI hides nothing as a substitute. The integration contract lists the server rules. **Mock permission demos are not production authorization.**
+- **Privacy:**
+  - public DTOs gained only labels (no internal basis), responses (no responder identity) and suppressions (public reason only); all are strict and tested;
+  - internal reasons and rationales stay staff-only (checked on public pages in E2E);
+  - staff emails are masked;
+  - the one-time code is fictional and shown once.
+- **Rendering and data:** responses and labels render as plain text; links are never fetched; no new dependencies, secrets or browser storage.
+- **Wallet requests:** standing challenges authorize no transaction; signature, authority and DNS checks are simulated and labelled.
+- **Threat IDs:**
+  - T-11 and T-12 (role and ownership enforcement);
+  - T-17 (staff step-up on every consequential admin action);
+  - T-29 (responses moderated for doxxing and abuse);
+  - T-31 (suppressions limited to analysis indicators, audited and public; findings cannot be suppressed);
+  - T-38 and T-39 (simulated, nonce-bound, transaction-free standing).
+  - THREAT-MODEL is unchanged; no production surface was added.
+
+### Decisions made (please confirm in review)
+
+- Suspension reviews are a case type (`suspension_review`) reviewed by any non-participant with `finding:publish`. Per moderation §8.2, a severe finding cannot be reversed by the person who suspended it.
+- Signal suppression is limited to `platform_analysis` indicators. Findings are suspended or reversed through moderation, never suppressed.
+- Profile: only the display name can change in V1; the handle is fixed. Handle rules (reserved list, confusables) are not yet designed.
+- Recovery verifiers are administrators in the demo; identity §10.11 allows any two staff with at least one admin (open item in the integration contracts).
+- Address-subject appeals no longer offer DNS standing. DNS applies to domain or project subjects (moderation §6.2).
+
+### Known issues and remaining items
+
+- **Open ADRs:** 0009, 0011 and 0012 Proposed; O-12 open.
+- **Documentation gaps:** correction and response statuses use interim sets.
+- **Pagination:** page numbers vs cursors still to decide.
+- **ARCHITECTURE §7.1:** endpoint additions still to make.
+- **Legal:** legal review of the transparency pages is a launch blocker.
+- **Browsers:** Firefox and WebKit not run.
+- **Not done:** no deployment.
+
+### Recommended next step
+
+Codex review of Phase 5 including this follow-up: the admin two-person rules, suspension independence, response standing, the public DTO additions and the integration contracts. Then owner decisions on:
+
+- the items above;
+- the Phase 6 scope: WCAG audit, cross-browser runs and polish.
 
 ---
 

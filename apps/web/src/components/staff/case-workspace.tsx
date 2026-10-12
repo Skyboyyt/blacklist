@@ -24,6 +24,7 @@ import {
 } from '@/lib/staff/copy';
 import { moderationErrorAlert } from '@/lib/staff/errors';
 import { AppealContext } from './appeal-context';
+import { ResponseContext, SuspensionContext } from './case-type-context';
 import { AssignmentControls } from './assignment-controls';
 import { AuditTimeline } from './audit-timeline';
 import { DecisionPanel } from './decision-panel';
@@ -254,6 +255,18 @@ export function CaseWorkspace({ caseId, staffRole, myHandle }: CaseWorkspaceProp
               </Link>
             </p>
           ) : null}
+        </DataCard>
+      ) : null}
+
+      {d.type === 'subject_response' ? (
+        <DataCard id="response" title={`Response from ${d.responderRef}`}>
+          <ResponseContext response={d} />
+        </DataCard>
+      ) : null}
+
+      {d.type === 'suspension_review' ? (
+        <DataCard id="suspension" title="Suspension review">
+          <SuspensionContext review={d} />
         </DataCard>
       ) : null}
 
