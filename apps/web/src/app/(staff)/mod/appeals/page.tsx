@@ -1,13 +1,21 @@
 import type { Metadata } from 'next';
-import { StaffPlaceholder } from '@/components/states/staff-placeholder';
+import { PageHeader } from '@/components/app/page-header';
+import { ReviewDashboard } from '@/components/staff/review-dashboard';
+import { StaffOnly } from '@/components/states/access-states';
+import { getStaffViewer } from '@/lib/staff/staff-page';
 
 export const metadata: Metadata = { title: 'Appeal reviews' };
 
-export default function AppealReviewsPage() {
+export default async function AppealReviewsPage() {
+  const staff = await getStaffViewer();
+  if (!staff) return <StaffOnly />;
   return (
-    <StaffPlaceholder
-      title="Appeal reviews"
-      description="Appeals assigned to you. Reviewers are never the author or approver of the finding."
-    />
+    <div className="flex flex-col gap-2">
+      <PageHeader
+        title="Appeal reviews"
+        description="Reviewers are never the author or approver of the finding under appeal."
+      />
+      <ReviewDashboard staffRole={staff.role} lockedType="appeal_review" />
+    </div>
   );
 }

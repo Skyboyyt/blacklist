@@ -1,5 +1,6 @@
 'use client';
 
+import type { PasskeyResult } from '@blacklist/contracts';
 import { useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { getStaffSecurityApi } from '@/lib/api/browser';
@@ -15,6 +16,8 @@ interface StepUpDialogProps {
   readonly action: string;
   readonly targetId: string;
   readonly onVerified: () => void;
+  /** Runs the ceremony through a specific service (default: the staff security API). */
+  readonly verify?: (action: string, targetId: string) => Promise<PasskeyResult>;
 }
 
 /**
@@ -29,10 +32,14 @@ export function StepUpDialog({
   action,
   targetId,
   onVerified,
+  verify: verifyWith,
 }: StepUpDialogProps) {
   const run = useCallback(
-    async () => (await getStaffSecurityApi()).verifyPasskey({ kind: 'step_up', action, targetId }),
-    [action, targetId],
+    async () =>
+      verifyWith
+        ? verifyWith(action, targetId)
+        : (await getStaffSecurityApi()).verifyPasskey({ kind: 'step_up', action, targetId }),
+    [action, targetId, verifyWith],
   );
   const { state, start, reset } = usePasskeyCeremony(run);
 

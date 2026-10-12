@@ -20,7 +20,7 @@ The approved V1 scope excludes these. Projects are staff-created (PRD §4.1). "U
 
 ## Evidence
 
-- PRD §4.1, §4.2, §4.4, §5.10, §5.16; data-model §6 deferred tables; ARCHITECTURE §36 (Phase 3 is the Research UI; uploads and redress are Phase 4).
+- PRD §4.1, §4.2, §4.4, §5.10, §5.16; data-model §6 deferred tables; ARCHITECTURE §36 (Phase 3 is the Research UI; uploads and redress are Phase 5 after the owner's 2026-10-12 reorder).
 - No approved status model for projects exists. The V1 public vocabulary is assessment bands, `not_assessed`, confidence, coverage and dispute state.
 
 ## Impact
@@ -50,11 +50,11 @@ Two separately decidable parts.
 
 ## Consequences
 
-Part A adds contracts (`projectSuggestion`, submitter-private status DTOs), new private routes (`/projects/suggest`, `/projects/suggestions/[id]`), queue items, a migration, authorization-matrix entries, quotas and threat-model updates. It depends on the Phase 4 evidence-upload UI and the Phase 9 evidence pipeline. Part B needs its own data-model and threat-model work and remains Post-V1 unless the owner pulls it forward.
+Part A adds contracts (`projectSuggestion`, submitter-private status DTOs), new private routes (`/projects/suggest`, `/projects/suggestions/[id]`), queue items, a migration, authorization-matrix entries, quotas and threat-model updates. It depends on the Phase 5 evidence-upload UI (Phase 4 before the 2026-10-12 reorder) and the Phase 9 evidence pipeline. Part B needs its own data-model and threat-model work and remains Post-V1 unless the owner pulls it forward.
 
 ## Recommendation (Claude)
 
-**Accept Part A, amended:** build it in Phase 4 alongside the approved report and evidence UI, which reuses its image-only upload rules, instead of in Phase 3. **Keep Part B Post-V1.** Phase 3 built no submission, verification or rejection state; contracts reject such fields with negative tests.
+**Accept Part A, amended:** build it in Phase 5 (the Reporting & Redress UI after the 2026-10-12 reorder) alongside the approved report and evidence UI, which reuses its image-only upload rules, instead of in Phase 3. **Keep Part B Post-V1.** Phase 3 built no submission, verification or rejection state; contracts reject such fields with negative tests.
 
 ## Decision (owner)
 

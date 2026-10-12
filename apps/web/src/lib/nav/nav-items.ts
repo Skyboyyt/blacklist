@@ -45,19 +45,30 @@ export const STAFF_NAV: NavSection = {
   id: 'staff',
   label: 'Staff',
   items: [
-    { href: '/mod', label: 'Moderation queue', icon: 'shield' },
+    { href: '/mod', label: 'Review dashboard', icon: 'shield' },
     { href: '/mod/approvals', label: 'Approvals', icon: 'shield' },
     { href: '/mod/appeals', label: 'Appeal reviews', icon: 'shield' },
+    { href: '/admin/audit', label: 'Audit history', icon: 'book' },
   ],
 };
 
 export function isStaffViewer(viewer: Viewer): boolean {
-  return viewer.kind === 'signed_in' && (viewer.role === 'moderator' || viewer.role === 'admin');
+  return viewer.kind === 'signed_in' && viewer.role !== 'member';
+}
+
+/** Staff links by role (layout only; the API enforces permissions). */
+function staffNavFor(viewer: Viewer): NavSection {
+  if (viewer.kind !== 'signed_in') return { ...STAFF_NAV, items: [] };
+  if (viewer.role === 'appeal_reviewer') {
+    return { ...STAFF_NAV, items: STAFF_NAV.items.filter((i) => i.href === '/mod/appeals') };
+  }
+  const items = STAFF_NAV.items.filter((i) => i.href !== '/admin/audit' || viewer.role === 'admin');
+  return { ...STAFF_NAV, items };
 }
 
 export function navSectionsFor(viewer: Viewer): readonly NavSection[] {
   if (viewer.kind === 'anonymous') return [PRIMARY_NAV];
-  return isStaffViewer(viewer) ? [PRIMARY_NAV, ACCOUNT_NAV, STAFF_NAV] : [PRIMARY_NAV, ACCOUNT_NAV];
+  return isStaffViewer(viewer) ? [PRIMARY_NAV, ACCOUNT_NAV, staffNavFor(viewer)] : [PRIMARY_NAV, ACCOUNT_NAV];
 }
 
 export function isActive(item: NavItem, pathname: string): boolean {

@@ -9,12 +9,12 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 3 implemented, awaiting Codex review)** |
-| Current phase | **Phase 3 — Research UI (project directory and profiles, research refinements): implemented on mocks, awaiting Codex review.** Phase 2 passed review and testing (owner, 2026-10-12) |
-| Authorized phase | Phase 3 (explicit owner authorization, 2026-10-12). **Phase 4 is NOT authorized.** |
+| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 4 implemented, awaiting Codex review)** |
+| Current phase | **Phase 4 — Staff Review UI (owner reordered Phases 4 and 5 on 2026-10-12): implemented on mocks, awaiting Codex review.** Phase 3 merged (PR Skyboyyt/blacklist#1) |
+| Authorized phase | Phase 4 (explicit owner authorization, 2026-10-12). **Phase 5 is NOT authorized.** |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Claude (primary engineer): Phase 3 implementation |
+| Last agent | Claude (primary engineer): Phase 4 implementation |
 | Last updated | 2026-10-12 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
@@ -38,9 +38,146 @@ Read this first at the start of every session. Update it at the end of every ses
 | 10 | Claude | **Phase 2: Account & security frontend** | Login/logout/session-ended, registration and reset states, security settings, password/email change, sessions, staff enrollment/verification/step-up/recovery; member and staff DTOs; 242 unit + 168 Chromium e2e passing; Firefox/WebKit 95/96 (one load timeout, passes in isolation) |
 | 9 | Codex | **Final Phase 1 closure check** | APPROVED FOR PHASE 2 AUTHORIZATION; required fixes verified; root check exit 0, 149 unit/component passes, focused E2E 25 passes/1 skip; Phase 2 NOT authorized |
 | 11 | Codex | **Phase 2 initial review** | Three open findings: staff enrollment password discarded (High), staff reset lacks WebAuthn (High), login lacks human-verification challenge (Medium). Static review only; see review file. |
+| 15 | Claude | **Phase 4: Staff review UI** | Owner-authorized, with the roadmap swap recorded (Staff UI = Phase 4, Reporting & Redress = Phase 5). Review dashboard, case workspace, approvals and admin audit on a mock moderation service that enforces roles, scope, transitions, assignment, conflicts, independence and step-up; contracts 70 + web 287 unit tests, Chromium E2E 238 passed / 2 skipped |
 | 14 | Claude | **Phase 3: Research UI (projects)** | Owner-authorized. Project directory and profiles on mocks; P1-05 source labels; P1-03 transfer scenarios; Proposed ADRs 0009–0011 for the owner's out-of-scope requests (not implemented); contracts 70 + web 243 unit tests, Chromium E2E 212 passed / 2 skipped |
 | 13 | Claude | **Phase 2 review corrections** | P2-01, P2-02 and P2-03 fixed within the approved design, with negative tests; contracts 60 + web 209 unit tests, Chromium E2E 172 passed / 2 skipped; Codex closure check requested |
 | 12 | Codex | **GitHub repository setup** | Owner requested a public `blacklist` repository and push. Created `Skyboyyt/blacklist`, pushed `chore/initial-repository`, verified remote commit and enabled secret scanning/push protection. |
+
+---
+
+## Session 15: Claude Phase 4 — Staff Review UI (2026-10-12)
+
+### Authorization, scope and discrepancies
+
+- **Owner instruction (2026-10-12):** continue with "Phase 4: Review Dashboard and Administration Frontend". Phase 3 had been merged (PR Skyboyyt/blacklist#1). **Phase 5 and backend work are not authorized**; none was done.
+- **Phase 3 check:** the merged tree is identical to the validated branch; the full suite was re-run at the end of this session (results below). No blocking regression was found.
+- **Discrepancies, reported to the owner before building:**
+
+| Brief | Documented rule | Owner decision | Result |
+|---|---|---|---|
+| Phase 4 = staff review dashboard | Documented Phase 4 = member Reporting & Redress UI; Staff UI = Phase 5 | Build the Staff UI now | ARCHITECTURE §36 records the swap (Staff UI = 4, Reporting & Redress = 5); ADR 0010 phase references updated |
+| Queues for project submissions and profile updates | No approved workflow (ADR 0010 Proposed) | Approved workflows only | Queues for reports, appeals and correction requests. A profile update is a correction request on a project profile; accepting it creates a new staff profile revision. No submission queue |
+| Public rejection reasons on project pages | Rejected reports stay private (moderation §10) | Follow policy (as the brief also asks) | Reasons come from a fixed list and are shown to the submitter only; never public |
+| Reuse the 0–100 model | Staff may see numbers (§15.6); the §15.3 table is a calibration proposal (O-12 open) | Show the proposal, clearly labelled | Staff-only score labelled "calibration proposal, not signed off (O-12)", plus unscored cases; public pages unchanged (band only) |
+| "Preserve submission and appeal flows" | Neither member flow exists yet (documented Phase 4 → now Phase 5) | n/a | Nothing to preserve; existing entry points unchanged |
+
+### Completed work
+
+- **Contracts:**
+  - `packages/contracts/src/moderation.ts` (new, staff-only):
+    - staff roles and refs; case types and statuses (report and appeal statuses from the data model; correction statuses interim, see gaps);
+    - case summary and detail (report / appeal / correction), staff evidence by kind and state, staff assessment (scored | unscored);
+    - internal notes, audit entries, finding revisions, appealed decision, standing record, profile change;
+    - decisions, moderation errors, queue request, response and counts.
+  - `session.ts`: `appeal_reviewer` viewer role. The member-facing `reportStatusSchema` is unchanged; the staff one is `reportCaseStatusSchema`.
+- **Permissions:** `lib/staff/permissions.ts` mirrors ARCHITECTURE §9.2 (moderator, appeal_reviewer, admin), plus `staffRoleOf`. `lib/staff/workflow.ts` holds the UI decision hints; `lib/staff/copy.ts` and `errors.ts` hold the wording.
+- **Mock service** (`lib/api/mock/moderation-api.ts`): an in-memory store that checks, by itself:
+  1. staff only;
+  2. scope (appeal reviewers see appeals; anything else is `not_found`);
+  3. role permission;
+  4. optimistic version (`conflict`);
+  5. allowed transition;
+  6. assigned reviewer only (take-over needs `takeOver`);
+  7. independence (appeal participants, severe-revision authors);
+  8. single-use, action-bound step-up grants (5-minute TTL).
+
+  It also handles:
+  - **approvals:** latest revision and content hash only; evidence must be available; publication recorded as a `system` audit entry;
+  - **corrections:** accepting one needs `project:manage` and creates a profile revision; rejecting leaves the profile unchanged;
+  - **audit:** every action is appended to the mock audit log;
+  - **conflict demo:** case `RPT-1007` simulates another reviewer's edit before the first action.
+
+  Supporting modules:
+  - `staff-scoring.ts`: the §15.3 proposal, `min(ceiling, Σ)`, ceiling 100 only with a severe finding; `not_assessed` is unscored.
+  - `profile-corrections.ts`: applies a correction as a new profile revision.
+  - `fixtures/moderation.ts`: 13 cases (8 reports, 2 appeals, 3 corrections) and 4 revisions, all fictional.
+- **UI** (`components/staff/*`):
+  - **Routes:** `/mod` (dashboard), `/mod/appeals`, `/mod/cases/[id]`, `/mod/approvals` and `/admin/audit` (admin).
+  - **Dashboard:** counts, filters, queue, pagination, loading / empty / error / access-denied states.
+  - **Workspace:** subject, report / appeal / correction context, evidence (nothing rendered as markup), staff assessment, decision panel (form → confirmation → step-up), internal notes, case history.
+  - **Supporting:** assignment controls with take-over confirmation, conflict banner with "Load the latest version".
+  - **Shared changes:** nav shows staff links by role. `StepUpDialog` gained an optional `verify` prop so staff decisions use the moderation service's grant.
+- **Mock viewers:** `moderator`, `moderator_b` (a second moderator for independence demos), `appeal_reviewer`, `admin`, added to the demo banner. Account mocks treat all four as staff.
+
+### Tests changed for intended behaviour
+
+`tests/e2e/specs/shell.spec.ts` and `account.spec.ts` asserted the Phase 1 `/mod` placeholder ("Moderation queue", "This page holds no case data"). Phase 4 replaces that placeholder by design, so the assertions now check the "Review dashboard" heading and that staff data loads from the (mock) staff service. No test was skipped or weakened.
+
+### Files changed
+
+- **New:** `packages/contracts/src/moderation.ts`;
+  - `apps/web/src/lib/staff/{permissions,workflow,copy,errors,staff-page}.ts`;
+  - `apps/web/src/lib/api/mock/{moderation-api,moderation-api.test,staff-scoring,profile-corrections}.ts`, `fixtures/moderation.ts`;
+  - `apps/web/src/components/staff/*` (13 components plus `staff-review.test.tsx`);
+  - `apps/web/src/app/(staff)/mod/cases/[id]/page.tsx`, `(staff)/admin/audit/page.tsx`;
+  - `tests/e2e/specs/staff.spec.ts`.
+- **Changed:**
+  - contracts: `index.ts`, `session.ts`;
+  - web: `lib/api/{types,browser,not-connected,mock-disabled}.ts`; mock `index.ts`, `scenario.ts`, `account-api.ts`, `research-api.ts`, `fixtures/dashboard.ts`;
+  - `lib/nav/nav-items.ts` and test; `components/layout/nav-list.tsx`; `components/security/step-up-dialog.tsx`;
+  - `(staff)/mod/{page,appeals/page,approvals/page}.tsx`;
+  - `scripts/check-mock-exclusion.mjs`;
+  - e2e `shell.spec.ts`, `account.spec.ts`;
+  - docs: ARCHITECTURE §36, `docs/design/frontend.md` §7c, `docs/data-model.md` (correction status gap), ADR 0010 phase references, AGENTS §1, README.
+- **Migrations:** none. **Dependencies:** none.
+
+### Validation (real exit codes, Node 24.21.0, pnpm 12.7.0)
+
+| Check | Result |
+|---|---|
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | exit 0 |
+| `pnpm test` | exit 0: contracts **70**, web **287** (24 moderation-service, 19 staff UI, nav role test) |
+| `pnpm build` (production) | exit 0, 29 routes |
+| `build:mock`, `check:mock-exclusion` (now includes moderation fixtures) | exit 0, 4/4 PASS |
+| Chromium E2E desktop + mobile, all specs (Phase 1–3 regressions + staff spec: role denials, filters, decision with confirmation and step-up, conflict, correction applied, independent severe approval, axe on 4 staff pages, 360 px overflow) | **238 passed, 2 skipped** |
+| Firefox / WebKit E2E | **Not run** (browsers not installed in this environment) |
+
+E2E ran on the image's Chromium through a temporary, uncommitted config override, as in Sessions 13–14. The staff pages were also checked visually from screenshots.
+
+### Mock boundaries and backend integration points
+
+- The UI depends only on `ModerationApi` (`lib/api/types.ts`) and the `moderation.ts` contracts. A live adapter replaces `createMockModerationApi` contract-for-contract.
+- The server must enforce, inside one transaction where the design says so:
+  - route plus domain authorization (default deny);
+  - WebAuthn-assured staff sessions and action-bound step-ups (identity §10.7);
+  - approve-and-publish (moderation §4.2);
+  - independence and conflict checks (§7);
+  - optimistic concurrency, assignment and the append-only audit (ADR 0006).
+- Client-side state is in-memory per tab; the public research pages are not changed by staff actions in the demo. A real correction or finding publication changes public data through the backend (Phases 7–10).
+- Staff scores use the §15.3 proposal only until O-12 sign-off; the real computation is server-side (Phase 10).
+
+### Known gaps and unfinished work
+
+- **Documented Staff UI scope not built this phase:** finding revision editor beyond drafting from an accepted report; emergency suspension and its 72-hour review; standing-review decisions (standing is displayed, not decided); admin screens for staff lifecycle, users, projects, labels and suppressions; reversal-proposal flow. These remain open within the Staff UI phase or for a follow-up.
+- **Documentation gaps:** `correction_requests.status` values (interim set used); `moderation_cases.priority` values (not used); report "needs_info → in_review" transition is driven by the reporter (Phase 5), so staff cannot move it back in the demo.
+- **Demo limitation:** decisions do not change the server-rendered public pages (mock state is per browser tab). Profile changes are visible in the staff workspace ("Current public profile: revision N").
+- Overdue labels use the viewer's real clock against September 2026 fixture deadlines, so most open demo cases show as overdue.
+- Firefox/WebKit not run here.
+
+### Security check
+
+- Staff DTOs are separate from public DTOs.
+- Internal notes, rationales, narratives and reporter references are absent from public data (tested).
+- Evidence is never rendered as active content (tested: no iframe, object, embed, img or script; markup shown as text).
+- URLs are defanged and never fetched.
+- No browser storage added.
+- Mocks grant nothing and are excluded from production builds (checked).
+
+Threats considered: staff abuse and single-person severe changes (independence and step-up), stale-state overwrite (versions), evidence-borne active content, privacy of reporters.
+
+### Recommended next step
+
+1. Codex Phase 4 review, especially:
+   - service-level enforcement versus UI hints;
+   - independence rules;
+   - conflict handling;
+   - privacy separation;
+   - the labelled staff score.
+2. Owner decisions on:
+   - the correction-request status set;
+   - whether the remaining documented Staff UI items (emergency suspension, standing review, admin screens) complete this phase or a follow-up;
+   - ADRs 0009–0011.
+3. Phase 5 (Reporting & Redress UI) needs separate owner authorization.
 
 ---
 

@@ -13,6 +13,9 @@ import type {
   AccountError,
   AccountSecurityResult,
   AddressResearch,
+  AuditEntry,
+  CaseDecision,
+  CaseDetail,
   ChainSlugDto,
   Dashboard,
   EmailAcceptedOutcome,
@@ -20,14 +23,18 @@ import type {
   EnrollmentPasswordRequest,
   EnrollmentStart,
   EnrollmentStartResult,
+  FindingRevision,
   ForgotPasswordRequest,
   LoginOutcome,
   LoginRequest,
+  ModerationError,
   PasskeyResult,
   PasswordChangeForm,
   ProjectDetail,
   ProjectDirectoryQuery,
   ProjectDirectoryResponse,
+  QueueRequest,
+  QueueResponse,
   ReauthRequest,
   RegisterCompleteForm,
   RegisterStartRequest,
@@ -142,6 +149,55 @@ export type HumanVerificationResult =
  */
 export interface HumanVerifierClient {
   challenge(container: HTMLElement): Promise<HumanVerificationResult>;
+}
+
+/** Result of a staff moderation call: data or a typed error. */
+export type ModerationResult<T> =
+  { readonly kind: 'ok'; readonly data: T } | ({ readonly kind: 'error' } & ModerationError);
+
+/** Current public profile state of a project, as the demo applies corrections to it. */
+export interface ProfileState {
+  readonly slug: string;
+  readonly revision: number;
+  readonly description: string;
+  readonly domains: readonly string[];
+}
+
+/**
+ * Staff review API (moderation design; ARCHITECTURE §9.2). Client components only.
+ * Every method checks the caller's role and the case state itself: the UI hiding a
+ * button is never the only guard. Mutations carry the version the caller saw, so a
+ * change by someone else is reported as `conflict` instead of being overwritten.
+ */
+export interface ModerationApi {
+  getQueue(request: QueueRequest): Promise<ModerationResult<QueueResponse>>;
+  getCase(caseId: string): Promise<ModerationResult<CaseDetail>>;
+  assign(
+    caseId: string,
+    expectedVersion: number,
+    target: { readonly to: 'me' | 'nobody'; readonly takeOver?: boolean },
+  ): Promise<ModerationResult<CaseDetail>>;
+  addNote(caseId: string, expectedVersion: number, text: string): Promise<ModerationResult<CaseDetail>>;
+  /** Action-bound step-up (identity §10.7): single use, for this action and target only. */
+  verifyStepUp(action: string, targetId: string): Promise<PasskeyResult>;
+  decide(
+    caseId: string,
+    expectedVersion: number,
+    decision: CaseDecision,
+  ): Promise<ModerationResult<CaseDetail>>;
+  listRevisions(): Promise<ModerationResult<readonly FindingRevision[]>>;
+  approveRevision(
+    findingId: string,
+    revisionNumber: number,
+    contentHash: string,
+  ): Promise<ModerationResult<readonly FindingRevision[]>>;
+  rejectRevision(
+    findingId: string,
+    revisionNumber: number,
+    rationale: string,
+  ): Promise<ModerationResult<readonly FindingRevision[]>>;
+  getAuditLog(caseId?: string): Promise<ModerationResult<readonly AuditEntry[]>>;
+  getProfileState(slug: string): Promise<ModerationResult<ProfileState>>;
 }
 
 export type PasskeyPurpose =

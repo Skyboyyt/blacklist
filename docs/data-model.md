@@ -206,7 +206,7 @@ Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplic
 ### `subject_responses`, `appeals`, `correction_requests`
 - `subject_responses`: `id`, `subject_id`, `author_user_id`, `standing_claim_id`, `body` (≤ 5k), `status`, `published_at`.
 - `appeals`: `id`, `finding_id`, `appealed_revision_id`, `appellant_user_id`, `standing_claim_id`, `statement`, `status` (`submitted` | `in_review` | `upheld` | `amended` | `reversed` | `withdrawn`), `reviewer_id`, `escalated_at`, `decision_id`, `submitted_at`, `decided_at`.
-- `correction_requests`: `id`, `requester_user_id`, `subject_id`, `finding_id`, `statement`, `status`, `decision_id`.
+- `correction_requests`: `id`, `requester_user_id`, `subject_id`, `finding_id`, `statement`, `status`, `decision_id`. **Open:** `status` values are not yet specified; the Phase 4 frontend uses an interim `submitted | in_review | accepted | rejected` pending a decision.
 
 ### `staff_conflicts`
 `id`, `staff_user_id`, `scope` (subject or finding), `reason` (`self_declared` | `admin_recorded` | `derived`), `created_at`, `revoked_at`.

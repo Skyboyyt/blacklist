@@ -2,9 +2,10 @@ import {
   notConnectedAccountApi,
   notConnectedAuthApi,
   notConnectedHumanVerifier,
+  notConnectedModerationApi,
   notConnectedStaffSecurityApi,
 } from './not-connected';
-import type { AccountApi, AuthApi, HumanVerifierClient, StaffSecurityApi } from './types';
+import type { AccountApi, AuthApi, HumanVerifierClient, ModerationApi, StaffSecurityApi } from './types';
 
 /** Auth API for client components (browser). */
 export async function getAuthApi(): Promise<AuthApi> {
@@ -40,4 +41,13 @@ export async function getHumanVerifier(): Promise<HumanVerifierClient> {
     return mockHumanVerifier;
   }
   return notConnectedHumanVerifier;
+}
+
+/** Staff review API for client components (mock in development; not connected otherwise). */
+export async function getModerationApi(): Promise<ModerationApi> {
+  if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
+    const { mockModerationApi } = await import('blacklist-mock-api');
+    return mockModerationApi;
+  }
+  return notConnectedModerationApi;
 }
