@@ -25,6 +25,9 @@ import type {
   LoginRequest,
   PasskeyResult,
   PasswordChangeForm,
+  ProjectDetail,
+  ProjectDirectoryQuery,
+  ProjectDirectoryResponse,
   ReauthRequest,
   RegisterCompleteForm,
   RegisterStartRequest,
@@ -53,6 +56,9 @@ export interface ResearchApi {
   getTransactionResearch(chain: ChainSlugDto, hash: string): Promise<ResearchResult<TransactionResearch>>;
   /** The signed-in viewer's own activity. */
   getDashboard(): Promise<Dashboard>;
+  /** Staff-created project profiles (PRD §5.10). Address queries are network-scoped. */
+  listProjects(request: ProjectDirectoryQuery): Promise<ProjectDirectoryResponse>;
+  getProject(slug: string): Promise<ResearchResult<ProjectDetail>>;
 }
 
 /**

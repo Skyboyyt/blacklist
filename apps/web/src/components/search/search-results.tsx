@@ -110,9 +110,20 @@ export function SearchResults({
 
     case 'invalid_identifier':
       return (
-        <Notice tone="danger" title="That doesn’t look like a supported address or transaction hash">
-          {response.reason}
-        </Notice>
+        <div className="flex flex-col gap-3">
+          <Notice tone="danger" title="That doesn’t look like a supported address or transaction hash">
+            {response.reason}
+          </Notice>
+          <p className="text-sm text-muted">
+            Looking for a project by name or domain?{' '}
+            <Link
+              href={`/projects?q=${encodeURIComponent(query.slice(0, 100))}`}
+              className="font-medium text-accent hover:underline"
+            >
+              Search project profiles
+            </Link>
+          </p>
+        </div>
       );
 
     case 'unsupported_network':

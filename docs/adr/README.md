@@ -41,3 +41,6 @@ No ADR status authorizes starting a phase. Phase authorization is always a separ
 | [0006](0006-audit-trust-retention-and-private-telemetry.md) | Audit trust, retention and private research telemetry | Accepted with amendments (2026-10-04); O-13 at hosting decision |
 | [0007](0007-toolchain-and-foundation-acceptance.md) | Toolchain baseline and Foundation acceptance checks | Accepted; sequencing amended by 0008 (gates in Phase 7) |
 | [0008](0008-revision-2-ratification-corrections.md) | Revision 2 protocol and execution corrections | Accepted with amendments (2026-10-04) |
+| [0009](0009-public-numeric-risk-score.md) | Public display of the numeric risk score (change to P-11) | **Proposed** |
+| [0010](0010-project-submission-and-verification-status.md) | Project submissions, update proposals and verification status | **Proposed** |
+| [0011](0011-additional-evm-networks.md) | Additional EVM networks (Base, Arbitrum, BNB Chain, Polygon) | **Proposed** |

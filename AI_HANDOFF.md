@@ -9,12 +9,12 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 2 closure check pending)** |
-| Current phase | **Phase 2 — Frontend Account, Authentication & Security Experience: P2-01–P2-03 fixed, awaiting Codex closure check** |
-| Authorized phase | Phase 2 (explicit owner authorization, 2026-10-05). **Phase 3 is NOT authorized.** |
+| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 3 implemented, awaiting Codex review)** |
+| Current phase | **Phase 3 — Research UI (project directory and profiles, research refinements): implemented on mocks, awaiting Codex review.** Phase 2 passed review and testing (owner, 2026-10-12) |
+| Authorized phase | Phase 3 (explicit owner authorization, 2026-10-12). **Phase 4 is NOT authorized.** |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Claude (primary engineer): Phase 2 review corrections |
+| Last agent | Claude (primary engineer): Phase 3 implementation |
 | Last updated | 2026-10-12 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
@@ -38,8 +38,105 @@ Read this first at the start of every session. Update it at the end of every ses
 | 10 | Claude | **Phase 2: Account & security frontend** | Login/logout/session-ended, registration and reset states, security settings, password/email change, sessions, staff enrollment/verification/step-up/recovery; member and staff DTOs; 242 unit + 168 Chromium e2e passing; Firefox/WebKit 95/96 (one load timeout, passes in isolation) |
 | 9 | Codex | **Final Phase 1 closure check** | APPROVED FOR PHASE 2 AUTHORIZATION; required fixes verified; root check exit 0, 149 unit/component passes, focused E2E 25 passes/1 skip; Phase 2 NOT authorized |
 | 11 | Codex | **Phase 2 initial review** | Three open findings: staff enrollment password discarded (High), staff reset lacks WebAuthn (High), login lacks human-verification challenge (Medium). Static review only; see review file. |
+| 14 | Claude | **Phase 3: Research UI (projects)** | Owner-authorized. Project directory and profiles on mocks; P1-05 source labels; P1-03 transfer scenarios; Proposed ADRs 0009–0011 for the owner's out-of-scope requests (not implemented); contracts 70 + web 243 unit tests, Chromium E2E 212 passed / 2 skipped |
 | 13 | Claude | **Phase 2 review corrections** | P2-01, P2-02 and P2-03 fixed within the approved design, with negative tests; contracts 60 + web 209 unit tests, Chromium E2E 172 passed / 2 skipped; Codex closure check requested |
 | 12 | Codex | **GitHub repository setup** | Owner requested a public `blacklist` repository and push. Created `Skyboyyt/blacklist`, pushed `chore/initial-repository`, verified remote commit and enabled secret scanning/push protection. |
+
+---
+
+## Session 14: Claude Phase 3 — Research UI: project discovery and profiles (2026-10-12)
+
+### Authorization and scope
+
+- **Owner instruction (2026-10-12):** "Continue … with Phase 3. Phase 2 has passed review and testing." This authorizes Phase 3. **Phase 4 and backend work are not authorized**; none was done.
+- **Conflicts between the brief and the approved architecture**, explained to the owner before coding. Owner decisions:
+
+| Brief asked for | Approved rule | Owner decision | Result |
+|---|---|---|---|
+| Public 0–100 score on cards and detail | P-11: band + explanation only (PRD §5.14, ADR 0005, ESSENTIALS §17) | Change P-11 via ADR | **Proposed ADR 0009**; no number built. UI shows band, explanation, factors, confidence, as-of, dispute state |
+| Project submission, verification statuses, rejection reasons, representative updates | V1 projects are staff-created; self-service verification is not V1 (PRD §4.1, §4.4, §5.16) | Documented scope + ADR | **Proposed ADR 0010** (private suggestions/updates in Phase 4; claim verification Post-V1). Directory and profiles built within the V1 model; contracts reject verification/submission fields |
+| Solana + "supported EVM networks" | V1 = Solana + Ethereum (PRD §4.1) | Add Post-V1 EVM chains | **Proposed ADR 0011** (Base, Arbitrum, BNB, Polygon; per-chain Phase 8 gate). Ships Ethereum + Solana; selector reads `CHAIN_SLUGS` |
+| Evidence uploads and appeals | Phase 4 (ARCHITECTURE §36); images only (ADR 0004) | Entry points only | Profile links to `/appeals/new` and `/reports/new` (sign-in first when signed out) |
+
+- **Status distinctions in the V1 model:** "not assessed" (insufficient data; never 0, never reassuring), "assessment unavailable right now" (`null`; shown as neither not assessed nor low), "no published findings" (not "safe"). V1 has no public "rejected" state: rejected reports stay private (PRD §5.11). Appeal outcomes appear in history.
+
+### Completed work
+
+- **Contracts (`packages/contracts/src/project.ts`, new):** project slug, category (interim descriptive list), attribution basis, official address (with its own `assessment | null` and separate `disclosures`), official domain (hostname text only), response with standing, history events, freshness, detail, summary (no band or score), directory request (query, chain, category, findings status, sort, page) and response (`results`, `no_results`, `empty_directory`, `choose_network`, `invalid_query`, `provider_unavailable`). `common.ts`: `DisputeState` type and `publicSourceSchema`. `research.ts`: required `source` on chain facts and disclosures (P1-05).
+- **API boundary:** `ResearchApi.listProjects` / `getProject`; the not-connected adapter rejects both (non-mock builds show no data).
+- **Mock service:** `lib/api/mock/project-api.ts` holds pure, deterministic catalog logic: network-scoped address matching, name/domain text match, filters, sort, page size 6, and the card identifier on the selected network. `fixtures/projects.ts` has 14 fictional profiles covering findings, under appeal, suspended, no findings, no official addresses, not assessed, unavailable assessment, stale, partial, multi-network and a project response. Project-only address records are merged into address research so links resolve.
+- **UI:** `/projects` (GET-form filters, cards, pagination, every state) and `/project/[slug]` (identity, limits notice, review and update dates, data status, official addresses with assessments and separate disclosures, domains, findings, responses, history, entry points). "Projects" nav item. Universal search offers a project-directory link for non-identifier queries. `components/projects/*`, `lib/projects/{copy,directory-params}.ts`.
+- **Research refinements:**
+  - **P1-05:** facts and disclosures render their source label.
+  - **P1-03:** delegated-outgoing (victim) and spoofed-incoming-log fixtures, with tests.
+- **ADRs:** 0009, 0010 and 0011, all **Proposed**, each with a Claude recommendation; ADR index updated.
+- **Docs:**
+  - frontend.md: new §7b, plus P1-05/P1-03 notes in §5.
+  - ARCHITECTURE: `/projects` route and the `GET /projects` endpoint.
+  - AGENTS §1 and README status lines.
+  - Mock-exclusion markers for project fixtures.
+
+### Files changed
+
+New: `packages/contracts/src/project{,.test}.ts`; `apps/web/src/app/(public)/projects/page.tsx`, `apps/web/src/app/(public)/project/[slug]/{page,loading}.tsx`; `apps/web/src/components/projects/{project-filters,project-card,pagination,project-directory-results,project-detail-view,official-address-list,address-assessment-summary,project-actions}.tsx` and `projects.test.tsx`; `apps/web/src/lib/projects/{copy,directory-params,directory-params.test}.ts`; `apps/web/src/lib/api/mock/{project-api,project-api.test}.ts`, `fixtures/projects.ts`; `tests/e2e/specs/projects.spec.ts`; `docs/adr/0009–0011`.
+Changed: contracts `common.ts`, `research.ts`, `index.ts`, `research.test.ts`; web `lib/api/{types,not-connected}.ts`, mock `research-api.ts`, `fixtures/{addresses,transactions,ids}.ts`; `components/research/{facts-list,disclosures-list}.tsx` and tests; `components/app/status-timeline.tsx` (accepts any entry with id/label/at/actor); `components/search/search-results.tsx`; `components/layout/nav-list.tsx`; `lib/nav/nav-items.ts`; `scripts/check-mock-exclusion.mjs`; `tests/e2e/specs/a11y-security.spec.ts`; docs listed above. **Migrations:** none. **Dependencies:** none.
+
+### Validation (real exit codes, Node 24.21.0, pnpm 12.7.0)
+
+| Check | Result |
+|---|---|
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | exit 0 |
+| `pnpm test` | exit 0: contracts **70**, web **243** |
+| `pnpm build` (production) | exit 0, 28 routes |
+| `build:mock` | exit 0 |
+| `check:mock-exclusion` (now includes project fixtures) | exit 0, 4/4 PASS |
+| Chromium E2E, desktop + mobile (all specs, including Phase 1 and Phase 2 auth/account flows, new projects spec, axe light/dark on 5 new pages, 360 px overflow check) | **212 passed, 2 skipped** |
+| Firefox / WebKit E2E | **Not run.** Those browsers are not installed in this cloud environment |
+
+E2E ran on the image's preinstalled Chromium 1194 through a temporary config override, deleted before commit, because Playwright 1.63 expects build 1243. Layout was also checked visually from screenshots (desktop light, mobile dark).
+
+### Mock-service boundaries and backend integration points (Phase 8)
+
+- The UI depends only on `ResearchApi.listProjects(query)` and `getProject(slug)` and the contract schemas. A live adapter replaces `createProjectCatalog` contract-for-contract; `GET /projects` and `GET /projects/:slug` (ARCHITECTURE research endpoints) must return exactly these DTOs.
+- The server must enforce what the mock only simulates:
+  - network-scoped address matching, with `choose_network` and never a cross-chain match;
+  - published-only findings and responses;
+  - staff-only profile creation;
+  - freshness computation;
+  - per-address assessments from the risk module.
+- The source label (P1-05) must come from sanitized registry data, never raw provider names, URLs or receipts.
+- Mocks grant nothing. Entry-point links are not authorization.
+
+### Known issues and unfinished work
+
+- Proposed ADRs 0009–0011 await owner decisions. Nothing they describe is implemented.
+- Project categories are an interim descriptive list for owner review.
+- The project directory is not in the mobile bottom tab bar (it is in the menu); revisit in the Phase 6 quality pass.
+- Firefox/WebKit not run here; cross-browser timing notes from Session 10 still apply.
+- Phase 6 items unchanged (style-src-attr allowance, broader quality pass).
+
+### Security check
+
+- No public number (contract tests).
+- Disclosures separate from factors (contract and component tests).
+- Attributions are labelled as not proof of ownership.
+- Domains are text only, never links.
+- Untrusted text is rendered as text.
+- No browser storage was added.
+- Unknown networks are reported, not dropped.
+- No private data in project DTOs: no report receipts, submitter identity or rejected items.
+
+Threats considered: impersonation via names (identifiers first, name warning), false legitimacy (no verified/pending labels), cross-chain confusion (network-scoped matching).
+
+### Recommended next step
+
+1. Codex Phase 3 review, especially:
+   - network scoping;
+   - status distinctions;
+   - the no-score and no-combined-rating rules;
+   - P1-05/P1-03 closure.
+2. Owner decisions on ADRs 0009–0011.
+3. Phase 4 needs separate owner authorization.
 
 ---
 

@@ -23,6 +23,20 @@ export const EVM = {
   error: evm('ff'),
 } as const;
 
+/** Official addresses that appear only through project profiles. */
+export const PROJECT_EVM = {
+  bridge: evm('b1'),
+  exchange: evm('b2'),
+  stale: evm('b3'),
+  unavailable: evm('b4'),
+} as const;
+
+export const PROJECT_SOLANA = {
+  daoTreasury: 'DemoDaoTreasuryBLackListFixture33333333333',
+  nftMarket: 'DemoNftMarketBLackListFixture4444444444444',
+  exchange: 'DemoExchangeHotBLackListFixture55555555555',
+} as const;
+
 export const SOLANA = {
   lookalikeToken: 'DemoTokenMintBLackListFixture1111111111111',
   wallet: 'DemoWa11etBLackListFixture22222222222222222',

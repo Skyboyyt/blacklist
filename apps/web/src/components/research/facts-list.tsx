@@ -4,9 +4,9 @@ import { ProvenanceLabel } from '@/components/app/provenance-label';
 import { formatDateTimeUtc } from '@/lib/format/date';
 
 /**
- * Blockchain facts with source category, finality and each fact's own observation
- * time (which may differ from the assessment's "as of" time). Per-fact provider
- * attribution is added with the research refinement in Phase 3 (review P1-05).
+ * Blockchain facts with source category, finality, each fact's own observation time
+ * (which may differ from the assessment's "as of" time) and its public source label
+ * (review P1-05). The label names a kind of source, never a provider link or receipt.
  */
 export function FactsList({ facts }: { readonly facts: readonly ChainFact[] }) {
   if (facts.length === 0) return <p className="text-sm text-muted">No blockchain facts available.</p>;
@@ -26,7 +26,8 @@ export function FactsList({ facts }: { readonly facts: readonly ChainFact[] }) {
                 {fact.finality !== 'final' ? <Badge tone="warning">Not final</Badge> : null}
               </span>
               <span className="text-xs text-muted">
-                Observed <time dateTime={fact.observedAt}>{formatDateTimeUtc(fact.observedAt)}</time>
+                Observed <time dateTime={fact.observedAt}>{formatDateTimeUtc(fact.observedAt)}</time> ·
+                Source: {fact.source}
               </span>
             </dd>
           </div>

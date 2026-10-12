@@ -7,8 +7,10 @@ const ACTOR_LABEL: Record<TimelineEvent['actor'], string> = {
   subject: 'Subject',
 };
 
+type TimelineEntry = Pick<TimelineEvent, 'id' | 'label' | 'at' | 'actor'>;
+
 /** Ordered history of public status changes (shell: wording only, no internal detail). */
-export function StatusTimeline({ events }: { readonly events: readonly TimelineEvent[] }) {
+export function StatusTimeline({ events }: { readonly events: readonly TimelineEntry[] }) {
   if (events.length === 0) return <p className="text-sm text-muted">No public status changes.</p>;
   return (
     <ol className="relative flex flex-col gap-4 border-l border-border pl-5">

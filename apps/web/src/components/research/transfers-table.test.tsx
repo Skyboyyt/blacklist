@@ -71,4 +71,42 @@ describe('TransfersTable', () => {
     expect(container.querySelector('img')).toBeNull();
     expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
   });
+
+  it('describes a delegated outgoing transfer of a victim without implying wrongdoing (P1-03)', () => {
+    render(
+      <TransfersTable
+        chain="ethereum"
+        transfers={[
+          {
+            ...transfer,
+            direction: 'out',
+            authorization: 'delegated',
+            evidenceLevel: 'balance_verified',
+            assetSymbol: 'USDC',
+            assetVerified: true,
+            tier: 'verified',
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText(/^Outgoing transfer of/)).toBeInTheDocument();
+    expect(
+      screen.getByText('Moved under an allowance or delegation granted by the sending address.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/does not mean wrongdoing/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/signed directly|stole|scam|drain/i);
+  });
+
+  it('reports a spoofed incoming log as a claim with unknown authorization (P1-03)', () => {
+    render(
+      <TransfersTable
+        chain="ethereum"
+        transfers={[{ ...transfer, direction: 'in', evidenceLevel: 'observed_log', assetSymbol: 'USDC' }]}
+      />,
+    );
+    expect(screen.getByText(/^A log reports an incoming transfer of/)).toBeInTheDocument();
+    expect(screen.getByText('Who authorized this transfer is unknown.')).toBeInTheDocument();
+    expect(screen.getByText('(unverified token name)')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/Received|Signed directly/);
+  });
 });

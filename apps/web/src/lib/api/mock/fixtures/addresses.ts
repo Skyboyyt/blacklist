@@ -13,6 +13,12 @@ import { EVM, FIXED_NOW, SOLANA, TX } from './ids';
 
 const RULESET = 'v1-demo';
 
+/** Public source labels (P1-05): kinds of source, never links or provider details. */
+const SOURCE = {
+  chain: 'Finalized node read (demo provider)',
+  explorer: 'Block explorer verification record (demo)',
+} as const;
+
 function facts(prefix: string, firstSeen: string, txCount: string, kind: string): ChainFact[] {
   return [
     {
@@ -21,6 +27,7 @@ function facts(prefix: string, firstSeen: string, txCount: string, kind: string)
       value: kind,
       provenance: 'chain_fact',
       finality: 'final',
+      source: SOURCE.chain,
       observedAt: FIXED_NOW,
     },
     {
@@ -29,6 +36,7 @@ function facts(prefix: string, firstSeen: string, txCount: string, kind: string)
       value: firstSeen,
       provenance: 'chain_fact',
       finality: 'final',
+      source: SOURCE.chain,
       observedAt: FIXED_NOW,
     },
     {
@@ -37,6 +45,7 @@ function facts(prefix: string, firstSeen: string, txCount: string, kind: string)
       value: txCount,
       provenance: 'chain_fact',
       finality: 'final',
+      source: SOURCE.chain,
       observedAt: FIXED_NOW,
     },
   ];
@@ -53,7 +62,8 @@ function disclosure(
   explanation: string,
   provenance: Disclosure['provenance'] = 'chain_fact',
 ): Disclosure {
-  return { id, code, label, explanation, provenance, observedAt: FIXED_NOW };
+  const source = provenance === 'chain_fact' ? SOURCE.chain : SOURCE.explorer;
+  return { id, code, label, explanation, provenance, source, observedAt: FIXED_NOW };
 }
 
 /** Lowercase display: fixtures do not compute EIP-55 checksums (the real API returns the display form). */
@@ -113,6 +123,36 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
         tier: 'observed',
         txHash: TX.ethereum,
         at: '2026-09-20T08:00:00Z',
+      },
+      {
+        // Victim case (P1-03): moved out under an approval this wallet once granted to a
+        // contract with a published finding. Direction and delegation are not wrongdoing.
+        id: 'low-t2',
+        direction: 'out',
+        counterparty: EVM.severeUnderAppeal,
+        amount: '1,200.00',
+        assetSymbol: 'USDC',
+        assetVerified: true,
+        evidenceLevel: 'balance_verified',
+        authorization: 'delegated',
+        tier: 'verified',
+        txHash: TX.ethereum,
+        at: '2026-09-21T10:30:00Z',
+      },
+      {
+        // Spoofed-log case (P1-03): a token contract emitted a log claiming a transfer
+        // from a well-known address. Reported as a log claim with unknown authorization.
+        id: 'low-t3',
+        direction: 'in',
+        counterparty: EVM.contractWithDisclosures,
+        amount: '5,000.00',
+        assetSymbol: 'USDC',
+        assetVerified: false,
+        evidenceLevel: 'observed_log',
+        authorization: 'unknown',
+        tier: 'observed',
+        txHash: TX.ethereum,
+        at: '2026-09-22T12:00:00Z',
       },
     ],
     evidence: [],
