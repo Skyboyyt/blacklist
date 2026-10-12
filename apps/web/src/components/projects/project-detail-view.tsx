@@ -15,9 +15,9 @@ import {
   NAME_WARNING,
   NO_COMBINED_RATING,
   PROFILE_DISCLAIMER,
-  STANDING_LABEL,
 } from '@/lib/projects/copy';
 import { OfficialAddressList } from './official-address-list';
+import { ResponsesList } from '@/components/research/responses-list';
 import { ProjectActions } from './project-actions';
 
 /**
@@ -125,25 +125,7 @@ export function ProjectDetailView({
           <FindingsList findings={project.findings} />
         </DataCard>
         <DataCard id="responses" title={`Responses from the project (${project.responses.length})`}>
-          {project.responses.length === 0 ? (
-            <p className="text-sm text-muted">No published responses.</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {project.responses.map((r) => (
-                <li key={r.id} className="flex flex-col gap-1.5 rounded-md border border-border p-3">
-                  <p className="text-sm text-text">{r.summary}</p>
-                  <p className="text-xs text-muted">
-                    Standing: {STANDING_LABEL[r.standing]} · Published{' '}
-                    <time dateTime={r.publishedAt}>{formatDateUtc(r.publishedAt)}</time>
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-xs text-muted">
-            Responses are the project’s own statements. Standing shows how the right to respond was
-            established, not that the statement is true.
-          </p>
+          <ResponsesList responses={project.responses} subject="project" />
         </DataCard>
       </div>
 

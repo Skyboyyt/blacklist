@@ -16,6 +16,7 @@ const assessment = {
   asOf: at,
   rulesetVersion: 'v1-demo',
   disputeState: 'none',
+  suppressions: [],
 };
 const official = {
   chain: 'ethereum',

@@ -7,6 +7,7 @@
  * - interaction with a flagged address is never presented as guilt;
  * - the numeric Risk Score is never shown publicly (decision P-11).
  */
+import type { SuppressibleFactorCode } from '@blacklist/contracts';
 import type { AssessmentBand, Provenance, RiskConfidence } from '@blacklist/core';
 
 export interface BandCopy {
@@ -137,3 +138,9 @@ export function transferMovementLabel(
   if (evidenceLevel === 'observed_log') return `A log reports an ${movement}`;
   return direction === 'in' ? 'Incoming transfer of' : 'Outgoing transfer of';
 }
+
+/** Plain names for the analysis indicators an administrator can suppress (shown with the public reason). */
+export const SUPPRESSIBLE_FACTOR_LABEL: Readonly<Record<SuppressibleFactorCode, string>> = {
+  'token.symbol_impersonation': 'Token name or symbol imitates another asset',
+  'eoa.delegated_to_flagged': 'Account delegates to a flagged contract',
+};

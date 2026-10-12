@@ -45,4 +45,5 @@ export const VIEWER_FIXTURES: Readonly<Record<MockViewerKey, Viewer>> = {
     emailVerified: true,
   },
   admin: { kind: 'signed_in', handle: 'demo_admin', role: 'admin', emailVerified: true },
+  admin_b: { kind: 'signed_in', handle: 'demo_admin_b', role: 'admin', emailVerified: true },
 };

@@ -16,7 +16,10 @@
  */
 import {
   caseDecisionSchema,
+  findingSeveritySchema,
   QUEUE_PAGE_SIZE,
+  suspensionRequestSchema,
+  type StaffFinding,
   type AuditEntry,
   type CaseDecision,
   type CaseDetail,
@@ -34,10 +37,14 @@ import {
   applyProjectCorrection,
   createProjectFromSuggestion,
   publishFinding,
+  publishResponse,
+  reinstateFinding,
+  reverseSuspendedFinding,
+  suspendFinding,
 } from './public-effects';
 import { currentPasskeyResult, currentScenario, currentViewerKey, type MockViewerKey } from './scenario';
 import { staffAssessmentFor } from './staff-scoring';
-import { createStore, type MockStore } from './store';
+import { createStore, nextId, type MockStore } from './store';
 
 export interface MockModerationOptions {
   readonly cookies: () => string;
@@ -53,6 +60,8 @@ const OPEN_STATUSES: Readonly<Record<CaseDetail['type'], readonly string[]>> = {
   appeal_review: ['submitted', 'in_review'],
   correction_request: ['submitted', 'in_review'],
   project_suggestion: ['submitted', 'needs_information'],
+  subject_response: ['submitted', 'in_review'],
+  suspension_review: ['open'],
 };
 
 const IDENTITIES: Partial<Record<MockViewerKey, { ref: StaffRef; role: StaffRole }>> = {
@@ -60,6 +69,7 @@ const IDENTITIES: Partial<Record<MockViewerKey, { ref: StaffRef; role: StaffRole
   moderator_b: { ref: STAFF.moderatorB, role: 'moderator' },
   appeal_reviewer: { ref: STAFF.appealReviewer, role: 'appeal_reviewer' },
   admin: { ref: STAFF.admin, role: 'admin' },
+  admin_b: { ref: STAFF.adminB, role: 'admin' },
 };
 
 interface Rule {
@@ -93,6 +103,13 @@ const TRANSITIONS: Readonly<Record<CaseDecision['action'], readonly Rule[]>> = {
       from: ['submitted'],
       to: 'in_review',
       permission: 'correction:decide',
+      stepUp: false,
+    },
+    {
+      type: 'subject_response',
+      from: ['submitted'],
+      to: 'in_review',
+      permission: 'response:moderate',
       stepUp: false,
     },
   ],
@@ -192,6 +209,13 @@ const TRANSITIONS: Readonly<Record<CaseDecision['action'], readonly Rule[]>> = {
       permission: 'standing:decide',
       stepUp: false,
     },
+    {
+      type: 'subject_response',
+      from: ['in_review'],
+      to: null,
+      permission: 'standing:decide',
+      stepUp: false,
+    },
   ],
   deny_standing: [
     {
@@ -200,6 +224,49 @@ const TRANSITIONS: Readonly<Record<CaseDecision['action'], readonly Rule[]>> = {
       to: null,
       permission: 'standing:decide',
       stepUp: false,
+    },
+    {
+      type: 'subject_response',
+      from: ['in_review'],
+      to: null,
+      permission: 'standing:decide',
+      stepUp: false,
+    },
+  ],
+  publish_response: [
+    {
+      type: 'subject_response',
+      from: ['in_review'],
+      to: 'published',
+      permission: 'response:moderate',
+      stepUp: true,
+    },
+  ],
+  reject_response: [
+    {
+      type: 'subject_response',
+      from: ['in_review'],
+      to: 'rejected',
+      permission: 'response:moderate',
+      stepUp: true,
+    },
+  ],
+  reinstate_finding: [
+    {
+      type: 'suspension_review',
+      from: ['open'],
+      to: 'reinstated',
+      permission: 'finding:publish',
+      stepUp: true,
+    },
+  ],
+  reverse_finding: [
+    {
+      type: 'suspension_review',
+      from: ['open'],
+      to: 'reversed',
+      permission: 'finding:publish',
+      stepUp: true,
     },
   ],
 };
@@ -229,7 +296,16 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
   const wait = () => (latency > 0 ? new Promise<void>((r) => setTimeout(r, latency)) : Promise.resolve());
   const store = options.store ?? createStore();
 
-  const identity = () => IDENTITIES[currentViewerKey(options.cookies())] ?? null;
+  /**
+   * The caller's staff identity. The account must still be active and hold the role in
+   * the demo store, so a suspension, offboarding or role removal takes effect at once.
+   */
+  const identity = () => {
+    const who = IDENTITIES[currentViewerKey(options.cookies())];
+    if (!who) return null;
+    const member = store.staff.find((m) => m.id === who.ref.id);
+    return member?.status === 'active' && member.roles.includes(who.role) ? who : null;
+  };
   const at = () => now().toISOString();
 
   function err<T>(
@@ -255,7 +331,9 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           ? `/projects/suggestions/${c.id}`
           : c.type === 'appeal_review'
             ? `/appeals/${c.id}`
-            : `/corrections/${c.id}`;
+            : c.type === 'subject_response'
+              ? `/responses/${c.id}`
+              : `/corrections/${c.id}`;
     store.notices.unshift({ handle, id: `notice-${store.seq}`, text, at: at(), href });
   }
 
@@ -298,6 +376,10 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       case 'correction_request':
         return { ...common, type: c.type, status: c.status };
       case 'project_suggestion':
+        return { ...common, type: c.type, status: c.status };
+      case 'subject_response':
+        return { ...common, type: c.type, status: c.status };
+      case 'suspension_review':
         return { ...common, type: c.type, status: c.status };
     }
   }
@@ -405,7 +487,23 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       case 'reject_abusive':
       case 'reject_correction':
       case 'reject_suggestion':
+      case 'reject_response':
         notifyOwner(c, `A decision was recorded on “${c.title}”.`);
+        return;
+      case 'publish_response':
+        if (c.type === 'subject_response') {
+          publishResponse(store, c, at());
+          notifyOwner(c, `Your response “${c.title}” was published.`);
+        }
+        return;
+      case 'reinstate_finding':
+        if (c.type === 'suspension_review')
+          reinstateFinding(store, c.suspendedFinding.findingId, d.publicSummary, at());
+        return;
+      case 'reverse_finding':
+        if (c.type === 'suspension_review') {
+          reverseSuspendedFinding(store, c.suspendedFinding.findingId, d.publicSummary, at());
+        }
         return;
       case 'uphold':
       case 'amend':
@@ -457,7 +555,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         return;
       case 'grant_standing':
       case 'deny_standing':
-        if (c.type === 'appeal_review') {
+        if (c.type === 'appeal_review' || c.type === 'subject_response') {
           c.standing = {
             ...c.standing,
             outcome: d.action === 'grant_standing' ? 'granted' : 'denied',
@@ -466,8 +564,8 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           notifyOwner(
             c,
             d.action === 'grant_standing'
-              ? `Standing was granted for your appeal “${c.title}”.`
-              : `Standing could not be established for your appeal “${c.title}”. You can reply with more documents.`,
+              ? `Standing was granted for “${c.title}”.`
+              : `Standing could not be established for “${c.title}”. You can reply with more documents.`,
           );
         }
         return;
@@ -493,6 +591,8 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         openAppeals: visible.filter((c) => c.type === 'appeal_review' && isOpen(c)).length,
         openCorrections: visible.filter((c) => c.type === 'correction_request' && isOpen(c)).length,
         openSuggestions: visible.filter((c) => c.type === 'project_suggestion' && isOpen(c)).length,
+        openResponses: visible.filter((c) => c.type === 'subject_response' && isOpen(c)).length,
+        openSuspensionReviews: visible.filter((c) => c.type === 'suspension_review' && isOpen(c)).length,
         unassigned: visible.filter((c) => isOpen(c) && c.assignedTo === null).length,
         pendingApprovals: hasPermission(who.role, 'finding:publish')
           ? store.revisions.filter(
@@ -645,15 +745,18 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           `A case that is “${c.status.replaceAll('_', ' ')}” cannot take this decision.`,
         );
       }
-      if (c.type === 'appeal_review') {
+      if (c.type === 'appeal_review' || c.type === 'subject_response') {
         if (
           (d.action === 'grant_standing' || d.action === 'deny_standing') &&
           c.standing.outcome !== 'pending'
         ) {
-          return err('invalid_transition', 'Standing has already been decided for this appeal.');
+          return err('invalid_transition', 'Standing has already been decided for this case.');
         }
-        if (['uphold', 'amend', 'reverse'].includes(d.action) && c.standing.outcome !== 'granted') {
-          return err('invalid_transition', 'Standing must be granted before the appeal can be decided.');
+        if (
+          ['uphold', 'amend', 'reverse', 'publish_response'].includes(d.action) &&
+          c.standing.outcome !== 'granted'
+        ) {
+          return err('invalid_transition', 'Standing must be granted before this case can be decided.');
         }
       }
       if (d.action !== 'start_review') {
@@ -673,6 +776,21 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           return err(
             'not_eligible',
             'You took part in the decision under appeal (author or approver), so you cannot review this appeal or its standing.',
+          );
+        }
+      }
+      if (c.type === 'suspension_review') {
+        const f = c.suspendedFinding;
+        if ([f.author.id, f.approver.id].includes(me.id)) {
+          return err(
+            'not_eligible',
+            'You took part in this finding (author or approver). A non-participant must review the suspension.',
+          );
+        }
+        if (d.action === 'reverse_finding' && f.severity === 'severe' && c.suspendedBy.id === me.id) {
+          return err(
+            'not_eligible',
+            'You suspended this severe finding. Reversing it needs a second person who is not a participant.',
           );
         }
       }
@@ -696,13 +814,21 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       record({
         actor: me,
         action:
-          c.type === 'appeal_review' && rule.stepUp
-            ? 'appeal_decided'
-            : (c.type === 'correction_request' || c.type === 'project_suggestion') && rule.stepUp
-              ? 'correction_decided'
-              : d.action === 'request_info'
-                ? 'info_requested'
-                : 'case_status_changed',
+          d.action === 'grant_standing' || d.action === 'deny_standing'
+            ? 'standing_decided'
+            : c.type === 'appeal_review' && rule.stepUp
+              ? 'appeal_decided'
+              : (c.type === 'correction_request' || c.type === 'project_suggestion') && rule.stepUp
+                ? 'correction_decided'
+                : c.type === 'subject_response' && rule.stepUp
+                  ? 'response_decided'
+                  : d.action === 'reinstate_finding'
+                    ? 'finding_reinstated'
+                    : d.action === 'reverse_finding'
+                      ? 'finding_reversed'
+                      : d.action === 'request_info'
+                        ? 'info_requested'
+                        : 'case_status_changed',
         caseId,
         reason,
         changes:
@@ -845,6 +971,117 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         .filter((e) => !caseId || e.caseId === caseId)
         .sort((a, b) => b.at.localeCompare(a.at));
       return ok(entries.map(clone));
+    },
+
+    async listFindings() {
+      await wait();
+      const who = identity();
+      if (!who || !hasPermission(who.role, 'finding:suspend')) {
+        return err('forbidden', 'Suspending findings needs a moderator or administrator role.');
+      }
+      const out: StaffFinding[] = [];
+      for (const address of store.addresses) {
+        for (const f of address.findings) {
+          const p = store.findingParticipants.get(f.id);
+          if (!p) continue;
+          const review = [...store.cases.values()].find(
+            (c) =>
+              c.type === 'suspension_review' && c.status === 'open' && c.suspendedFinding.findingId === f.id,
+          );
+          const original = store.suspended.get(f.id)?.finding;
+          out.push({
+            findingId: f.id,
+            title: original?.title ?? f.title,
+            severity: findingSeveritySchema.parse(p.severity),
+            subject: {
+              kind: 'address',
+              chain: address.chain,
+              address: address.address,
+              displayAddress: address.displayAddress,
+            },
+            author: p.author,
+            approver: p.approver,
+            publishedAt: f.publishedAt,
+            status: f.disputeState === 'suspended_pending_review' ? 'suspended' : 'published',
+            reviewCaseId: review?.id ?? null,
+          });
+        }
+      }
+      return ok(out.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)));
+    },
+
+    async suspendFinding(findingId, reason) {
+      await wait();
+      const who = identity();
+      if (!who || !hasPermission(who.role, 'finding:suspend')) {
+        return err('forbidden', 'Suspending findings needs a moderator or administrator role.');
+      }
+      const parsed = suspensionRequestSchema.safeParse({ reason });
+      if (!parsed.success)
+        return err('invalid_transition', 'Give an internal reason of at least 10 characters.');
+      const address = store.addresses.find((a) => a.findings.some((f) => f.id === findingId));
+      const finding = address?.findings.find((f) => f.id === findingId);
+      const p = store.findingParticipants.get(findingId);
+      if (!address || !finding || !p) return { kind: 'error', code: 'not_found' };
+      if (finding.disputeState === 'suspended_pending_review') {
+        return err('invalid_transition', 'This finding is already suspended.');
+      }
+      if (!consumeGrant('finding.suspend', findingId)) return { kind: 'error', code: 'stepup_required' };
+      const original = structuredClone(finding);
+      suspendFinding(store, findingId, at());
+      const id = nextId(store, 'SUS');
+      const severity = findingSeveritySchema.parse(p.severity);
+      const review: CaseDetail = {
+        id,
+        type: 'suspension_review',
+        status: 'open',
+        subject: {
+          kind: 'address',
+          chain: address.chain,
+          address: address.address,
+          displayAddress: address.displayAddress,
+        },
+        chain: address.chain,
+        title: `Suspension review: ${original.title}`,
+        assignedTo: null,
+        submittedAt: at(),
+        lastActivityAt: at(),
+        slaDueAt: new Date(now().getTime() + 72 * 60 * 60 * 1000).toISOString(),
+        version: 1,
+        evidence: [],
+        notes: [],
+        history: [],
+        assessment: null,
+        submitterReason: null,
+        publicSummary: null,
+        infoRequest: null,
+        submitterMessages: [],
+        suspendedFinding: {
+          findingId,
+          revisionNumber: 1,
+          severity,
+          publicSummary: original.summary,
+          author: p.author,
+          approver: p.approver,
+          publishedAt: original.publishedAt,
+        },
+        suspendedBy: who.ref,
+        suspensionReason: parsed.data.reason,
+      };
+      store.cases.set(id, review);
+      record({
+        actor: who.ref,
+        action: 'finding_suspended',
+        caseId: id,
+        reason: parsed.data.reason,
+        changes: [{ field: `finding ${findingId}`, from: 'published', to: 'suspended' }],
+      });
+      if (severity === 'severe') {
+        const text = `${who.ref.handle} suspended severe finding ${findingId}. A non-participant must review it within 72 hours (${id}).`;
+        store.alerts.unshift({ id: `alert-${id}`, at: at(), text });
+        record({ actor: 'system', action: 'admin_alert', caseId: id, reason: text, changes: [] });
+      }
+      return ok(view(review));
     },
 
     async getProfileState(slug) {

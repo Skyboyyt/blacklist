@@ -9,6 +9,25 @@
  * grants authority: the API (Phase 7) enforces every permission.
  */
 import type {
+  AdminLabel,
+  AdminOverview,
+  Invitation,
+  InvitationCreated,
+  InvitationRequest,
+  LabelRequest,
+  MemberAccount,
+  Profile,
+  ProfileUpdate,
+  RecoveryCase,
+  ResponseRequest,
+  ResponseTarget,
+  ResponseTargetRef,
+  RoleChangeRequest,
+  RoleRequest,
+  StaffFinding,
+  StaffMember,
+  Suppression,
+  SuppressionRequest,
   AccountActionResult,
   AccountError,
   AccountSecurityResult,
@@ -208,6 +227,10 @@ export interface ModerationApi {
   ): Promise<ModerationResult<readonly FindingRevision[]>>;
   getAuditLog(caseId?: string): Promise<ModerationResult<readonly AuditEntry[]>>;
   getProfileState(slug: string): Promise<ModerationResult<ProfileState>>;
+  /** Published and suspended findings, for emergency suspension (moderation §8.3). */
+  listFindings(): Promise<ModerationResult<readonly StaffFinding[]>>;
+  /** Emergency suspension with step-up `finding.suspend`; opens a 72-hour suspension review case. */
+  suspendFinding(findingId: string, reason: string): Promise<ModerationResult<CaseDetail>>;
 }
 
 /** Result of a member submission call. */
@@ -237,6 +260,61 @@ export interface MemberApi {
   getAppealTarget(findingId: string): Promise<MemberResult<AppealTarget>>;
   /** The exact text the member would sign for signature standing (moderation §6.4). */
   getStandingChallenge(findingId: string): Promise<MemberResult<{ readonly message: string }>>;
+  /** Right-of-reply response (moderation §9): plain text, published only after safety moderation. */
+  submitResponse(request: ResponseRequest): Promise<MemberResult<{ readonly id: string }>>;
+  getResponseTarget(target: ResponseTargetRef): Promise<MemberResult<ResponseTarget>>;
+  getResponseChallenge(target: ResponseTargetRef): Promise<MemberResult<{ readonly message: string }>>;
+  /** The member's own private profile (PRD §5.3). */
+  getProfile(): Promise<MemberResult<Profile>>;
+  updateProfile(update: ProfileUpdate): Promise<MemberResult<Profile>>;
+}
+
+/**
+ * Administrator console (PRD §5.24; identity §10; ARCHITECTURE §9.4). Client components
+ * only. Privilege increases need a second administrator; consequential actions need an
+ * action-bound step-up obtained with `verifyStepUp` for the named action and target.
+ */
+export interface AdminApi {
+  verifyStepUp(action: string, targetId: string): Promise<PasskeyResult>;
+  getOverview(): Promise<ModerationResult<AdminOverview>>;
+  listStaff(): Promise<ModerationResult<readonly StaffMember[]>>;
+  listInvitations(): Promise<ModerationResult<readonly Invitation[]>>;
+  /** Step-up `staff.invite` on target `new`. */
+  createInvitation(request: InvitationRequest): Promise<ModerationResult<InvitationCreated>>;
+  /** Step-up `staff.invitation.approve`. A different administrator from the inviter. */
+  approveInvitation(id: string): Promise<ModerationResult<Invitation>>;
+  /** Step-up `staff.invitation.revoke`. */
+  revokeInvitation(id: string): Promise<ModerationResult<Invitation>>;
+  listRoleRequests(): Promise<ModerationResult<readonly RoleRequest[]>>;
+  /** Step-up `staff.role` on the target. Reductions apply at once; increases wait for a second admin. */
+  requestRoleChange(request: RoleChangeRequest): Promise<ModerationResult<readonly RoleRequest[]>>;
+  /** Step-up `staff.role.approve`. */
+  approveRoleRequest(id: string): Promise<ModerationResult<readonly RoleRequest[]>>;
+  cancelRoleRequest(id: string): Promise<ModerationResult<readonly RoleRequest[]>>;
+  /** Step-up `staff.suspend` on the target. */
+  suspendStaff(id: string, reason: string): Promise<ModerationResult<readonly StaffMember[]>>;
+  /** Step-up `staff.offboard` on the target. */
+  offboardStaff(id: string, reason: string): Promise<ModerationResult<readonly StaffMember[]>>;
+  listRecoveries(): Promise<ModerationResult<readonly RecoveryCase[]>>;
+  /** Step-up `staff.recovery.open` on the subject. */
+  openRecovery(staffId: string): Promise<ModerationResult<RecoveryCase>>;
+  verifyRecovery(id: string, method: string): Promise<ModerationResult<RecoveryCase>>;
+  /** Step-up `staff.recovery.approve`. */
+  approveRecovery(id: string): Promise<ModerationResult<RecoveryCase>>;
+  completeRecovery(id: string): Promise<ModerationResult<RecoveryCase>>;
+  listMembers(): Promise<ModerationResult<readonly MemberAccount[]>>;
+  /** Step-up `user.suspend` on the member. */
+  suspendMember(id: string, reason: string): Promise<ModerationResult<readonly MemberAccount[]>>;
+  /** Step-up `user.restore` on the member. */
+  restoreMember(id: string, reason: string): Promise<ModerationResult<readonly MemberAccount[]>>;
+  listLabels(): Promise<ModerationResult<readonly AdminLabel[]>>;
+  addLabel(request: LabelRequest): Promise<ModerationResult<readonly AdminLabel[]>>;
+  retireLabel(id: string, reason: string): Promise<ModerationResult<readonly AdminLabel[]>>;
+  listSuppressions(): Promise<ModerationResult<readonly Suppression[]>>;
+  /** Step-up `signal.suppress` on target `new`. */
+  suppressSignal(request: SuppressionRequest): Promise<ModerationResult<readonly Suppression[]>>;
+  /** Step-up `signal.suppression.lift`. */
+  liftSuppression(id: string, reason: string): Promise<ModerationResult<readonly Suppression[]>>;
 }
 
 export type PasskeyPurpose =

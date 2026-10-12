@@ -2,6 +2,7 @@
 
 import {
   CHAIN_SLUGS,
+  caseTypeSchema,
   STATUSES_BY_TYPE,
   type CaseType,
   type QueueQuery,
@@ -37,7 +38,7 @@ export function QueueFilters({ query, staffRole, lockedType, onApply }: QueueFil
       ? [lockedType]
       : staffRole === 'appeal_reviewer'
         ? ['appeal_review']
-        : ['report_review', 'appeal_review', 'correction_request', 'project_suggestion'];
+        : caseTypeSchema.options;
   const type = lockedType ?? draft.type;
   const statuses = type ? STATUSES_BY_TYPE[type] : [...new Set(types.flatMap((t) => STATUSES_BY_TYPE[t]))];
 

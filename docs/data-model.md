@@ -207,7 +207,7 @@ Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplic
 `id`, `case_ref` (appeal or response), `claimant_user_id`, `mechanism` (`signature` | `authority_signature` | `dns_txt` | `documentary`), `proof_refs` (challenge, signature, verification receipt, DNS check record, evidence item IDs), `decided_by` (null for automatic), `outcome` (`granted` | `denied`), `scope_statement`, `decided_at`.
 
 ### `subject_responses`, `appeals`, `correction_requests`
-- `subject_responses`: `id`, `subject_id`, `author_user_id`, `standing_claim_id`, `body` (≤ 5k), `status`, `published_at`.
+- `subject_responses`: `id`, `subject_id`, `author_user_id`, `standing_claim_id`, `body` (≤ 5k), `status`, `published_at`. `status` values are not yet specified; the frontend contracts use the interim set `submitted`, `in_review`, `published`, `rejected`, `withdrawn` (documentation gap, like correction statuses).
 - `appeals`: `id`, `finding_id`, `appealed_revision_id`, `appellant_user_id`, `standing_claim_id`, `statement`, `status` (`submitted` | `in_review` | `upheld` | `amended` | `reversed` | `withdrawn`), `reviewer_id`, `escalated_at`, `decision_id`, `submitted_at`, `decided_at`.
 - `correction_requests`: `id`, `requester_user_id`, `subject_id`, `finding_id`, `statement`, `status`, `decision_id`. **Open:** `status` values are not yet specified; the Phase 4 frontend uses an interim `submitted | in_review | accepted | rejected` pending a decision.
 

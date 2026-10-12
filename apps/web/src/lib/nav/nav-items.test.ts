@@ -24,13 +24,14 @@ describe('navigation', () => {
     expect(reports && isActive(reports, '/reportsx')).toBe(false);
   });
 
-  it('shows staff links by role: appeal reviewers see appeals only, audit is for administrators', () => {
+  it('shows staff links by role: appeal reviewers see appeals only, the administration console is for administrators', () => {
     const staffLinks = (role: 'moderator' | 'admin' | 'appeal_reviewer') =>
       navSectionsFor({ kind: 'signed_in', handle: 'x', role, emailVerified: true })
         .find((s) => s.id === 'staff')
         ?.items.map((i) => i.href);
     expect(staffLinks('appeal_reviewer')).toEqual(['/mod/appeals']);
-    expect(staffLinks('moderator')).not.toContain('/admin/audit');
-    expect(staffLinks('admin')).toContain('/admin/audit');
+    expect(staffLinks('moderator')).not.toContain('/admin');
+    expect(staffLinks('moderator')).toContain('/mod/findings');
+    expect(staffLinks('admin')).toContain('/admin');
   });
 });

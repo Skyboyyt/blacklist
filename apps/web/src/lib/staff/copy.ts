@@ -16,6 +16,8 @@ export const CASE_TYPE_LABEL: Readonly<Record<CaseType, string>> = {
   appeal_review: 'Appeal',
   correction_request: 'Correction',
   project_suggestion: 'Project suggestion',
+  subject_response: 'Response',
+  suspension_review: 'Suspension review',
 };
 
 export const STATUS_LABEL: Readonly<Record<string, string>> = {
@@ -34,6 +36,9 @@ export const STATUS_LABEL: Readonly<Record<string, string>> = {
   needs_information: 'Waiting for information',
   accepted_into_profile: 'Accepted into a profile',
   not_accepted: 'Not accepted',
+  published: 'Published',
+  open: 'Open',
+  reinstated: 'Reinstated',
 };
 
 export const CATEGORY_LABEL: Readonly<Record<ReportCategory, string>> = {
@@ -83,6 +88,30 @@ export const AUDIT_ACTION_LABEL: Readonly<Record<AuditEntry['action'], string>> 
   appeal_decided: 'Appeal decided',
   correction_decided: 'Correction decided',
   profile_revised: 'Project profile revised',
+  standing_decided: 'Standing decided',
+  response_decided: 'Response decided',
+  finding_suspended: 'Finding suspended',
+  finding_reinstated: 'Finding reinstated',
+  finding_reversed: 'Finding reversed',
+  admin_alert: 'Alert to all administrators',
+  staff_invitation_created: 'Staff invitation created',
+  staff_invitation_approved: 'Staff invitation approved',
+  staff_invitation_revoked: 'Staff invitation revoked',
+  staff_role_requested: 'Role change requested',
+  staff_role_approved: 'Role change approved',
+  staff_role_revoked: 'Role removed',
+  staff_suspended: 'Staff account suspended',
+  staff_offboarded: 'Staff account offboarded',
+  staff_recovery_opened: 'Staff recovery opened',
+  staff_recovery_verified: 'Staff identity verified',
+  staff_recovery_approved: 'Staff recovery approved',
+  staff_recovery_completed: 'Staff recovery completed',
+  user_suspended: 'Member suspended',
+  user_restored: 'Member restored',
+  label_added: 'Public label added',
+  label_retired: 'Public label retired',
+  signal_suppressed: 'Signal suppressed',
+  suppression_lifted: 'Suppression lifted',
 };
 
 /** Decision button labels and what each does in plain words (shown on the confirmation screen). */
@@ -165,7 +194,30 @@ export const DECISION_COPY: Readonly<
   deny_standing: {
     label: 'Deny standing',
     consequence:
-      'The appeal cannot be decided until standing is established. The appellant can reply with more documents.',
+      'The case cannot be decided until standing is established. The submitter can reply with more documents.',
+    tone: 'danger',
+  },
+  publish_response: {
+    label: 'Publish response',
+    consequence:
+      'The response is published as plain text, shown as coming from a party that proved control on the standing date. It was checked for safety (personal data, abuse, malicious links), not viewpoint.',
+    tone: 'default',
+  },
+  reject_response: {
+    label: 'Do not publish',
+    consequence: 'Nothing is published. The responder sees the selected reason.',
+    tone: 'danger',
+  },
+  reinstate_finding: {
+    label: 'Reinstate finding',
+    consequence:
+      'The suspension ends and the finding counts again. A severe finding needs a reviewer who did not author it.',
+    tone: 'default',
+  },
+  reverse_finding: {
+    label: 'Reverse finding',
+    consequence:
+      'The finding is reversed and removed from scoring. A public correction notice is shown and the history keeps the entry. A severe finding cannot be reversed by the person who suspended it.',
     tone: 'danger',
   },
 };

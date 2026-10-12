@@ -56,7 +56,8 @@ export const STAFF_NAV: NavSection = {
     { href: '/mod', label: 'Review dashboard', icon: 'shield' },
     { href: '/mod/approvals', label: 'Approvals', icon: 'shield' },
     { href: '/mod/appeals', label: 'Appeal reviews', icon: 'shield' },
-    { href: '/admin/audit', label: 'Audit history', icon: 'book' },
+    { href: '/mod/findings', label: 'Published findings', icon: 'shield' },
+    { href: '/admin', label: 'Administration', icon: 'settings', matchPrefix: '/admin' },
   ],
 };
 
@@ -70,7 +71,7 @@ function staffNavFor(viewer: Viewer): NavSection {
   if (viewer.role === 'appeal_reviewer') {
     return { ...STAFF_NAV, items: STAFF_NAV.items.filter((i) => i.href === '/mod/appeals') };
   }
-  const items = STAFF_NAV.items.filter((i) => i.href !== '/admin/audit' || viewer.role === 'admin');
+  const items = STAFF_NAV.items.filter((i) => i.href !== '/admin' || viewer.role === 'admin');
   return { ...STAFF_NAV, items };
 }
 

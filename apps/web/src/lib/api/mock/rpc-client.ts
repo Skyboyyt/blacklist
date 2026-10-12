@@ -3,8 +3,8 @@
  * posts to the mock-only route and returns the same typed result the in-process mock
  * would. A failed request throws, so pages show their error states.
  */
-import type { MemberApi, ModerationApi } from '../types';
-import { MEMBER_METHODS, MODERATION_METHODS } from './rpc-methods';
+import type { AdminApi, MemberApi, ModerationApi } from '../types';
+import { ADMIN_METHODS, MEMBER_METHODS, MODERATION_METHODS } from './rpc-methods';
 
 const ENDPOINT = '/api/mock/rpc';
 
@@ -32,6 +32,7 @@ function client<T>(service: string, methods: readonly string[]): T {
 
 export const mockModerationApi = client<ModerationApi>('moderation', MODERATION_METHODS);
 export const mockMemberApi = client<MemberApi>('member', MEMBER_METHODS);
+export const mockAdminApi = client<AdminApi>('admin', ADMIN_METHODS);
 
 /** Restarts this browser's demo session from the fixtures. */
 export async function resetMockSession(): Promise<void> {

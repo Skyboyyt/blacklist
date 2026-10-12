@@ -24,6 +24,7 @@ const assessment = {
   asOf: at,
   rulesetVersion: 'v1',
   disputeState: 'none',
+  suppressions: [],
 };
 
 const factor = {
@@ -44,7 +45,9 @@ const research = {
   assessment,
   facts: [],
   disclosures: [],
+  labels: [],
   findings: [],
+  responses: [],
   transfers: [],
   evidence: [],
   timeline: [],

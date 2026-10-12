@@ -57,9 +57,11 @@ function build(action: Action, f: Fields): unknown {
     case 'reject_report':
     case 'reject_correction':
     case 'reject_suggestion':
+    case 'reject_response':
       return { action, reason: f.reason, internalRationale: f.internalRationale };
     case 'grant_standing':
     case 'deny_standing':
+    case 'publish_response':
       return { action, internalRationale: f.internalRationale };
     case 'reject_abusive':
       return { action, internalRationale: f.internalRationale };
@@ -68,15 +70,18 @@ function build(action: Action, f: Fields): unknown {
     case 'reverse':
     case 'accept_correction':
     case 'accept_suggestion':
+    case 'reinstate_finding':
+    case 'reverse_finding':
       return { action, publicSummary: f.publicSummary, internalRationale: f.internalRationale };
   }
 }
 
+/** Which fields a decision needs, derived from what `build` sends so the two never drift apart. */
+const fieldsOf = (a: Action) => Object.keys(build(a, EMPTY) as Record<string, unknown>);
 const needs = {
-  publicSummary: (a: Action) =>
-    ['accept_report', 'uphold', 'amend', 'reverse', 'accept_correction', 'accept_suggestion'].includes(a),
-  rationale: (a: Action) => a !== 'start_review' && a !== 'request_info',
-  reason: (a: Action) => a === 'reject_report' || a === 'reject_correction' || a === 'reject_suggestion',
+  publicSummary: (a: Action) => fieldsOf(a).includes('publicSummary'),
+  rationale: (a: Action) => fieldsOf(a).includes('internalRationale'),
+  reason: (a: Action) => fieldsOf(a).includes('reason'),
 };
 
 interface DecisionPanelProps {

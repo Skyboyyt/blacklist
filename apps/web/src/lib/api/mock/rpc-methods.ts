@@ -1,9 +1,9 @@
 /**
  * The service methods the mock RPC transport carries, shared by the browser client and
  * the server allowlist. The records are keyed by the interfaces, so adding a method to
- * `ModerationApi` or `MemberApi` without listing it here fails the type check.
+ * `ModerationApi`, `MemberApi` or `AdminApi` without listing it here fails the type check.
  */
-import type { MemberApi, ModerationApi } from '../types';
+import type { AdminApi, MemberApi, ModerationApi } from '../types';
 
 const MODERATION: Readonly<Record<keyof ModerationApi, true>> = {
   getQueue: true,
@@ -17,6 +17,8 @@ const MODERATION: Readonly<Record<keyof ModerationApi, true>> = {
   rejectRevision: true,
   getAuditLog: true,
   getProfileState: true,
+  listFindings: true,
+  suspendFinding: true,
 };
 
 const MEMBER: Readonly<Record<keyof MemberApi, true>> = {
@@ -31,7 +33,43 @@ const MEMBER: Readonly<Record<keyof MemberApi, true>> = {
   listNotices: true,
   getAppealTarget: true,
   getStandingChallenge: true,
+  submitResponse: true,
+  getResponseTarget: true,
+  getResponseChallenge: true,
+  getProfile: true,
+  updateProfile: true,
+};
+
+const ADMIN: Readonly<Record<keyof AdminApi, true>> = {
+  verifyStepUp: true,
+  getOverview: true,
+  listStaff: true,
+  listInvitations: true,
+  createInvitation: true,
+  approveInvitation: true,
+  revokeInvitation: true,
+  listRoleRequests: true,
+  requestRoleChange: true,
+  approveRoleRequest: true,
+  cancelRoleRequest: true,
+  suspendStaff: true,
+  offboardStaff: true,
+  listRecoveries: true,
+  openRecovery: true,
+  verifyRecovery: true,
+  approveRecovery: true,
+  completeRecovery: true,
+  listMembers: true,
+  suspendMember: true,
+  restoreMember: true,
+  listLabels: true,
+  addLabel: true,
+  retireLabel: true,
+  listSuppressions: true,
+  suppressSignal: true,
+  liftSuppression: true,
 };
 
 export const MODERATION_METHODS = Object.keys(MODERATION) as readonly (keyof ModerationApi)[];
 export const MEMBER_METHODS = Object.keys(MEMBER) as readonly (keyof MemberApi)[];
+export const ADMIN_METHODS = Object.keys(ADMIN) as readonly (keyof AdminApi)[];

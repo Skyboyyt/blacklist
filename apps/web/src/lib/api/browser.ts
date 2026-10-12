@@ -1,5 +1,6 @@
 import {
   notConnectedAccountApi,
+  notConnectedAdminApi,
   notConnectedAuthApi,
   notConnectedHumanVerifier,
   notConnectedMemberApi,
@@ -8,6 +9,7 @@ import {
 } from './not-connected';
 import type {
   AccountApi,
+  AdminApi,
   AuthApi,
   HumanVerifierClient,
   MemberApi,
@@ -67,6 +69,15 @@ export async function getMemberApi(): Promise<MemberApi> {
     return mockMemberApi;
   }
   return notConnectedMemberApi;
+}
+
+/** The administrator console (mock in development; not connected otherwise). */
+export async function getAdminApi(): Promise<AdminApi> {
+  if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
+    const { mockAdminApi } = await import('blacklist-mock-api');
+    return mockAdminApi;
+  }
+  return notConnectedAdminApi;
 }
 
 /** Restarts the demo data for this browser (mock builds only; does nothing otherwise). */

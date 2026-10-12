@@ -133,12 +133,23 @@ export const correctionRequestSchema = z
   });
 export type CorrectionRequest = z.infer<typeof correctionRequestSchema>;
 
+/** On-chain authority roles for authority-signature standing (moderation §6.2 #2). */
+export const AUTHORITY_ROLES = ['owner', 'admin', 'upgrade_authority', 'mint_authority', 'deployer'] as const;
+export const authorityRoleSchema = z.enum(AUTHORITY_ROLES);
+export type AuthorityRole = z.infer<typeof authorityRoleSchema>;
+
 /**
- * Standing proof for an appeal (moderation §6.2). In the frontend phases signature and
- * DNS checks are SIMULATED and labelled as such; documentary standing goes to staff.
+ * Standing proof for an appeal or response (moderation §6.2). In the frontend phases
+ * signature, authority-signature and DNS checks are SIMULATED and labelled as such;
+ * documentary standing goes to staff.
  */
 export const standingProofSchema = z.discriminatedUnion('mechanism', [
   z.strictObject({ mechanism: z.literal('signature'), simulated: z.literal(true) }),
+  z.strictObject({
+    mechanism: z.literal('authority_signature'),
+    authorityRole: authorityRoleSchema,
+    simulated: z.literal(true),
+  }),
   z.strictObject({ mechanism: z.literal('dns_txt'), domain: hostnameSchema, simulated: z.literal(true) }),
   z.strictObject({
     mechanism: z.literal('documentary'),
@@ -159,13 +170,33 @@ export const appealRequestSchema = z.strictObject({
 });
 export type AppealRequest = z.infer<typeof appealRequestSchema>;
 
+/** The subject a right-of-reply response is about (moderation §9 "Responses"). */
+export const responseTargetRefSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('address'), chain: chainSlugSchema, address: z.string().trim().min(1) }),
+  z.strictObject({ kind: z.literal('project'), slug: projectSlugSchema }),
+]);
+export type ResponseTargetRef = z.infer<typeof responseTargetRefSchema>;
+
+export const responseRequestSchema = z.strictObject({
+  target: responseTargetRefSchema,
+  body: z.string().trim().min(20, 'Write at least 20 characters.').max(5000, 'Use at most 5,000 characters.'),
+  standing: standingProofSchema,
+});
+export type ResponseRequest = z.infer<typeof responseRequestSchema>;
+
 export const infoResponseSchema = z.strictObject({
   message: z.string().trim().min(10, 'Write at least 10 characters.').max(5000),
   evidence: evidenceFilesSchema,
 });
 export type InfoResponse = z.infer<typeof infoResponseSchema>;
 
-export const submissionKindSchema = z.enum(['report', 'project_suggestion', 'correction', 'appeal']);
+export const submissionKindSchema = z.enum([
+  'report',
+  'project_suggestion',
+  'correction',
+  'appeal',
+  'response',
+]);
 export type SubmissionKind = z.infer<typeof submissionKindSchema>;
 
 /** The member's own submission, as they see it. */
@@ -219,6 +250,8 @@ export const memberErrorSchema = z.discriminatedUnion('code', [
   z.strictObject({ code: z.literal('conflict'), detail: z.string() }),
   z.strictObject({ code: z.literal('invalid_transition'), detail: z.string() }),
   z.strictObject({ code: z.literal('temporarily_unavailable') }),
+  /** An administrator suspended the account; nothing can be submitted. */
+  z.strictObject({ code: z.literal('account_suspended') }),
 ]);
 export type MemberError = z.infer<typeof memberErrorSchema>;
 
@@ -228,8 +261,22 @@ export const appealTargetSchema = z.strictObject({
   title: z.string(),
   summary: z.string(),
   subject: z.strictObject({ chain: chainSlugSchema, address: z.string() }),
+  /** Decides which standing mechanisms fit (authority signatures are for contracts and tokens). */
+  subjectKind: z.enum(['wallet', 'contract', 'token', 'unknown']),
   disputeState: z.enum(['none', 'under_appeal', 'suspended_pending_review']),
   /** The signed-in member already has an open appeal against it. */
   alreadyAppealed: z.boolean(),
 });
 export type AppealTarget = z.infer<typeof appealTargetSchema>;
+
+/** What a responder sees before writing a response. */
+export const responseTargetSchema = z.strictObject({
+  target: responseTargetRefSchema,
+  title: z.string(),
+  subjectKind: z.enum(['wallet', 'contract', 'token', 'unknown', 'project']),
+  /** Official domains, for DNS standing on project subjects. */
+  domains: z.array(z.string()),
+  /** The signed-in member already has a response under review for this subject. */
+  alreadyResponding: z.boolean(),
+});
+export type ResponseTarget = z.infer<typeof responseTargetSchema>;

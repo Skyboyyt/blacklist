@@ -51,8 +51,10 @@ function facts(prefix: string, firstSeen: string, txCount: string, kind: string)
   ];
 }
 
-function assessment(partial: Omit<PublicAssessment, 'asOf' | 'rulesetVersion'>): PublicAssessment {
-  return { ...partial, asOf: FIXED_NOW, rulesetVersion: RULESET };
+function assessment(
+  partial: Omit<PublicAssessment, 'asOf' | 'rulesetVersion' | 'suppressions'>,
+): PublicAssessment {
+  return { ...partial, asOf: FIXED_NOW, rulesetVersion: RULESET, suppressions: [] };
 }
 
 function disclosure(
@@ -87,7 +89,9 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
     }),
     facts: facts('na', '—', 'Unknown', 'Wallet (externally owned)'),
     disclosures: [],
+    labels: [],
     findings: [],
+    responses: [],
     transfers: [],
     evidence: [],
     timeline: [],
@@ -108,7 +112,9 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
     }),
     facts: facts('low', '14 Mar 2024', '312', 'Wallet (externally owned)'),
     disclosures: [],
+    labels: [],
     findings: [],
+    responses: [],
     transfers: [
       {
         id: 'low-t1',
@@ -195,7 +201,9 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
         'external_source',
       ),
     ],
+    labels: [],
     findings: [],
+    responses: [],
     transfers: [],
     evidence: [],
     timeline: [],
@@ -227,6 +235,7 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
     }),
     facts: facts('high', '30 Aug 2026', '58', 'Wallet (externally owned)'),
     disclosures: [],
+    labels: [],
     findings: [
       {
         id: 'demo-finding-301',
@@ -238,6 +247,7 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
         disputeState: 'none',
       },
     ],
+    responses: [],
     transfers: [
       {
         id: 'high-t1',
@@ -312,6 +322,7 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
     }),
     facts: facts('sev', '10 Sep 2026', '4,881', 'Smart contract'),
     disclosures: [],
+    labels: [],
     findings: [
       {
         id: 'demo-finding-401',
@@ -322,6 +333,7 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
         disputeState: 'under_appeal',
       },
     ],
+    responses: [],
     transfers: [],
     evidence: [
       { id: 'ev-401-1', kind: 'image', caption: 'Redacted phishing page screenshot', status: 'available' },
@@ -360,6 +372,7 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
     }),
     facts: facts('sus', '1 Jun 2025', '96', 'Wallet (externally owned)'),
     disclosures: [],
+    labels: [],
     findings: [
       {
         id: 'demo-finding-501',
@@ -370,6 +383,7 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
         disputeState: 'suspended_pending_review',
       },
     ],
+    responses: [],
     transfers: [],
     evidence: [],
     timeline: [
@@ -422,7 +436,9 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
         'The mint authority can still create new tokens.',
       ),
     ],
+    labels: [],
     findings: [],
+    responses: [],
     transfers: [],
     evidence: [],
     timeline: [],
@@ -443,7 +459,9 @@ export const ADDRESS_FIXTURES: AddressResearch[] = [
     }),
     facts: facts('solw', '5 Jan 2025', '1,045', 'Wallet'),
     disclosures: [],
+    labels: [],
     findings: [],
+    responses: [],
     transfers: [
       {
         id: 'solw-t1',

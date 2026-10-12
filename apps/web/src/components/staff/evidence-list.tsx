@@ -11,6 +11,7 @@ const SUBMITTER = {
   reporter: 'Reporter',
   appellant: 'Appellant',
   requester: 'Requester',
+  responder: 'Responder',
   staff: 'Staff',
 } as const;
 const VERIFICATION = {

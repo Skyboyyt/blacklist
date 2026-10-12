@@ -16,6 +16,17 @@ export type StaffPermission =
   | 'finding:approve_severe'
   | 'appeal:decide'
   | 'standing:decide'
+  | 'finding:suspend'
+  | 'response:moderate'
+  | 'staff:invite'
+  | 'staff:role:request'
+  | 'staff:role:approve'
+  | 'staff:suspend'
+  | 'staff:recovery'
+  | 'staff:offboard'
+  | 'user:suspend'
+  | 'label:manage'
+  | 'signal:suppress'
   | 'correction:decide'
   | 'evidence:read_derivative'
   | 'project:manage'
@@ -31,6 +42,8 @@ const MODERATOR: readonly StaffPermission[] = [
   'finding:approve_severe',
   'appeal:decide',
   'standing:decide',
+  'finding:suspend',
+  'response:moderate',
   'correction:decide',
   'evidence:read_derivative',
 ];
@@ -44,7 +57,20 @@ export const ROLE_PERMISSIONS: Readonly<Record<StaffRole, readonly StaffPermissi
     'appeal:decide',
     'evidence:read_derivative',
   ],
-  admin: [...MODERATOR, 'project:manage', 'audit:read'],
+  admin: [
+    ...MODERATOR,
+    'staff:invite',
+    'staff:role:request',
+    'staff:role:approve',
+    'staff:suspend',
+    'staff:recovery',
+    'staff:offboard',
+    'user:suspend',
+    'project:manage',
+    'label:manage',
+    'signal:suppress',
+    'audit:read',
+  ],
 };
 
 export function hasPermission(role: StaffRole | null, permission: StaffPermission): boolean {

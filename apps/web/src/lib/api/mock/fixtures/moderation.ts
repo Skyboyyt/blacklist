@@ -14,6 +14,7 @@ export const STAFF = {
   moderatorB: { id: 'stf_mod_b', handle: 'demo_moderator_b' },
   appealReviewer: { id: 'stf_appeal', handle: 'demo_appeal_reviewer' },
   admin: { id: 'stf_admin', handle: 'demo_admin' },
+  adminB: { id: 'stf_admin_b', handle: 'demo_admin_b' },
 } as const satisfies Record<string, StaffRef>;
 
 /**

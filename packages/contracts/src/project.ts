@@ -17,7 +17,12 @@
  */
 import { z } from './zod.ts';
 import { chainSlugSchema, disputeStateSchema, isoDateTimeSchema } from './common.ts';
-import { disclosureSchema, findingSummarySchema, publicAssessmentSchema } from './research.ts';
+import {
+  disclosureSchema,
+  findingSummarySchema,
+  publicAssessmentSchema,
+  subjectResponseSchema,
+} from './research.ts';
 
 export const PROJECT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const projectSlugSchema = z.string().min(2).max(64).regex(PROJECT_SLUG_PATTERN);
@@ -89,12 +94,7 @@ export const officialDomainSchema = z.strictObject({
 export type OfficialDomain = z.infer<typeof officialDomainSchema>;
 
 /** A published response from the subject, with the standing mechanism that admitted it (moderation §6). */
-export const projectResponseSchema = z.strictObject({
-  id: z.string(),
-  summary: z.string().max(1000),
-  standing: z.enum(['wallet_signature', 'authority_signature', 'dns_txt', 'documentary']),
-  publishedAt: isoDateTimeSchema,
-});
+export const projectResponseSchema = subjectResponseSchema;
 export type ProjectResponse = z.infer<typeof projectResponseSchema>;
 
 /** Public project history (PRD §5.17). Reports, drafts and moderation-internal events have no kind. */

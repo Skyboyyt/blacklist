@@ -9,7 +9,10 @@ export const MOCK_COOKIES = {
   passkey: 'bl_mock_passkey',
 } as const;
 
-/** `moderator_b` is a second moderator, so independence rules can be demonstrated. */
+/**
+ * `moderator_b` is a second moderator, so independence rules can be demonstrated;
+ * `admin_b` is a second administrator, for the two-person rules (identity §10.4, §10.8).
+ */
 export const MOCK_VIEWERS = [
   'anonymous',
   'member',
@@ -17,9 +20,16 @@ export const MOCK_VIEWERS = [
   'moderator_b',
   'appeal_reviewer',
   'admin',
+  'admin_b',
 ] as const;
 export type MockViewerKey = (typeof MOCK_VIEWERS)[number];
-export const MOCK_STAFF_VIEWERS = ['moderator', 'moderator_b', 'appeal_reviewer', 'admin'] as const;
+export const MOCK_STAFF_VIEWERS = [
+  'moderator',
+  'moderator_b',
+  'appeal_reviewer',
+  'admin',
+  'admin_b',
+] as const;
 
 export function isMockStaffViewer(key: MockViewerKey): key is (typeof MOCK_STAFF_VIEWERS)[number] {
   return (MOCK_STAFF_VIEWERS as readonly string[]).includes(key);

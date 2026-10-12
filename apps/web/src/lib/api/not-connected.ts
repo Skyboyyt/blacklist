@@ -6,6 +6,7 @@
 import {
   ApiNotConnectedError,
   type AccountApi,
+  type AdminApi,
   type AuthApi,
   type HumanVerifierClient,
   type MemberApi,
@@ -82,6 +83,39 @@ export const notConnectedModerationApi: ModerationApi = {
   rejectRevision: moderationUnavailable,
   getAuditLog: moderationUnavailable,
   getProfileState: moderationUnavailable,
+  listFindings: moderationUnavailable,
+  suspendFinding: moderationUnavailable,
+};
+
+/** The administrator console needs the API (Phase 7+). Step-ups never succeed. */
+export const notConnectedAdminApi: AdminApi = {
+  verifyStepUp: () => Promise.resolve({ kind: 'failed' }),
+  getOverview: moderationUnavailable,
+  listStaff: moderationUnavailable,
+  listInvitations: moderationUnavailable,
+  createInvitation: moderationUnavailable,
+  approveInvitation: moderationUnavailable,
+  revokeInvitation: moderationUnavailable,
+  listRoleRequests: moderationUnavailable,
+  requestRoleChange: moderationUnavailable,
+  approveRoleRequest: moderationUnavailable,
+  cancelRoleRequest: moderationUnavailable,
+  suspendStaff: moderationUnavailable,
+  offboardStaff: moderationUnavailable,
+  listRecoveries: moderationUnavailable,
+  openRecovery: moderationUnavailable,
+  verifyRecovery: moderationUnavailable,
+  approveRecovery: moderationUnavailable,
+  completeRecovery: moderationUnavailable,
+  listMembers: moderationUnavailable,
+  suspendMember: moderationUnavailable,
+  restoreMember: moderationUnavailable,
+  listLabels: moderationUnavailable,
+  addLabel: moderationUnavailable,
+  retireLabel: moderationUnavailable,
+  listSuppressions: moderationUnavailable,
+  suppressSignal: moderationUnavailable,
+  liftSuppression: moderationUnavailable,
 };
 
 const memberUnavailable = () =>
@@ -100,4 +134,9 @@ export const notConnectedMemberApi: MemberApi = {
   listNotices: memberUnavailable,
   getAppealTarget: memberUnavailable,
   getStandingChallenge: memberUnavailable,
+  submitResponse: memberUnavailable,
+  getResponseTarget: memberUnavailable,
+  getResponseChallenge: memberUnavailable,
+  getProfile: memberUnavailable,
+  updateProfile: memberUnavailable,
 };
