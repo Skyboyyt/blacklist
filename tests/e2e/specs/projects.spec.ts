@@ -88,7 +88,7 @@ test.describe('project detail (mock)', () => {
     await page.getByLabel('Password', { exact: true }).fill('a long enough passphrase');
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page).toHaveURL(/\/project\/demoswap$/);
-    await expect(page.getByRole('link', { name: 'Respond, correct or appeal' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Propose a correction' })).toBeVisible();
   });
 
   test('has no horizontal page overflow on small screens', async ({ page }) => {

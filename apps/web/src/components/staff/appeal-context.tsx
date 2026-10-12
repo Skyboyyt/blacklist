@@ -47,8 +47,17 @@ export function AppealContext({ appeal }: { readonly appeal: Appeal }) {
         </h3>
         <p className="text-sm whitespace-pre-wrap text-text">{appeal.grounds}</p>
         <p className="text-xs text-muted">
-          Standing: {MECHANISM[appeal.standing.mechanism]}, {appeal.standing.outcome}.{' '}
-          {appeal.standing.scopeStatement}
+          Standing: {MECHANISM[appeal.standing.mechanism]},{' '}
+          <span
+            className={
+              appeal.standing.outcome === 'pending' ? 'font-medium text-warning' : 'font-medium text-text'
+            }
+          >
+            {appeal.standing.outcome === 'pending'
+              ? 'waiting for a standing decision'
+              : appeal.standing.outcome}
+          </span>
+          . {appeal.standing.scopeStatement}
         </p>
       </section>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import type { CaseDecision, CaseDetail, StaffRole } from '@blacklist/contracts';
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FormAlert, type FormAlertState } from '@/components/auth/form-alert';
 import { ChainBadge } from '@/components/app/chain-badge';
@@ -208,6 +209,76 @@ export function CaseWorkspace({ caseId, staffRole, myHandle }: CaseWorkspaceProp
               Current public profile: revision {profile.revision}. Official domains:{' '}
               {profile.domains.length > 0 ? profile.domains.join(', ') : 'none'}.
             </p>
+          ) : null}
+        </DataCard>
+      ) : null}
+
+      {d.type === 'project_suggestion' ? (
+        <DataCard
+          id="suggestion"
+          title={`Project suggestion from ${d.submitterRef}`}
+          description="Private (ADR 0010 Part A). Submitting a suggestion proves nothing about ownership."
+        >
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-medium text-muted">Name and category</dt>
+              <dd className="text-text">
+                {d.proposal.name} · {d.proposal.category}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-muted">Network and contract or mint</dt>
+              <dd className="flex flex-col gap-1">
+                <ChainBadge chain={d.proposal.chain} />
+                <CopyableValue value={d.proposal.identifier} kind="address" full />
+              </dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium text-muted">Official links (defanged text; never opened)</dt>
+              <dd className="identifier break-all text-text">{d.proposal.links.join(' · ')}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium text-muted">Description</dt>
+              <dd className="whitespace-pre-wrap text-text">{d.proposal.description}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium text-muted">Stated connection to the project</dt>
+              <dd className="whitespace-pre-wrap text-text">{d.proposal.relationship}</dd>
+            </div>
+          </dl>
+          {d.resultingSlug ? (
+            <p className="mt-3 text-sm">
+              Published as{' '}
+              <Link href={`/project/${d.resultingSlug}`} className="font-medium text-accent hover:underline">
+                /project/{d.resultingSlug}
+              </Link>
+            </p>
+          ) : null}
+        </DataCard>
+      ) : null}
+
+      {d.infoRequest || d.submitterMessages.length > 0 ? (
+        <DataCard
+          id="messages"
+          title="Information requests and replies"
+          description="Shared with the submitter."
+        >
+          {d.infoRequest ? (
+            <Notice tone="info" title="Waiting for the submitter">
+              {d.infoRequest}
+            </Notice>
+          ) : null}
+          {d.submitterMessages.length > 0 ? (
+            <ul className="mt-3 flex flex-col gap-2">
+              {d.submitterMessages.map((m) => (
+                <li key={m.at} className="rounded-md border border-border p-3 text-sm">
+                  <p className="whitespace-pre-wrap text-text">{m.text}</p>
+                  <p className="mt-1 text-xs text-muted">
+                    Submitter replied <time dateTime={m.at}>{formatDateTimeUtc(m.at)}</time>
+                  </p>
+                </li>
+              ))}
+            </ul>
           ) : null}
         </DataCard>
       ) : null}

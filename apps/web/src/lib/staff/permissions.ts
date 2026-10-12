@@ -15,6 +15,7 @@ export type StaffPermission =
   | 'finding:publish'
   | 'finding:approve_severe'
   | 'appeal:decide'
+  | 'standing:decide'
   | 'correction:decide'
   | 'evidence:read_derivative'
   | 'project:manage'
@@ -29,6 +30,7 @@ const MODERATOR: readonly StaffPermission[] = [
   'finding:publish',
   'finding:approve_severe',
   'appeal:decide',
+  'standing:decide',
   'correction:decide',
   'evidence:read_derivative',
 ];

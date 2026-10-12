@@ -11,6 +11,8 @@ import {
   TOKEN_PAGE_PREFIXES,
 } from './lib/security/csp';
 
+const MOCK_SESSION_COOKIE = 'bl_mock_session';
+
 export function proxy(request: NextRequest) {
   // Malformed percent-encoding: answer 400 instead of letting route decoding fail with a 500.
   try {
@@ -33,8 +35,21 @@ export function proxy(request: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
 
+  // Mock builds only: give each browser its own demo-data session (not authentication).
+  const mockSession =
+    process.env.NEXT_PUBLIC_API_MODE === 'mock' && !request.cookies.has(MOCK_SESSION_COOKIE)
+      ? crypto.randomUUID()
+      : null;
+  if (mockSession) {
+    const existing = requestHeaders.get('cookie');
+    requestHeaders.set('cookie', `${existing ? `${existing}; ` : ''}${MOCK_SESSION_COOKIE}=${mockSession}`);
+  }
+
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', csp);
+  if (mockSession) {
+    response.cookies.set(MOCK_SESSION_COOKIE, mockSession, { httpOnly: true, sameSite: 'lax', path: '/' });
+  }
 
   const path = request.nextUrl.pathname;
   // Token pages: never leak the URL (the token itself is in the fragment) via Referer.

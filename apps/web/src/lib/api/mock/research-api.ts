@@ -23,11 +23,12 @@ import { EVM } from './fixtures/ids';
 import { PROJECT_ADDRESS_FIXTURES } from './fixtures/projects';
 import { TRANSACTION_FIXTURES } from './fixtures/transactions';
 import { createProjectCatalog } from './project-api';
+import { createStore, sessionIdFrom, storeFor, type MockStore } from './store';
 
-const addresses = addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]);
+// Fixtures are validated against the public contracts when the mock loads (fail fast).
+addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]);
 const transactions = transactionResearchSchema.array().parse(TRANSACTION_FIXTURES);
 const dashboard = dashboardSchema.parse(DASHBOARD_FIXTURE);
-const projects = createProjectCatalog(addresses);
 
 export interface MockOptions {
   /** Value of the mock viewer cookie: anonymous | member | moderator | admin. Defaults to member. */
@@ -36,6 +37,10 @@ export interface MockOptions {
   readonly scenario?: string | undefined;
   /** Simulated latency so loading states are visible in development. */
   readonly latencyMs?: number;
+  /** Shared demo store; a fresh one from the fixtures when omitted (unit tests). */
+  readonly store?: MockStore;
+  /** Demo session id (cookie value); selects the shared store when `store` is omitted. */
+  readonly sessionId?: string | undefined;
 }
 
 const DEFAULT_LATENCY_MS = 350;
@@ -45,7 +50,11 @@ function delay(ms: number): Promise<void> {
   return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
 }
 
-function findAddress(chain: string, address: string): AddressResearch | undefined {
+function findAddress(
+  addresses: readonly AddressResearch[],
+  chain: string,
+  address: string,
+): AddressResearch | undefined {
   const canonical = chain === 'ethereum' ? address.toLowerCase() : address;
   return addresses.find((a) => a.chain === chain && a.address === canonical);
 }
@@ -73,7 +82,11 @@ function wrongNetwork(chain: 'ethereum' | 'solana', what: string): SearchRespons
   return { kind: 'invalid_identifier', reason: `This is not a valid ${NETWORK_NAMES[chain]} ${what}.` };
 }
 
-function mockSearch(query: string, chain?: 'ethereum' | 'solana'): SearchResponse {
+function mockSearch(
+  addresses: readonly AddressResearch[],
+  query: string,
+  chain?: 'ethereum' | 'solana',
+): SearchResponse {
   const c = classifyInput(query);
   switch (c.kind) {
     case 'empty':
@@ -85,7 +98,7 @@ function mockSearch(query: string, chain?: 'ethereum' | 'solana'): SearchRespons
       if (chain) {
         // The user chose a network: look the value up there only (Solana keeps its case).
         const value = chain === 'ethereum' ? `0x${query.trim().toLowerCase()}` : query.trim();
-        const found = findAddress(chain, value);
+        const found = findAddress(addresses, chain, value);
         return found ? { kind: 'results', hits: [addressHit(found)] } : { kind: 'not_found' };
       }
       const value = query.trim();
@@ -106,7 +119,7 @@ function mockSearch(query: string, chain?: 'ethereum' | 'solana'): SearchRespons
       if (c.normalized === EVM.providerUnavailable) return UNAVAILABLE;
       if (c.normalized === EVM.error) throw new Error('Mock failure for the error-state fixture.');
       const hits = (chain ? [chain] : c.chains)
-        .map((ch) => findAddress(ch, c.normalized))
+        .map((ch) => findAddress(addresses, ch, c.normalized))
         .filter((a): a is AddressResearch => a !== undefined)
         .map(addressHit);
       return hits.length > 0 ? { kind: 'results', hits } : { kind: 'not_found' };
@@ -134,6 +147,12 @@ function mockSearch(query: string, chain?: 'ethereum' | 'solana'): SearchRespons
 
 export function createMockResearchApi(options: MockOptions = {}): ResearchApi {
   const latency = options.latencyMs ?? DEFAULT_LATENCY_MS;
+  const store =
+    options.store ??
+    (options.sessionId !== undefined
+      ? storeFor(sessionIdFrom(`bl_mock_session=${options.sessionId}`))
+      : createStore());
+  const projects = createProjectCatalog(store);
   const viewerKey = options.viewer;
   const viewer: Viewer =
     options.scenario === 'session_expired'
@@ -148,7 +167,7 @@ export function createMockResearchApi(options: MockOptions = {}): ResearchApi {
     },
     async search(request) {
       await delay(latency);
-      return searchResponseSchema.parse(mockSearch(request.query, request.chain));
+      return searchResponseSchema.parse(mockSearch(store.addresses, request.query, request.chain));
     },
     async getAddressResearch(chain, address): Promise<ResearchResult<AddressResearch>> {
       await delay(latency);
@@ -161,8 +180,8 @@ export function createMockResearchApi(options: MockOptions = {}): ResearchApi {
       }
       if (c.normalized === EVM.providerUnavailable) return UNAVAILABLE;
       if (c.normalized === EVM.error) throw new Error('Mock failure for the error-state fixture.');
-      const found = findAddress(chain, c.normalized);
-      return found ? { kind: 'found', data: found } : { kind: 'not_found' };
+      const found = findAddress(store.addresses, chain, c.normalized);
+      return found ? { kind: 'found', data: structuredClone(found) } : { kind: 'not_found' };
     },
     async getTransactionResearch(chain, hash): Promise<ResearchResult<TransactionResearch>> {
       await delay(latency);
@@ -178,7 +197,30 @@ export function createMockResearchApi(options: MockOptions = {}): ResearchApi {
     },
     async getDashboard() {
       await delay(latency);
-      return dashboard;
+      if (viewer.kind !== 'signed_in') return dashboard;
+      const handle = viewer.handle;
+      const memberStatus = (status: string) =>
+        ['submitted', 'screening', 'queued'].includes(status)
+          ? ('submitted' as const)
+          : status === 'in_review'
+            ? ('in_review' as const)
+            : status === 'needs_info'
+              ? ('needs_information' as const)
+              : ('closed' as const);
+      const myReports = [...store.cases.values()]
+        .filter((c) => c.type === 'report_review' && store.owners.get(c.id) === handle)
+        .sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt))
+        .map((c) => ({
+          id: c.id,
+          title: c.title,
+          status: memberStatus(c.status),
+          submittedAt: c.submittedAt,
+          updatedAt: c.lastActivityAt,
+        }));
+      const notices = store.notices
+        .filter((n) => n.handle === handle)
+        .map((n) => ({ id: n.id, text: n.text, at: n.at }));
+      return dashboardSchema.parse({ recentSearches: dashboard.recentSearches, myReports, notices });
     },
     async listProjects(request) {
       await delay(latency);

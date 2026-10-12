@@ -16,6 +16,44 @@ export const STAFF = {
   admin: { id: 'stf_admin', handle: 'demo_admin' },
 } as const satisfies Record<string, StaffRef>;
 
+/**
+ * Which demo member submitted which fixture case. `demo_member` (the default mock
+ * viewer) owns a report waiting for information and a rejected correction, so the
+ * member journeys start with something to act on. Other submitters are synthetic.
+ */
+export const CASE_OWNERS: Readonly<Record<string, string>> = {
+  'RPT-1003': 'demo_member',
+  'COR-3003': 'demo_member',
+};
+
+/** Who authored and approved the fixture findings that appeals can target. */
+export const FINDING_PARTICIPANTS: Readonly<
+  Record<string, { author: StaffRef; approver: StaffRef; severity: 'high' | 'severe' }>
+> = {
+  'demo-finding-401': {
+    author: { id: 'stf_mod_a', handle: 'demo_moderator' },
+    approver: { id: 'stf_mod_b', handle: 'demo_moderator_b' },
+    severity: 'severe',
+  },
+  'demo-finding-301': {
+    author: { id: 'stf_mod_b', handle: 'demo_moderator_b' },
+    approver: { id: 'stf_mod_b', handle: 'demo_moderator_b' },
+    severity: 'high',
+  },
+  /** Suspended pending review: it has no factor while suspended. */
+  'demo-finding-501': {
+    author: { id: 'stf_mod_b', handle: 'demo_moderator_b' },
+    approver: { id: 'stf_mod_b', handle: 'demo_moderator_b' },
+    severity: 'high',
+  },
+};
+
+/** Published findings and the risk factor each one contributes (address fixtures). */
+export const FINDING_FACTORS: Readonly<Record<string, string>> = {
+  'demo-finding-401': 'sev-r1',
+  'demo-finding-301': 'high-r1',
+};
+
 /** This case simulates another reviewer changing it just before your first action. */
 export const CONFLICT_CASE_ID = 'RPT-1007';
 /** Queue search text that makes the mock fail, to show the error state. */
@@ -56,11 +94,16 @@ function created(caseId: string, at: string): AuditEntry {
   };
 }
 
-const base: Pick<CaseDetail, 'notes' | 'assessment' | 'submitterReason' | 'publicSummary'> = {
+const base: Pick<
+  CaseDetail,
+  'notes' | 'assessment' | 'submitterReason' | 'publicSummary' | 'infoRequest' | 'submitterMessages'
+> = {
   notes: [],
   assessment: null,
   submitterReason: null,
   publicSummary: null,
+  infoRequest: null,
+  submitterMessages: [],
 };
 
 export const CASE_FIXTURES: readonly CaseDetail[] = [
@@ -176,6 +219,8 @@ export const CASE_FIXTURES: readonly CaseDetail[] = [
     slaDueAt: '2026-09-30T11:00:00Z',
     version: 4,
     reporterRef: 'Reporter R-5532',
+    infoRequest:
+      'Please add the transaction hash of your purchase so we can confirm which token you received.',
     narrative:
       'I bought this thinking it was the official stablecoin. The reporter attached a file they saved from a website.',
     evidence: [

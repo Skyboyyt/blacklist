@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | **Proposed** (must not be implemented) |
+| Status | **Part A Accepted** (owner, 2026-10-12; implemented on mocks in Phase 5). **Part B Proposed** (Post-V1; must not be implemented) |
 | Proposed by | Claude, 2026-10-12, at the owner's request during Phase 3 planning |
 | Reviewed by | Claude recommendation below; Codex review pending |
-| Decided by | Pending (project owner) |
+| Decided by | Project owner, 2026-10-12 (Part A only) |
 | Affects | PRD §4.1, §4.2, §4.4, §5.10, §5.12, §5.16, §5.18; ARCHITECTURE §12, §14, §36; data model (`projects`, deferred `project_claims`, `verification_checks`, `verified_claims`); moderation design §6 (standing); THREAT-MODEL (impersonation, false legitimacy, evidence abuse) |
 
 ## Problem
@@ -58,4 +58,4 @@ Part A adds contracts (`projectSuggestion`, submitter-private status DTOs), new 
 
 ## Decision (owner)
 
-Pending.
+**2026-10-12: Part A accepted** as recommended (private project suggestions and representative update proposals, statuses `submitted`, `needs_information`, `accepted_into_profile`, `not_accepted`, visible only to the submitter; image-only evidence; standing per moderation §6 for update proposals). Built on mocks in Phase 5; server enforcement, storage and the moderation queue backend follow in Phases 7–9. **Part B stays Proposed (Post-V1).** PRD §4.4 and ARCHITECTURE are updated accordingly.

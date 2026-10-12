@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { ModerationApi, ModerationResult } from '../types';
 import { ADDRESS_FIXTURES } from './fixtures/addresses';
 import { CASE_FIXTURES } from './fixtures/moderation';
-import { PROJECT_ADDRESS_FIXTURES } from './fixtures/projects';
+import { PROJECT_ADDRESS_FIXTURES, PROJECT_FIXTURES } from './fixtures/projects';
 import { createMockModerationApi, stepUpActionFor } from './moderation-api';
 import { applyCorrection } from './profile-corrections';
 import { createProjectCatalog } from './project-api';
@@ -93,6 +93,7 @@ describe('queue', () => {
       needsInfo: 1,
       openAppeals: 2,
       openCorrections: 2,
+      openSuggestions: 0,
       unassigned: 5,
       pendingApprovals: 3,
     });
@@ -336,9 +337,10 @@ describe('privacy: internal notes stay staff-only', () => {
       action: 'reject_abusive',
       internalRationale: 'INTERNAL-ONLY rationale text.',
     });
-    const publicDetails = createProjectCatalog(
-      addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
-    ).details;
+    const publicDetails = createProjectCatalog({
+      addresses: addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
+      projects: PROJECT_FIXTURES,
+    }).details;
     const text = JSON.stringify(publicDetails) + JSON.stringify(ADDRESS_FIXTURES);
     for (const c of CASE_FIXTURES) {
       for (const note of c.notes) expect(text).not.toContain(note.text);

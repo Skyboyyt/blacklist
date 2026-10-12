@@ -7,4 +7,5 @@ export * from './project.ts';
 export * from './research.ts';
 export * from './search.ts';
 export * from './session.ts';
+export * from './submissions.ts';
 export * from './staff.ts';

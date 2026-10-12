@@ -13,9 +13,12 @@ import type {
   AccountError,
   AccountSecurityResult,
   AddressResearch,
+  AppealRequest,
+  AppealTarget,
   AuditEntry,
   CaseDecision,
   CaseDetail,
+  CorrectionRequest,
   ChainSlugDto,
   Dashboard,
   EmailAcceptedOutcome,
@@ -25,8 +28,13 @@ import type {
   EnrollmentStartResult,
   FindingRevision,
   ForgotPasswordRequest,
+  InfoResponse,
   LoginOutcome,
   LoginRequest,
+  MemberError,
+  MemberNotice,
+  MemberSubmissionDetail,
+  MemberSubmissionSummary,
   ModerationError,
   PasskeyResult,
   PasswordChangeForm,
@@ -38,12 +46,14 @@ import type {
   ReauthRequest,
   RegisterCompleteForm,
   RegisterStartRequest,
+  ReportRequest,
   ResetPasswordForm,
   ResetPasswordOutcome,
   SearchRequest,
   SearchResponse,
   StaffRecoveryStatus,
   StaffSecurity,
+  SuggestionRequest,
   TokenFlowOutcome,
   TransactionResearch,
   Viewer,
@@ -198,6 +208,35 @@ export interface ModerationApi {
   ): Promise<ModerationResult<readonly FindingRevision[]>>;
   getAuditLog(caseId?: string): Promise<ModerationResult<readonly AuditEntry[]>>;
   getProfileState(slug: string): Promise<ModerationResult<ProfileState>>;
+}
+
+/** Result of a member submission call. */
+export type MemberResult<T> =
+  { readonly kind: 'ok'; readonly data: T } | ({ readonly kind: 'error' } & MemberError);
+
+/**
+ * The signed-in member's own submissions (PRD §5.11, §5.18; ADR 0010 Part A). Client
+ * components only. Every call acts for the session's account; the API decides ownership
+ * and never returns internal notes, staff identities or other people's submissions.
+ */
+export interface MemberApi {
+  listSubmissions(): Promise<MemberResult<readonly MemberSubmissionSummary[]>>;
+  getSubmission(id: string): Promise<MemberResult<MemberSubmissionDetail>>;
+  submitReport(request: ReportRequest): Promise<MemberResult<{ readonly id: string }>>;
+  submitSuggestion(request: SuggestionRequest): Promise<MemberResult<{ readonly id: string }>>;
+  submitCorrection(request: CorrectionRequest): Promise<MemberResult<{ readonly id: string }>>;
+  submitAppeal(request: AppealRequest): Promise<MemberResult<{ readonly id: string }>>;
+  /** Reply to a request for information. Carries the version the member saw. */
+  respond(
+    id: string,
+    expectedVersion: number,
+    response: InfoResponse,
+  ): Promise<MemberResult<MemberSubmissionDetail>>;
+  withdraw(id: string, expectedVersion: number): Promise<MemberResult<MemberSubmissionDetail>>;
+  listNotices(): Promise<MemberResult<readonly MemberNotice[]>>;
+  getAppealTarget(findingId: string): Promise<MemberResult<AppealTarget>>;
+  /** The exact text the member would sign for signature standing (moderation §6.4). */
+  getStandingChallenge(findingId: string): Promise<MemberResult<{ readonly message: string }>>;
 }
 
 export type PasskeyPurpose =

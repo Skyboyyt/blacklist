@@ -2,7 +2,8 @@ import type { Viewer } from '@blacklist/contracts';
 import { ButtonLink } from '@/components/ui/button';
 
 /**
- * Entry points to the approved redress and reporting flows (built in Phase 4).
+ * Entry points to the approved reporting and correction flows. Appeals start from a
+ * specific finding (findings list).
  * Signed-out viewers are sent to sign in first, returning here afterwards. This only
  * chooses a link: the API decides who may file what (Phase 7).
  */
@@ -22,8 +23,8 @@ export function ProjectActions({ viewer, slug }: { readonly viewer: Viewer; read
   }
   return (
     <div className="flex flex-wrap gap-2">
-      <ButtonLink href="/appeals/new" variant="secondary" size="sm">
-        Respond, correct or appeal
+      <ButtonLink href={`/corrections/new?project=${encodeURIComponent(slug)}`} variant="secondary" size="sm">
+        Propose a correction
       </ButtonLink>
       <ButtonLink href="/reports/new" variant="ghost" size="sm">
         Report a concern

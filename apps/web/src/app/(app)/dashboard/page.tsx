@@ -4,6 +4,7 @@ import { DataCard } from '@/components/app/data-card';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { ReportStatusBadge } from '@/components/app/report-status-badge';
+import { MySubmissions } from '@/components/submissions/my-submissions';
 import { SearchBar } from '@/components/search/search-bar';
 import { getResearchApi } from '@/lib/api/server';
 import { truncateMiddle } from '@/lib/format/address';
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
         <SearchBar />
       </DataCard>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <DataCard title="Recent searches">
           {dashboard.recentSearches.length === 0 ? (
             <EmptyState icon="search" title="No recent searches" />
@@ -61,7 +62,9 @@ export default async function DashboardPage() {
             <ul className="flex flex-col divide-y divide-border">
               {dashboard.myReports.map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-3 py-2">
-                  <span className="truncate text-sm text-text">{r.title}</span>
+                  <Link href={`/reports/${r.id}`} className="truncate text-sm text-text hover:underline">
+                    {r.title}
+                  </Link>
                   <ReportStatusBadge status={r.status} />
                 </li>
               ))}
@@ -70,7 +73,25 @@ export default async function DashboardPage() {
         </DataCard>
       </div>
 
-      <DataCard title="Notices">
+      <DataCard
+        title="Your submissions"
+        actions={
+          <Link href="/projects/suggest" className="text-sm font-medium text-accent hover:underline">
+            Suggest a project
+          </Link>
+        }
+      >
+        <MySubmissions />
+      </DataCard>
+
+      <DataCard
+        title="Notices"
+        actions={
+          <Link href="/notifications" className="text-sm font-medium text-accent hover:underline">
+            All notifications
+          </Link>
+        }
+      >
         {dashboard.notices.length === 0 ? (
           <p className="text-sm text-muted">No notices.</p>
         ) : (

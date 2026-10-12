@@ -21,7 +21,12 @@ export const staffRefSchema = z.strictObject({ id: z.string(), handle: z.string(
 export type StaffRef = z.infer<typeof staffRefSchema>;
 
 /** Case types built in the staff UI (data-model `moderation_cases.case_type`, subset). */
-export const caseTypeSchema = z.enum(['report_review', 'appeal_review', 'correction_request']);
+export const caseTypeSchema = z.enum([
+  'report_review',
+  'appeal_review',
+  'correction_request',
+  'project_suggestion',
+]);
 export type CaseType = z.infer<typeof caseTypeSchema>;
 
 /** Report lifecycle (moderation §10). `draft` is never visible to staff. */
@@ -52,6 +57,15 @@ export type AppealStatus = z.infer<typeof appealStatusSchema>;
 /** INTERIM: `correction_requests.status` is unspecified in the data model (documentation gap). */
 export const correctionStatusSchema = z.enum(['submitted', 'in_review', 'accepted', 'rejected']);
 export type CorrectionStatus = z.infer<typeof correctionStatusSchema>;
+
+/** ADR 0010 Part A suggestion lifecycle. */
+export const suggestionStatusSchema = z.enum([
+  'submitted',
+  'needs_information',
+  'accepted_into_profile',
+  'not_accepted',
+]);
+export type SuggestionStatus = z.infer<typeof suggestionStatusSchema>;
 
 /** PRD §5.11 report categories. */
 export const reportCategorySchema = z.enum([
@@ -105,6 +119,7 @@ export const caseSummarySchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({ ...caseCommon, type: z.literal('appeal_review'), status: appealStatusSchema }),
   z.strictObject({ ...caseCommon, type: z.literal('correction_request'), status: correctionStatusSchema }),
+  z.strictObject({ ...caseCommon, type: z.literal('project_suggestion'), status: suggestionStatusSchema }),
 ]);
 export type CaseSummary = z.infer<typeof caseSummarySchema>;
 
@@ -267,7 +282,8 @@ export const appealedDecisionSchema = z.strictObject({
 
 export const standingRecordSchema = z.strictObject({
   mechanism: z.enum(['signature', 'authority_signature', 'dns_txt', 'documentary']),
-  outcome: z.enum(['granted', 'denied']),
+  /** `pending` until a standing reviewer decides documentary standing (moderation §6.2 #4). */
+  outcome: z.enum(['granted', 'denied', 'pending']),
   /** What was and was not established (moderation §6.3). */
   scopeStatement: z.string(),
   decidedAt: isoDateTimeSchema,
@@ -291,6 +307,10 @@ const detailCommon = {
   submitterReason: z.string().nullable(),
   /** Public text published with the decision, when one applies. */
   publicSummary: z.string().nullable(),
+  /** The latest request for information sent to the submitter, if any. */
+  infoRequest: z.string().nullable(),
+  /** Replies from the submitter (plain text), oldest first. */
+  submitterMessages: z.array(z.strictObject({ at: isoDateTimeSchema, text: z.string().max(5000) })),
 };
 
 export const caseDetailSchema = z.discriminatedUnion('type', [
@@ -323,6 +343,25 @@ export const caseDetailSchema = z.discriminatedUnion('type', [
     statement: z.string().max(5000),
     currentRevision: z.number().int().positive(),
     changes: z.array(profileChangeSchema).min(1),
+  }),
+  z.strictObject({
+    ...caseCommon,
+    ...detailCommon,
+    type: z.literal('project_suggestion'),
+    status: suggestionStatusSchema,
+    submitterRef: z.string(),
+    proposal: z.strictObject({
+      name: z.string(),
+      category: z.string(),
+      chain: chainSlugSchema,
+      identifier: z.string(),
+      /** Defanged link text; never fetched. */
+      links: z.array(z.string()),
+      description: z.string(),
+      relationship: z.string(),
+    }),
+    /** Slug of the profile created on acceptance. */
+    resultingSlug: z.string().nullable(),
   }),
 ]);
 export type CaseDetail = z.infer<typeof caseDetailSchema>;
@@ -372,6 +411,17 @@ export const caseDecisionSchema = z.discriminatedUnion('action', [
     reason: submitterReasonSchema,
     internalRationale: rationale,
   }),
+  z.strictObject({
+    action: z.literal('accept_suggestion'),
+    publicSummary: publicText,
+    internalRationale: rationale,
+  }),
+  z.strictObject({
+    action: z.literal('reject_suggestion'),
+    reason: submitterReasonSchema,
+    internalRationale: rationale,
+  }),
+  z.strictObject({ action: z.enum(['grant_standing', 'deny_standing']), internalRationale: rationale }),
 ]);
 export type CaseDecision = z.infer<typeof caseDecisionSchema>;
 
@@ -416,6 +466,7 @@ export const queueCountsSchema = z.strictObject({
   needsInfo: z.number().int().min(0),
   openAppeals: z.number().int().min(0),
   openCorrections: z.number().int().min(0),
+  openSuggestions: z.number().int().min(0),
   unassigned: z.number().int().min(0),
   pendingApprovals: z.number().int().min(0),
 });
@@ -435,4 +486,5 @@ export const STATUSES_BY_TYPE = {
   report_review: reportCaseStatusSchema.options,
   appeal_review: appealStatusSchema.options,
   correction_request: correctionStatusSchema.options,
+  project_suggestion: suggestionStatusSchema.options,
 } as const;

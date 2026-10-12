@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { DataCard } from '@/components/app/data-card';
 import { PageHeader } from '@/components/app/page-header';
 import { NotAvailableYet } from '@/components/states/not-available';
+import { AppealForm } from '@/components/submissions/appeal-form';
 
 export const metadata: Metadata = { title: 'Appeals & responses' };
 
@@ -15,7 +16,7 @@ const STANDING =
 const OPTIONS = [
   {
     title: 'Appeal a finding',
-    text: `If a published finding that affects you is wrong. ${STANDING} The finding stays visible as “Disputed — under appeal” while someone who did not write or approve it reviews your appeal.`,
+    text: `If a published finding that affects you is wrong, open it on its address or project page and choose “Appeal this finding”. ${STANDING} The finding stays visible as “Disputed — under appeal” while someone who did not write or approve it reviews your appeal.`,
   },
   {
     title: 'Respond as the subject',
@@ -23,11 +24,29 @@ const OPTIONS = [
   },
   {
     title: 'Request a correction',
-    text: 'Anyone with an account can point out a factual error, such as a wrong date, amount or subject. No standing is needed.',
+    text: 'Anyone with an account can point out an error in a project profile from its page, using “Propose a correction”. No standing is needed.',
   },
 ] as const;
 
-export default function AppealsPage() {
+interface PageProps {
+  readonly searchParams: Promise<{ finding?: string | string[] }>;
+}
+
+const FINDING_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+export default async function AppealsPage({ searchParams }: PageProps) {
+  const { finding } = await searchParams;
+  if (typeof finding === 'string' && FINDING_ID.test(finding)) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          title="Appeal a finding"
+          description="Someone who did not write or approve the finding reviews your appeal. The finding stays visible as “Disputed — under appeal” meanwhile."
+        />
+        <AppealForm findingId={finding} />
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -41,7 +60,7 @@ export default function AppealsPage() {
           </DataCard>
         ))}
       </div>
-      <NotAvailableYet feature="Filing appeals and responses" icon="appeals" />
+      <NotAvailableYet feature="Public subject responses" icon="appeals" />
     </div>
   );
 }

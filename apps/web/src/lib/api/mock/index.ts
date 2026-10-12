@@ -9,5 +9,6 @@ export { DemoBanner } from '@/components/layout/demo-banner';
 export { DEMO_EXAMPLES } from './fixtures/examples';
 export { mockAccountApi, mockStaffSecurityApi } from './account-api';
 export { mockAuthApi, mockHumanVerifier } from './auth-api';
-export { mockModerationApi } from './moderation-api';
+export { handleMockRpc } from './rpc-server';
+export { mockMemberApi, mockModerationApi, resetMockSession } from './rpc-client';
 export { createMockResearchApi } from './research-api';

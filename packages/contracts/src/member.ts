@@ -7,7 +7,7 @@
 import { z } from './zod.ts';
 import { isoDateTimeSchema } from './common.ts';
 
-export const reportStatusSchema = z.enum(['draft', 'submitted', 'in_review', 'closed']);
+export const reportStatusSchema = z.enum(['draft', 'submitted', 'in_review', 'needs_information', 'closed']);
 
 /** One of the member's own reports. `submittedAt` is the private receipt time (null for drafts). */
 export const reportSummarySchema = z.strictObject({

@@ -172,7 +172,7 @@ AI-assisted research (labelled, never decisive) · public API · cross-chain int
 
 ### 4.4 Explicitly NOT in V1
 
-Watchlists and all alerts · graph and tracing UI · investigation workspaces · researcher reputation and leaderboard · AI · public API · comments · voting · elaborate analytics · public profile pages · persistent wallet links · counterparty analytics · sanctions badges · PDFs and other documents · member MFA · numeric effect of unreviewed reports, association or sanctions · user-created projects and self-service verification · NFTs · extra chains · mobile apps · browser extension · price data · payments · social login · avatar uploads.
+Watchlists and all alerts · graph and tracing UI · investigation workspaces · researcher reputation and leaderboard · AI · public API · comments · voting · elaborate analytics · public profile pages · persistent wallet links · counterparty analytics · sanctions badges · PDFs and other documents · member MFA · numeric effect of unreviewed reports, association or sanctions · self-service project verification and public project claims (private project suggestions are V1 per ADR 0010 Part A) · NFTs · extra chains · mobile apps · browser extension · price data · payments · social login · avatar uploads.
 
 ---
 

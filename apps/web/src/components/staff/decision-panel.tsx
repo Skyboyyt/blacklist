@@ -20,7 +20,7 @@ import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DECISION_COPY, SEVERITY_LABEL, SUBMITTER_REASON_LABEL } from '@/lib/staff/copy';
-import { decisionsFor, roleLimitFor, STEP_UP_DECISIONS } from '@/lib/staff/workflow';
+import { decisionsForCase, roleLimitFor, STEP_UP_DECISIONS } from '@/lib/staff/workflow';
 import { ProfileDiff } from './profile-diff';
 
 type Action = CaseDecision['action'];
@@ -56,22 +56,27 @@ function build(action: Action, f: Fields): unknown {
       };
     case 'reject_report':
     case 'reject_correction':
+    case 'reject_suggestion':
       return { action, reason: f.reason, internalRationale: f.internalRationale };
+    case 'grant_standing':
+    case 'deny_standing':
+      return { action, internalRationale: f.internalRationale };
     case 'reject_abusive':
       return { action, internalRationale: f.internalRationale };
     case 'uphold':
     case 'amend':
     case 'reverse':
     case 'accept_correction':
+    case 'accept_suggestion':
       return { action, publicSummary: f.publicSummary, internalRationale: f.internalRationale };
   }
 }
 
 const needs = {
   publicSummary: (a: Action) =>
-    ['accept_report', 'uphold', 'amend', 'reverse', 'accept_correction'].includes(a),
+    ['accept_report', 'uphold', 'amend', 'reverse', 'accept_correction', 'accept_suggestion'].includes(a),
   rationale: (a: Action) => a !== 'start_review' && a !== 'request_info',
-  reason: (a: Action) => a === 'reject_report' || a === 'reject_correction',
+  reason: (a: Action) => a === 'reject_report' || a === 'reject_correction' || a === 'reject_suggestion',
 };
 
 interface DecisionPanelProps {
@@ -87,7 +92,7 @@ interface DecisionPanelProps {
  * internal rationale are separate fields and are labelled as such.
  */
 export function DecisionPanel({ detail, staffRole, onDecide, verifyStepUp }: DecisionPanelProps) {
-  const actions = decisionsFor(detail.type, detail.status);
+  const actions = decisionsForCase(detail);
   const [selected, setSelected] = useState<Action | null>(null);
   const [fields, setFields] = useState<Fields>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>({});
@@ -191,8 +196,8 @@ export function DecisionPanel({ detail, staffRole, onDecide, verifyStepUp }: Dec
           {selected === 'request_info' ? (
             <Field
               id="decision-message"
-              label="Message to the reporter"
-              hint="The reporter sees this message."
+              label="Message to the submitter"
+              hint="The submitter sees this message."
               error={errors.messageToSubmitter}
             >
               {(control) => (

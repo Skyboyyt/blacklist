@@ -11,6 +11,7 @@ import {
   currentScenario,
   currentViewerKey,
 } from '@/lib/api/mock/scenario';
+import { resetDemoData } from '@/lib/api/browser';
 
 const noSubscription = () => () => {};
 const browserCookies = () => document.cookie;
@@ -54,6 +55,39 @@ function PreviewSelect({ label, cookie, options, read, fallback }: ControlProps)
 }
 
 /**
+ * Restores this browser's demo data (submissions, decisions, published results) to the
+ * fixtures. The store is per demo session on the mock server; nothing real is reset.
+ */
+function ResetDemoData() {
+  const router = useRouter();
+  const [state, setState] = useState<'idle' | 'pending' | 'done' | 'failed'>('idle');
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <button
+        type="button"
+        disabled={state === 'pending'}
+        onClick={() => {
+          setState('pending');
+          resetDemoData().then(
+            () => {
+              setState('done');
+              router.refresh();
+            },
+            () => setState('failed'),
+          );
+        }}
+        className="h-7 rounded border border-border-strong bg-surface px-2 text-xs text-text hover:bg-surface-2 disabled:opacity-60"
+      >
+        Reset demo data
+      </button>
+      <span role="status" className="text-xs">
+        {state === 'done' ? 'Demo data reset.' : state === 'failed' ? 'Reset failed. Try again.' : ''}
+      </span>
+    </span>
+  );
+}
+
+/**
  * Mock-only preview controls: which fictional viewer, account scenario and simulated
  * authenticator result the mock returns. They change mock data only and grant nothing.
  */
@@ -81,6 +115,7 @@ export function MockPreviewControls() {
         read={currentPasskeyResult}
         fallback="verified"
       />
+      <ResetDemoData />
     </div>
   );
 }

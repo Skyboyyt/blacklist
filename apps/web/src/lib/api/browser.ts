@@ -2,10 +2,18 @@ import {
   notConnectedAccountApi,
   notConnectedAuthApi,
   notConnectedHumanVerifier,
+  notConnectedMemberApi,
   notConnectedModerationApi,
   notConnectedStaffSecurityApi,
 } from './not-connected';
-import type { AccountApi, AuthApi, HumanVerifierClient, ModerationApi, StaffSecurityApi } from './types';
+import type {
+  AccountApi,
+  AuthApi,
+  HumanVerifierClient,
+  MemberApi,
+  ModerationApi,
+  StaffSecurityApi,
+} from './types';
 
 /** Auth API for client components (browser). */
 export async function getAuthApi(): Promise<AuthApi> {
@@ -50,4 +58,20 @@ export async function getModerationApi(): Promise<ModerationApi> {
     return mockModerationApi;
   }
   return notConnectedModerationApi;
+}
+
+/** The signed-in member's own submissions (mock in development; not connected otherwise). */
+export async function getMemberApi(): Promise<MemberApi> {
+  if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
+    const { mockMemberApi } = await import('blacklist-mock-api');
+    return mockMemberApi;
+  }
+  return notConnectedMemberApi;
+}
+
+/** Restarts the demo data for this browser (mock builds only; does nothing otherwise). */
+export async function resetDemoData(): Promise<void> {
+  if (process.env.NEXT_PUBLIC_API_MODE !== 'mock') return;
+  const { resetMockSession } = await import('blacklist-mock-api');
+  await resetMockSession();
 }

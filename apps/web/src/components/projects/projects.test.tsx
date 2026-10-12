@@ -9,16 +9,17 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../test/a11y';
 import { ADDRESS_FIXTURES } from '@/lib/api/mock/fixtures/addresses';
-import { PROJECT_ADDRESS_FIXTURES } from '@/lib/api/mock/fixtures/projects';
+import { PROJECT_ADDRESS_FIXTURES, PROJECT_FIXTURES } from '@/lib/api/mock/fixtures/projects';
 import { createProjectCatalog } from '@/lib/api/mock/project-api';
 import { ProjectCard } from './project-card';
 import { ProjectDetailView } from './project-detail-view';
 import { ProjectDirectoryResults } from './project-directory-results';
 import { ProjectFilters } from './project-filters';
 
-const catalog = createProjectCatalog(
-  addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
-);
+const catalog = createProjectCatalog({
+  addresses: addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
+  projects: PROJECT_FIXTURES,
+});
 const project = (slug: string): ProjectDetail => {
   const found = catalog.details.find((d) => d.slug === slug);
   if (!found) throw new Error(`missing fixture ${slug}`);
@@ -167,12 +168,12 @@ describe('project detail', () => {
       'href',
       '/login?next=%2Fproject%2Fdemoswap',
     );
-    expect(screen.queryByRole('link', { name: 'Respond, correct or appeal' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Propose a correction' })).toBeNull();
     out.unmount();
     render(<ProjectDetailView project={project('demoswap')} viewer={member} />);
-    expect(screen.getByRole('link', { name: 'Respond, correct or appeal' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Propose a correction' })).toHaveAttribute(
       'href',
-      '/appeals/new',
+      '/corrections/new?project=demoswap',
     );
     expect(screen.getByRole('link', { name: 'Report a concern' })).toHaveAttribute('href', '/reports/new');
   });

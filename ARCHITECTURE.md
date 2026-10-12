@@ -284,7 +284,7 @@ request
 |---|---|---|
 | `(public)` | `/`, `/search`, `/address/[chain]/[address]`, `/tx/[chain]/[hash]`, `/projects`, `/project/[slug]`, `/finding/[id]`, `/methodology`, `/terms`, `/privacy`, `/security` | Anyone |
 | `(auth)` | `/login`, `/register`, `/register/complete`, `/forgot-password`, `/reset-password`, `/email-change/confirm`, `/staff/enroll`, `/staff/verify` | Token/flow pages per [identity design](docs/design/identity.md); tokens travel in URL fragments |
-| `(app)` | `/dashboard`, `/reports`, `/reports/new`, `/reports/[id]`, `/appeals/new`, `/responses/new`, `/corrections/new`, `/notifications`, `/settings/profile`, `/settings/security` (password, email, sessions) | Signed-in member or staff |
+| `(app)` | `/dashboard`, `/reports`, `/reports/new`, `/reports/[id]`, `/appeals/new`, `/appeals/[id]`, `/responses/new`, `/corrections/new`, `/corrections/[id]`, `/projects/suggest`, `/projects/suggestions/[id]` (ADR 0010 Part A), `/notifications`, `/settings/profile`, `/settings/security` (password, email, sessions) | Signed-in member or staff |
 | `(staff)` | `/mod`, `/mod/cases/[id]`, `/mod/approvals`, `/mod/appeals`, `/mod/standing`, `/admin`, `/admin/staff`, `/admin/users`, `/admin/projects`, `/admin/labels`, `/admin/signals`, `/admin/audit` | Staff session with WebAuthn assurance |
 | Deferred | `/u/[handle]`, `/watchlists/*`, `/investigations/*`, `/trace/*`, `/graph/*`, `/leaderboard`, `/claims/*` | — |
 
@@ -347,6 +347,8 @@ Indicative V1 endpoint groups:
 | Moderation | `GET /mod/queue`, `GET /mod/cases/:id`, `POST /mod/findings/:id/revisions`, `POST /mod/findings/:id/approvals`, `POST /mod/findings/:id/publish`, `POST /mod/findings/:id/suspend`, `POST /mod/standing/:id/decision`, `POST /mod/appeals/:id/decision` |
 | Admin | `/admin/staff/*` (invitations, role requests, suspensions, recovery, offboarding), `/admin/users/*`, `/admin/projects/*`, `/admin/labels/*`, `/admin/signals/suppressions`, `/admin/audit` |
 | Ops (internal only) | `GET /healthz`, `GET /readyz` |
+
+The frontend's typed service interfaces, the member submission views (ADR 0010 Part A) and the endpoint additions they need are specified in [docs/design/api-integration-contracts.md](docs/design/api-integration-contracts.md) (Phase 5); that document's open items are resolved here before Phase 7.
 
 ### 7.2 Domain modules (`packages/domain/src/<module>`)
 
@@ -1307,6 +1309,8 @@ Rev-2 changes are marked; superseded wording is retained for history.
 | **11 — Integration, Hardening & Launch Readiness** | End-to-end integration with real backend, pentest/security review, staff security re-verification, performance, restore drill, break-glass and recovery drills, **legal review (blocker)**, retention approval, O-13 | Launch checklist signed by owner |
 
 **Phase order change (owner decision, 2026-10-12):** the Staff UI is built as Phase 4 and the Reporting & Redress UI as Phase 5, swapping the original order. Staff screens run on mock cases that stand in for member submissions until Phase 5 builds the member side. The phase contents and exit criteria are unchanged.
+
+**Phase 5 brief (owner, 2026-10-12):** run as "Frontend Completion and Integration Validation": the Reporting & Redress scope above, plus connected member↔staff journeys on a shared mock store, a requirements checklist ([docs/frontend-requirements-checklist.md](docs/frontend-requirements-checklist.md)) and backend integration contracts ([docs/design/api-integration-contracts.md](docs/design/api-integration-contracts.md)). The WCAG 2.2 AA audit stays in Phase 6. Items of Phases 4–5 above that were not built (emergency suspension, the admin console beyond the audit viewer, public subject responses, the authority standing mechanism, real upload processing states) are listed in the checklist and `AI_HANDOFF.md`.
 
 **Frontend-first rules:**
 

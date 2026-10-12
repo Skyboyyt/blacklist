@@ -9,13 +9,13 @@ import type {
   EvidenceState,
   FindingSeverity,
   ReportCategory,
-  SubmitterReason,
 } from '@blacklist/contracts';
 
 export const CASE_TYPE_LABEL: Readonly<Record<CaseType, string>> = {
   report_review: 'Report',
   appeal_review: 'Appeal',
   correction_request: 'Correction',
+  project_suggestion: 'Project suggestion',
 };
 
 export const STATUS_LABEL: Readonly<Record<string, string>> = {
@@ -31,6 +31,9 @@ export const STATUS_LABEL: Readonly<Record<string, string>> = {
   upheld: 'Upheld',
   amended: 'Amended',
   reversed: 'Reversed',
+  needs_information: 'Waiting for information',
+  accepted_into_profile: 'Accepted into a profile',
+  not_accepted: 'Not accepted',
 };
 
 export const CATEGORY_LABEL: Readonly<Record<ReportCategory, string>> = {
@@ -53,14 +56,7 @@ export const SEVERITY_LABEL: Readonly<Record<FindingSeverity, string>> = {
   severe: 'Severe',
 };
 
-/** Shown to the submitter only, never on a public page. */
-export const SUBMITTER_REASON_LABEL: Readonly<Record<SubmitterReason, string>> = {
-  insufficient_evidence: 'There was not enough evidence to act on.',
-  out_of_scope: 'The request is outside what Blacklist reviews.',
-  duplicate: 'This duplicates a case that is already being handled.',
-  not_reproducible: 'Staff could not confirm the problem described.',
-  already_corrected: 'The information has already been corrected.',
-};
+export { SUBMITTER_REASON_LABEL } from '@/lib/submissions/copy';
 
 export const EVIDENCE_STATE_COPY: Readonly<Record<EvidenceState, { label: string; available: boolean }>> = {
   upload_pending: { label: 'Upload not finished', available: false },
@@ -100,7 +96,7 @@ export const DECISION_COPY: Readonly<
   },
   request_info: {
     label: 'Request information',
-    consequence: 'The reporter is asked for more information. The case waits until they reply.',
+    consequence: 'The submitter is asked for more information. The case waits until they reply.',
     tone: 'default',
   },
   accept_report: {
@@ -147,6 +143,29 @@ export const DECISION_COPY: Readonly<
   reject_correction: {
     label: 'Reject correction',
     consequence: 'The profile stays as it is. The requester sees the selected reason.',
+    tone: 'danger',
+  },
+  accept_suggestion: {
+    label: 'Accept and publish profile',
+    consequence:
+      'Staff create a public project profile from this suggestion (ADR 0010 Part A). The submitter is told; their identity is never shown on the profile.',
+    tone: 'default',
+  },
+  reject_suggestion: {
+    label: 'Do not accept',
+    consequence: 'Nothing is published. The submitter sees the selected reason.',
+    tone: 'danger',
+  },
+  grant_standing: {
+    label: 'Grant standing',
+    consequence:
+      'Record that the documents establish standing for this appeal. State in the rationale what was and was not established.',
+    tone: 'default',
+  },
+  deny_standing: {
+    label: 'Deny standing',
+    consequence:
+      'The appeal cannot be decided until standing is established. The appellant can reply with more documents.',
     tone: 'danger',
   },
 };
