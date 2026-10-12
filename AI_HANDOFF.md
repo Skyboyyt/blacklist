@@ -14,12 +14,12 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Phase 2 (explicit owner authorization, 2026-10-05). **Phase 3 is NOT authorized.** |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex (secondary engineer): Phase 2 review |
+| Last agent | Codex (secondary engineer): repository setup |
 | Last updated | 2026-10-12 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
 >
-> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. Not a git repository yet.
+> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. Local Git was initialized on `chore/initial-repository`; GitHub creation and push are pending authentication.
 
 ---
 
@@ -38,6 +38,20 @@ Read this first at the start of every session. Update it at the end of every ses
 | 10 | Claude | **Phase 2: Account & security frontend** | Login/logout/session-ended, registration and reset states, security settings, password/email change, sessions, staff enrollment/verification/step-up/recovery; member and staff DTOs; 242 unit + 168 Chromium e2e passing; Firefox/WebKit 95/96 (one load timeout, passes in isolation) |
 | 9 | Codex | **Final Phase 1 closure check** | APPROVED FOR PHASE 2 AUTHORIZATION; required fixes verified; root check exit 0, 149 unit/component passes, focused E2E 25 passes/1 skip; Phase 2 NOT authorized |
 | 11 | Codex | **Phase 2 initial review** | Three open findings: staff enrollment password discarded (High), staff reset lacks WebAuthn (High), login lacks human-verification challenge (Medium). Static review only; see review file. |
+| 12 | Codex | **GitHub repository preparation** | Owner requested a public `blacklist` repository and push. Local Git initialized on `chore/initial-repository`; initial snapshot committed. Staged files scanned for secrets and personal paths. GitHub browser authentication is pending; no remote repository or push yet. |
+
+---
+
+## Session 12: Codex GitHub repository preparation (2026-10-12)
+
+- **Owner instruction:** create a new public GitHub repository named `blacklist` and push the project. This authorizes a commit and push for this setup task. Phase 3 remains unauthorized.
+- **Completed:** initialized local Git on `chore/initial-repository` and committed the initial 304-file snapshot as `9704983` (`Initialize Blacklist repository`). Updated README to describe Phase 2 accurately and replaced one historical local user path with a generic temporary-directory reference.
+- **Current work:** GitHub repository creation and branch push await browser authorization through Git Credential Manager. The connected GitHub app can read repositories but exposes no repository-creation operation. There is no saved local GitHub credential and `gh` is not installed. `Skyboyyt/blacklist` returned 404 before creation.
+- **Files changed:** README.md, docs/reviews/2026-10-05-phase-1-codex-review.md and this handoff; local `.git` created. **Migrations/dependencies/production code:** none.
+- **Tests and results:** 304 staged paths inspected; ignored `.env`, `node_modules`, `.next` and TypeScript build info confirmed; high-confidence secret-pattern and long assignment-value searches over staged content returned no matches; `.env.example` contains placeholders. `git diff --cached --check` identified only three existing blank lines at EOF in ADR files. No product tests, lint, typecheck or build run (Node 24/pnpm unavailable).
+- **Security concerns:** repository will be public; no real credentials were identified in the staged snapshot. GitHub secret scanning and push protection still need to be enabled and verified after repository creation. No token value was printed or stored in project files.
+- **Decisions:** public visibility per owner; initial branch is `chore/initial-repository`, honoring the no-direct-push-to-`main` rule. Local Git author uses the connected account's GitHub noreply identity. No architecture decision changed.
+- **Unfinished/recommended next step:** complete GitHub browser authorization, create the public repository, push `chore/initial-repository`, verify remote contents and security settings, and update this entry with the actual result.
 
 ---
 
