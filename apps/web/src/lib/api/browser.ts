@@ -1,0 +1,29 @@
+import { notConnectedAccountApi, notConnectedAuthApi, notConnectedStaffSecurityApi } from './not-connected';
+import type { AccountApi, AuthApi, StaffSecurityApi } from './types';
+
+/** Auth API for client components (browser). */
+export async function getAuthApi(): Promise<AuthApi> {
+  if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
+    const { mockAuthApi } = await import('blacklist-mock-api');
+    return mockAuthApi;
+  }
+  return notConnectedAuthApi;
+}
+
+/** Signed-in account and security API for client components. */
+export async function getAccountApi(): Promise<AccountApi> {
+  if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
+    const { mockAccountApi } = await import('blacklist-mock-api');
+    return mockAccountApi;
+  }
+  return notConnectedAccountApi;
+}
+
+/** Staff security API for client components. */
+export async function getStaffSecurityApi(): Promise<StaffSecurityApi> {
+  if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
+    const { mockStaffSecurityApi } = await import('blacklist-mock-api');
+    return mockStaffSecurityApi;
+  }
+  return notConnectedStaffSecurityApi;
+}

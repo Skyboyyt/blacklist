@@ -1,0 +1,27 @@
+{
+  "name": "@blacklist/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Zod schemas and DTO types for every API request and response, shared by the web app and the API.",
+  "type": "module",
+  "sideEffects": [
+    "./src/zod.ts"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@blacklist/core": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@blacklist/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Server-only environment parsing and validation. Fails fast on missing or malformed configuration.",
+  "type": "module",
+  "sideEffects": false
+}

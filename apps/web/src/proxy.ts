@@ -1,0 +1,54 @@
+/**
+ * Next.js 16 proxy (formerly middleware). Responsibilities: per-request CSP nonce
+ * and security headers ONLY. It never makes authorization decisions — the API
+ * enforces every permission (ARCHITECTURE §9, §26).
+ */
+import { NextResponse, type NextRequest } from 'next/server';
+import {
+  buildContentSecurityPolicy,
+  matchesPrefix,
+  NO_STORE_PREFIXES,
+  TOKEN_PAGE_PREFIXES,
+} from './lib/security/csp';
+
+export function proxy(request: NextRequest) {
+  // Malformed percent-encoding: answer 400 instead of letting route decoding fail with a 500.
+  try {
+    decodeURIComponent(request.nextUrl.pathname);
+  } catch {
+    return new NextResponse('Bad request', {
+      status: 400,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }
+
+  const nonce = btoa(crypto.randomUUID());
+  const csp = buildContentSecurityPolicy(
+    nonce,
+    process.env.NODE_ENV === 'development',
+    request.nextUrl.hostname,
+  );
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set('Content-Security-Policy', csp);
+
+  const path = request.nextUrl.pathname;
+  // Token pages: never leak the URL (the token itself is in the fragment) via Referer.
+  if (matchesPrefix(path, TOKEN_PAGE_PREFIXES)) response.headers.set('Referrer-Policy', 'no-referrer');
+  // Account, auth and staff pages are never cached.
+  if (matchesPrefix(path, NO_STORE_PREFIXES)) response.headers.set('Cache-Control', 'no-store');
+  return response;
+}
+
+/**
+ * Runs for every page and RSC request, INCLUDING prefetches: security headers must never
+ * depend on caller-controlled request metadata such as 'purpose: prefetch' (review P1-04).
+ * Each response carries its own nonce, matching the scripts it renders.
+ */
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|theme-init.js).*)'],
+};

@@ -1,0 +1,242 @@
+/*
+ * Blacklist design tokens (docs/design/frontend.md).
+ *
+ * Semantic CSS variables are the single source of colour. Components use the
+ * Tailwind utilities generated from them (bg-surface, text-muted, border-border,
+ * text-risk-severe …), never raw palette colours.
+ *
+ * Theme resolution: [data-theme] (explicit choice) > prefers-color-scheme (system).
+ */
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  color-scheme: light;
+
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --surface-3: #e4e7ec;
+  --border: #d5dae1;
+  --border-strong: #b4bcc8;
+  --text: #121821;
+  --text-muted: #4a5565;
+  --text-subtle: #6a7483;
+
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-fg: #ffffff;
+  --accent-soft: #e6edfd;
+  --focus: #2563eb;
+
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --warning: #8a5300;
+  --warning-soft: #fdf3e1;
+  --info: #155e9c;
+  --info-soft: #e8f1fa;
+  --positive: #146c43;
+  --positive-soft: #e7f4ec;
+
+  /* Risk bands. Low is deliberately neutral blue-grey, never "safe" green. */
+  --risk-low: #3b5b7a;
+  --risk-low-soft: #e9eff5;
+  --risk-moderate: #8a5300;
+  --risk-moderate-soft: #fdf3e1;
+  --risk-high: #b54708;
+  --risk-high-soft: #fdeee3;
+  --risk-severe: #b42318;
+  --risk-severe-soft: #fdecea;
+  --risk-na: #5b6472;
+  --risk-na-soft: #eef0f3;
+
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06);
+  --shadow-md: 0 4px 12px rgb(16 24 40 / 0.08);
+}
+
+/* Dark tokens appear twice (explicit choice and system preference); keep both blocks identical. */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0b0f15;
+  --surface: #121821;
+  --surface-2: #19212c;
+  --surface-3: #232d3a;
+  --border: #2a3441;
+  --border-strong: #3d4a5b;
+  --text: #e8ecf1;
+  --text-muted: #a5afbd;
+  --text-subtle: #8792a2;
+
+  --accent: #6c9cff;
+  --accent-hover: #8fb3ff;
+  --accent-fg: #0b0f15;
+  --accent-soft: #17243d;
+  --focus: #8fb3ff;
+
+  --danger: #ff8a7a;
+  --danger-soft: #3a1714;
+  --warning: #f5b453;
+  --warning-soft: #33240c;
+  --info: #7cc0ff;
+  --info-soft: #102538;
+  --positive: #6fd39c;
+  --positive-soft: #0f2a1d;
+
+  --risk-low: #a9c1da;
+  --risk-low-soft: #1a2633;
+  --risk-moderate: #f5b453;
+  --risk-moderate-soft: #33240c;
+  --risk-high: #ff9b5c;
+  --risk-high-soft: #3a1d0c;
+  --risk-severe: #ff8a7a;
+  --risk-severe-soft: #3a1714;
+  --risk-na: #a5afbd;
+  --risk-na-soft: #1d242e;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg: #0b0f15;
+    --surface: #121821;
+    --surface-2: #19212c;
+    --surface-3: #232d3a;
+    --border: #2a3441;
+    --border-strong: #3d4a5b;
+    --text: #e8ecf1;
+    --text-muted: #a5afbd;
+    --text-subtle: #8792a2;
+
+    --accent: #6c9cff;
+    --accent-hover: #8fb3ff;
+    --accent-fg: #0b0f15;
+    --accent-soft: #17243d;
+    --focus: #8fb3ff;
+
+    --danger: #ff8a7a;
+    --danger-soft: #3a1714;
+    --warning: #f5b453;
+    --warning-soft: #33240c;
+    --info: #7cc0ff;
+    --info-soft: #102538;
+    --positive: #6fd39c;
+    --positive-soft: #0f2a1d;
+
+    --risk-low: #a9c1da;
+    --risk-low-soft: #1a2633;
+    --risk-moderate: #f5b453;
+    --risk-moderate-soft: #33240c;
+    --risk-high: #ff9b5c;
+    --risk-high-soft: #3a1d0c;
+    --risk-severe: #ff8a7a;
+    --risk-severe-soft: #3a1714;
+    --risk-na: #a5afbd;
+    --risk-na-soft: #1d242e;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-focus: var(--focus);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-risk-low: var(--risk-low);
+  --color-risk-low-soft: var(--risk-low-soft);
+  --color-risk-moderate: var(--risk-moderate);
+  --color-risk-moderate-soft: var(--risk-moderate-soft);
+  --color-risk-high: var(--risk-high);
+  --color-risk-high-soft: var(--risk-high-soft);
+  --color-risk-severe: var(--risk-severe);
+  --color-risk-severe-soft: var(--risk-severe-soft);
+  --color-risk-na: var(--risk-na);
+  --color-risk-na-soft: var(--risk-na-soft);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+
+  /* System font stacks: no font downloads, no third-party requests. */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* The root also carries the theme background: iOS overscroll areas and tools that
+       read the root's own colour (e.g. contrast checkers) must never see default white. */
+    background-color: var(--bg);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+  }
+}
+
+@layer components {
+  /* Addresses, hashes and other identifiers. */
+  .identifier {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-variant-ligatures: none;
+    letter-spacing: 0;
+  }
+
+  /* Full identifiers may wrap at any character rather than overflow. */
+  .identifier-wrap {
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

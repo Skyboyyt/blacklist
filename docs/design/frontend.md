@@ -1,0 +1,141 @@
+# Blacklist — Frontend Foundation and Design System
+
+| Field | Value |
+|---|---|
+| Status | **Phase 2** (2026-10-05): account, authentication and security flows added on top of the Phase 1 foundation. Implemented against `@blacklist/contracts` and a mock adapter; no backend |
+| Code | [`apps/web`](../../apps/web), [`packages/contracts`](../../packages/contracts) |
+| Related | [ARCHITECTURE.md §15, §26, §36](../../ARCHITECTURE.md), [identity design](identity.md), [testing strategy §13](../testing-strategy.md) |
+
+## 1. Architecture
+
+```
+UI (.tsx) ──► ResearchApi / AuthApi / AccountApi / StaffSecurityApi (lib/api/types.ts) ──► adapter
+                                                           ├─ mock (NEXT_PUBLIC_API_MODE=mock; dev/test only)
+                                                           └─ "not connected" (every other build until Phase 7)
+```
+
+- **Server components** read through `getResearchApi()` (`lib/api/server.ts`, `server-only`). **Client components** use `getAuthApi()`, `getAccountApi()` and `getStaffSecurityApi()` (`lib/api/browser.ts`). Account and staff security pages load and mutate entirely through these interfaces, so connecting the real API later replaces the adapter, not the UI.
+- **Mock exclusion is enforced twice.** Each import site is guarded by the literal `process.env.NEXT_PUBLIC_API_MODE === 'mock'`. The only import path, `blacklist-mock-api`, is aliased in `next.config.ts` to `lib/api/mock/index.ts` in mock builds and to a throwing stub otherwise. `pnpm --filter @blacklist/web check:mock-exclusion` proves the production build has no fixture markers, that the mock build does, and that no server-only names appear in browser bundles.
+- **Mocks confer no authority.** The demo banner's preview controls set mock-only cookies (`bl_mock_viewer`: anonymous/member/moderator/admin; `bl_mock_scenario`: normal, cooling_period, session_expired, staff_recovery; `bl_mock_passkey`: the simulated authenticator result). They change what the mock returns, nothing else. Mock auth never stores, compares or logs passwords and creates no session. All mock security behaviour (re-authentication window, cooling, session revocation, enrollment, passkey results) is centralized in `lib/api/mock/account-api.ts`; components contain no fake state machines.
+- **Fixtures** (`lib/api/mock/fixtures/`) are fictional (`0xb1ac…`, `Demo…`, `*.example.test`) and are parsed with the contract schemas when the mock loads and in tests.
+- **Frontend validation is UX, not security.** Forms validate with the same Zod schemas the API will use; the API re-validates everything.
+
+### Contract boundaries
+
+| Contract | File | Audience | Admits |
+|---|---|---|---|
+| Public research | `packages/contracts/src/research.ts` | Anyone | Band + explanation; **risk factors only from the closed V1 set** (`finding.*` as `moderator_finding`; `token.symbol_impersonation`, `eoa.delegated_to_flagged` as `platform_analysis`); **disclosures** (capability facts, zero contribution) in a separate collection; **published moderator findings only**; public timeline events only (no report receipt, queue or draft events); no numeric score |
+| Member-private | `packages/contracts/src/member.ts` | The signed-in member only | The member's own reports, including receipt time (`submittedAt`) and review status; own searches and notices |
+| Member account security | `packages/contracts/src/account.ts` | The account holder only | Own email, handle, coarse session summaries (opaque revocation handle, device summary, times; no tokens, IPs or locations), own security activity, cooling period, re-authentication window, typed account errors |
+| Staff security | `packages/contracts/src/staff.ts` | The staff member only, in an assured session | Their authenticators (opaque handle, label, kind, synced flag, dates; no credential IDs or keys), authenticator deficit, enrollment start results, passkey results, their own recovery progress (no reviewer identities). **No moderation or case data** |
+| Staff moderation | Added with the staff UI (Phase 5) | Staff with WebAuthn assurance | Numeric score, contributions, unreviewed reports, internal references |
+
+All public objects are strict: unknown fields (score, `pendingReportCount`, reporter metadata, AI payloads) are rejected, so a future backend cannot leak them through the shared contract. Provenance labels and public visibility are separate concerns: "Community allegation" and "AI observation" remain defined labels for legends and future/private views, but no public V1 schema accepts them.
+
+## 2. Tokens and theming
+
+- Semantic colour variables live in `src/styles/globals.css` (`--bg`, `--surface`, `--text`, `--text-muted`, `--accent`, `--danger`, `--risk-*` …) and are exposed as Tailwind utilities (`bg-surface`, `text-muted`, `text-risk-severe`). Components never use raw palette colours.
+- **Themes:** light, dark and system. `system` = no `data-theme` attribute, so CSS follows `prefers-color-scheme` (works without JavaScript). An explicit choice is stored in `localStorage` (`bl-theme`) and applied before first paint by `public/theme-init.js`, loaded synchronously with the CSP nonce. There is no flash, and no `dangerouslySetInnerHTML`.
+- **Risk colours:** Low is a neutral blue-grey, never "safe" green. Every band also has a distinct glyph and a text label, so colour is never the only signal.
+- **Typography:** system font stacks (no font downloads or third-party requests). Identifiers use `.identifier` (monospace, tabular numbers, no ligatures). `.identifier-wrap` allows full values to break anywhere; `truncateMiddle` produces `0x1234…cdef` for display only.
+- **Motion:** `prefers-reduced-motion: reduce` disables animations and transitions globally; spinners and skeletons have explicit `motion-reduce` variants.
+
+## 3. Layout
+
+| Viewport | Pattern |
+|---|---|
+| ≥ 1024 px (`lg`) | Persistent sidebar (sections: Main, Account, Staff) + sticky header (search form, theme toggle, account) |
+| < 1024 px | Header with a menu button opening a Radix dialog sheet (focus trap, Escape, focus return) + bottom tab bar (Home, Research, Dashboard, Reports) |
+| Auth pages | Focused card layout, no navigation, persistent seed-phrase notice |
+
+- A skip link targets `#main`; every page has exactly one `h1`; touch targets are at least 44 px on primary controls.
+- The **staff section** appears only for staff viewers to reduce clutter. This is **not access control**: `(staff)` pages render no case data, and staff data will come only from the API with WebAuthn assurance.
+
+## 4. Components
+
+| Layer | Components |
+|---|---|
+| Primitives (`components/ui`) | Button / ButtonLink (loading state blocks double submit), Input, Textarea, Select (native), Checkbox (native), PasswordInput (show/hide, paste allowed), Field (label + hint + error wired with `aria-describedby`/`aria-invalid`), Badge, Tooltip (supplementary only), Dialog / Sheet, Tabs, Skeleton, Spinner, Icon |
+| App (`components/app`) | PageHeader, DataCard, EmptyState, ErrorState, Notice, CopyableValue, ChainBadge, RiskBadge, Confidence, ProvenanceLabel, UntrustedText, StatusTimeline (shell), EvidenceThumbnail (shell), ReportStatusBadge, SeedPhraseNotice |
+| Research (`components/research`) | AssessmentPanel, FactsList, FindingsList, TransfersTable, AddressResearchView, TransactionResearchView, ResearchProblem |
+| Search (`components/search`) | SearchBar, DetectionStatus, SearchResults |
+
+**When to use which:** a native element first (select, checkbox); a Radix primitive when native semantics are missing (dialog, tabs, tooltip); never put essential information in a tooltip.
+
+## 5. Risk, disclosure and provenance wording
+
+All wording comes from `src/lib/risk/copy.ts`:
+
+- **Public risk = band + explanation**, plus key factors (provenance, relative weight in words, observed time), confidence, coverage, freshness ("As of", UTC) and dispute state. **No numeric score anywhere** (decision P-11); public DTOs are strict objects that reject a `score` field.
+- Low = "No significant risk indicators found. This is not a guarantee of safety." Not assessed is never reassuring. "Not found" always says "This is not a sign that it is safe."
+- **Disclosures** (mint/freeze authority, upgrade or pause authority, transfer hooks/fees, unverified source …) are capability facts with **zero contribution** in V1 (ADR 0005). They render in their own neutral "Disclosures" section (no band colours, no warning icons, "No effect on the assessment") and never appear among the assessment's factors or explain a band.
+- Disputes: "Disputed — under appeal" (finding stays visible); "Temporarily suspended pending review".
+- Provenance labels: Blockchain fact, Blacklist analysis, Community allegation, Moderator finding, AI observation, External source.
+- Transfers use neutral movement wording ("Incoming transfer of …"; "A log reports an outgoing transfer of …" when the evidence is only an unvalidated log), name the counterparty as Sender or Recipient, and describe authorization **relative to the sending side** ("Signed directly by the sending address."; "Who authorized this transfer is unknown."). Receiving a transfer is never presented as the recipient's action. The disclaimer that interacting with a flagged address does not mean wrongdoing is always shown.
+- Blockchain facts show finality and their own observation time. Per-fact provider/publisher attribution is a Phase 3 item (review P1-05); the copy does not promise it.
+- Attacker-controlled names (token symbols, self-descriptions) are rendered as plain text and marked "unverified".
+
+## 6. Search states
+
+Typing states live in the search box (`lib/search/search-input-state.ts`): idle → typing ("Detecting format…") → detected address / transaction, **"Address detected — choose network"**, unsupported network, or invalid identifier. Detection is a hint only.
+
+Remote states come from the results page (`/search?q=&chain=`): loading (skeleton), results, choose network, not found, invalid identifier, unsupported network, provider unavailable, and unexpected error (route error boundary showing an opaque reference only). **An explicitly selected network is never silently replaced:** a mismatch returns "not a valid <network> address/transaction hash", and an unknown `chain` value returns "Network not supported".
+
+## 7. Auth UX (mock)
+
+- `/login`: email (`autocomplete=username`) + password (`current-password`), show/hide, forgot/register links, inline errors with focus on the first invalid field, no double submit, a generic "Email or password is incorrect", rate-limit and request-reference states, and a validated same-origin `next`.
+- `/register` is email-first and returns the same "Check your email" response whether or not an account exists. The handle is described as visible to the user and staff only (PRD §5.3: no public profiles in V1). `/register/complete`, `/reset-password` and `/email-change/confirm` read the token from the URL **fragment**, strip it with `history.replaceState`, keep it in memory only, and send it only on submit. They show missing, invalid, expired and used states and are served with `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
+- Mock rules: `member@` signs in, `staff@` goes to `/staff/verify`, `limited@` is rate-limited, `error@` returns an unexpected error (all `@example.test`). Tokens starting `expired`, `used` or `invalid` produce those states.
+
+## 7a. Account and security UX (Phase 2, mock)
+
+Normative source: [identity design](identity.md). Everything below is presentation over typed contracts; the API (Phase 7) enforces every rule.
+
+| Area | Route | Behaviour |
+|---|---|---|
+| Login | `/login` | As above, plus "temporarily unavailable", and a calm banner when returning after `reason=session_expired` or `staff_verification_expired`. Unknown email and wrong password are the same message |
+| Logout | Sidebar, mobile menu, security page | POST-style action (no GET link), pending state, failure keeps you signed in and says so, then the public home page |
+| Session ended | `(app)` pages | `SessionExpiredPanel`: explains without implying data loss; "Sign in again" carries the current path through `safeNextPath` (unsafe paths become `/dashboard`) |
+| Registration | `/register`, `/register/complete` | Email-first; generic "Check your email"; invalid, expired, used and **superseded** link states; no terms checkbox (terms are a pending legal decision) |
+| Reset | `/forgot-password`, `/reset-password` | Generic request answer; superseded link state; success explains that every session ends and email change pauses for **72 hours** (identity §6.3) |
+| Security overview | `/settings/security` | Password, email, sessions, recovery, recent activity; staff see a link to their security keys |
+| Password change | `/settings/security/password` | Current + new + confirm; reusing the current password rejected; incorrect current password marked on its field; other sessions end, this one stays (identity §6.4) |
+| Email change | `/settings/security/email` | Blocked during cooling; re-authentication (10 minutes) when the API asks; the same answer whether or not the new address has an account; link to the new address (1 hour); the old address is told after the change (identity §7) |
+| Sessions | `/settings/security/sessions` | Coarse device summary and times only; revoke one (confirmed); the current session can only sign out; already-ended sessions reported as done; revoke all others requires re-authentication |
+| Staff keys | `/settings/security/staff` | Authenticators with a synced flag and failure-domain guidance; fewer than two raises a banner (7-day suspension rule); removal needs an action-bound step-up, then confirmation |
+| Staff verify | `/staff/verify` | Passkey states: waiting, verified, cancelled, timed out, unsupported (feature-detected), failed, session ended; retry |
+| Staff enrollment | `/staff/enroll` | Fragment token + 10-character out-of-band code (attempts remaining), password, two authenticators with honest "two registrations ≠ two devices" guidance, atomic activation |
+| Staff recovery | `/staff/recovery` | Explains the two-person process and shows the holder's own case progress (requested → identity verification (2) → second admin → 24-hour objection window → fresh enrollment → completed; rejected/cancelled). **No break-glass or bypass control exists in the UI** |
+
+Reusable patterns: `ConfirmDialog` (consequences, cancel, pending, error; no typed phrases), `ReauthDialog`, `StepUpDialog` (bound to one action and target), `PasskeyPrompt` + `usePasskeyCeremony`, `SecurityBanner` (session ended, re-auth, cooling, change pending, recovery pending, staff verification), `CoolingPeriodNotice`, `SecurityActivity`, typed account errors with plain-language copy (`lib/auth/account-error-copy.ts`). Member MFA is post-V1 and is not shown as available.
+
+Passwords: 15+ code points after NFKC, up to 128 and 512 bytes, no composition rules or expiry, paste and password managers supported. New-password fields show a live length count (not a strength meter) and a Caps Lock hint. Component state keeps at most a character count; passwords, tokens, codes and challenges never touch `localStorage`/`sessionStorage`.
+
+## 8. Security headers
+
+`src/proxy.ts` sets a per-request nonce CSP: `script-src 'self' 'nonce-…' 'strict-dynamic'`, `object-src 'none'`, `base-uri 'none'`, `frame-ancestors 'none'`, `form-action 'self'`. It runs for **every** page and RSC request, including prefetch-marked ones, so document security headers never depend on caller-controlled request metadata (review P1-04). It also answers 400 to malformed path percent-encoding (malformed query strings render a normal UI state), and it never makes authorization decisions. `next.config.ts` adds `nosniff`, `Referrer-Policy`, `X-Frame-Options`, COOP and `Permissions-Policy`.
+
+**Styles (narrowed in Phase 2):** in production, `<style>` elements need the per-request nonce (`style-src 'self' 'nonce-…'`). Radix's runtime scroll-lock styles receive it through `get-nonce` (`components/layout/style-nonce.tsx`). Style **attributes** remain allowed (`style-src-attr 'unsafe-inline'`): they cannot carry selectors, so the remaining CSS-injection risk is small. Removing that last allowance is tracked for Phase 6. Development keeps inline styles for hot reloading.
+
+**No eval:** the CSP has no `'unsafe-eval'` in production, so Zod runs **jitless** (`packages/contracts/src/zod.ts`, imported by every contract module before any schema exists). Otherwise Zod 4 probes `Function('')` and Firefox reports a CSP violation. `apps/web` may import Zod types only (lint rule).
+
+**`upgrade-insecure-requests`** is sent on real hosts but omitted for loopback hosts: WebKit applies it to `http://localhost` and breaks local production-mode runs. Real deployments rely on HTTPS and HSTS.
+
+**Root background:** `<html>` carries the theme background as well as `<body>`, so iOS overscroll areas and contrast checkers never see default white.
+
+**Focus return:** `DialogContent` records the element that opened a dialog (`onOpenAutoFocus`) and returns focus to it on close, including dialogs opened programmatically. Safari does not focus buttons on mouse click, so after a mouse click there may be no opener to return to; keyboard users always get focus back.
+
+**Caching:** account, auth, staff and other private areas send `Cache-Control: no-store`, including prefetch requests (`NO_STORE_PREFIXES`); token pages also send `Referrer-Policy: no-referrer`.
+
+## 9. Running
+
+```
+pnpm --filter @blacklist/web dev               # mock mode, http://localhost:3000
+pnpm --filter @blacklist/web build             # production build (no mock; pages show "not connected")
+pnpm --filter @blacklist/web build:mock        # mock build (.next-mock)
+pnpm --filter @blacklist/web check:mock-exclusion
+pnpm test:e2e                                  # Playwright + axe on the mock build (port 3100), Chromium desktop + mobile
+E2E_ALL_BROWSERS=1 pnpm test:e2e               # also auth/account journeys in Firefox, WebKit and WebKit mobile
+```
+
+The demo banner's preview controls switch the fictional viewer, the account scenario and the simulated passkey result. Mock rules: re-authentication or current passwords starting with `wrong` fail; `limited@example.test` is rate-limited; `unavailable@example.test` is temporarily unavailable; the enrollment code is `DEMO2026AB`; token prefixes `expired`, `used`, `invalid`, `superseded`, `revoked` select those link states.

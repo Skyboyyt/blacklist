@@ -1,0 +1,11 @@
+{
+  "name": "@blacklist/testing",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared test harnesses: PostgreSQL containers, fixtures, provider fakes with fault injection.",
+  "type": "module",
+  "sideEffects": false,
+  "dependencies": {
+    "@blacklist/core": "workspace:*"
+  }
+}

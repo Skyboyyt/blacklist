@@ -1,0 +1,103 @@
+# .gitignore reduces accidental commits; it is NOT sufficient secret protection.
+# Also use gitleaks (pre-commit + CI) and GitHub secret scanning with push protection.
+# See AGENTS.md §7 and THREAT-MODEL.md T-45.
+
+# ---- Environment files and secrets ----
+.env
+.env.*
+!.env.example
+*.env
+.envrc
+.secrets/
+secrets/
+*.secret
+*.secrets
+
+# ---- Keys, certificates and credentials ----
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.csr
+*.der
+id_rsa*
+id_ed25519*
+*.gpg
+*.asc
+credentials.json
+service-account*.json
+*-credentials.json
+.npmrc.local
+# Wallet keypairs and mnemonic exports (Blacklist never handles these, but tooling might create them)
+*keypair*.json
+wallet*.json
+*.mnemonic
+mnemonic*.txt
+seed*.txt
+
+# ---- Dependencies ----
+node_modules/
+.pnpm-store/
+
+# ---- Build output and caches ----
+dist/
+build/
+out/
+.next/
+.next-mock/
+next-env.d.ts
+.turbo/
+.cache/
+*.tsbuildinfo
+.eslintcache
+.vercel/
+
+# ---- Tests and coverage ----
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# ---- Local databases and data ----
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
+pgdata/
+.data/
+infrastructure/local/data/
+
+# ---- Temporary uploads and evidence (never commit user content) ----
+uploads/
+tmp/
+temp/
+.tmp/
+quarantine/
+evidence-local/
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ---- Editors and operating systems ----
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ---- Local agent/tool state ----
+.claude/settings.local.json

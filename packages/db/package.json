@@ -1,0 +1,11 @@
+{
+  "name": "@blacklist/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Drizzle schema, committed SQL migrations, database client, roles and grants.",
+  "type": "module",
+  "sideEffects": false,
+  "dependencies": {
+    "@blacklist/core": "workspace:*"
+  }
+}

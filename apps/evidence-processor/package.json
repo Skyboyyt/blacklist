@@ -1,0 +1,10 @@
+{
+  "name": "@blacklist/evidence-processor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Isolated image sanitizer for evidence uploads. No database access, no secrets, egress only to object storage.",
+  "type": "module",
+  "dependencies": {
+    "@blacklist/core": "workspace:*"
+  }
+}

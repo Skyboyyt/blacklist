@@ -1,0 +1,13 @@
+{
+  "name": "@blacklist/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Blacklist HTTP API (Fastify): sessions, authentication, authorization guards, validation, and thin routes over domain services.",
+  "type": "module",
+  "dependencies": {
+    "@blacklist/config": "workspace:*",
+    "@blacklist/contracts": "workspace:*",
+    "@blacklist/core": "workspace:*",
+    "@blacklist/domain": "workspace:*"
+  }
+}

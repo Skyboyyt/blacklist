@@ -1,0 +1,31 @@
+packages:
+  - apps/*
+  - packages/*
+  - tests/*
+
+# Supply-chain policy — see docs/dependency-policy.md.
+# Changing any of these settings requires project-owner approval.
+
+# Only install versions published at least 7 days ago (value in minutes).
+minimumReleaseAge: 10080
+
+# Refuse versions whose publish trust evidence is weaker than earlier versions.
+trustPolicy: no-downgrade
+
+# Fail installs when a dependency needs an install/build script that has not been
+# explicitly approved under `allowBuilds` (none are approved yet).
+strictDepBuilds: true
+
+# Enforce the root `engines.node` range.
+engineStrict: true
+
+# Record exact versions in package.json (no ^ / ~ ranges).
+saveExact: true
+
+# Narrow dependency overrides (docs/dependency-policy.md §"Overrides").
+# These change resolution only; they never relax the policies above.
+overrides:
+  # Babel packages (via eslint-plugin-react-hooks, dev only) ask for semver ^6.3.1,
+  # which trustPolicy flags as a trust downgrade. semver 7 is API-compatible for
+  # Babel's usage and keeps publish-trust evidence intact.
+  'semver@^6': '7.7.4'
