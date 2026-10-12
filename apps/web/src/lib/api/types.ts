@@ -68,6 +68,8 @@ import type {
   ReportRequest,
   ResetPasswordForm,
   ResetPasswordOutcome,
+  ScoreboardRequest,
+  ScoreboardResponse,
   SearchRequest,
   SearchResponse,
   StaffRecoveryStatus,
@@ -95,6 +97,8 @@ export interface ResearchApi {
   /** Staff-created project profiles (PRD §5.10). Address queries are network-scoped. */
   listProjects(request: ProjectDirectoryQuery): Promise<ProjectDirectoryResponse>;
   getProject(slug: string): Promise<ResearchResult<ProjectDetail>>;
+  /** Band ranking of reviewed projects (ADR 0012, band-only; no numeric score). */
+  getScoreboard(request: ScoreboardRequest): Promise<ScoreboardResponse>;
 }
 
 /**

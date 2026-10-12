@@ -31,9 +31,14 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
         title="Projects"
         description="Project profiles created and reviewed by Blacklist staff, with their official addresses, findings and history."
         actions={
-          <ButtonLink href="/projects/suggest" variant="secondary" size="sm">
-            Suggest a project
-          </ButtonLink>
+          <div className="flex flex-wrap gap-2">
+            <ButtonLink href="/scoreboard" variant="ghost" size="sm">
+              Risk ranking
+            </ButtonLink>
+            <ButtonLink href="/projects/suggest" variant="secondary" size="sm">
+              Suggest a project
+            </ButtonLink>
+          </div>
         }
       />
       <p className="text-sm text-muted">

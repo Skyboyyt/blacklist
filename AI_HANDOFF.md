@@ -14,7 +14,7 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Phase 5 (explicit owner authorization, 2026-10-12). **Phase 6 and all backend work are NOT authorized.** |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Claude (primary engineer): Phase 5 follow-up (remaining gaps and administrator console) |
+| Last agent | Claude (primary engineer): project risk ranking (ADR 0012 accepted, band-only) |
 | Last updated | 2026-10-12 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
@@ -38,12 +38,61 @@ Read this first at the start of every session. Update it at the end of every ses
 | 10 | Claude | **Phase 2: Account & security frontend** | Login/logout/session-ended, registration and reset states, security settings, password/email change, sessions, staff enrollment/verification/step-up/recovery; member and staff DTOs; 242 unit + 168 Chromium e2e passing; Firefox/WebKit 95/96 (one load timeout, passes in isolation) |
 | 9 | Codex | **Final Phase 1 closure check** | APPROVED FOR PHASE 2 AUTHORIZATION; required fixes verified; root check exit 0, 149 unit/component passes, focused E2E 25 passes/1 skip; Phase 2 NOT authorized |
 | 11 | Codex | **Phase 2 initial review** | Three open findings: staff enrollment password discarded (High), staff reset lacks WebAuthn (High), login lacks human-verification challenge (Medium). Static review only; see review file. |
+| 18 | Claude | **Project risk ranking (scoreboard)** | Owner asked to build the scoreboard and chose the band-only ranking. ADR 0012 accepted (band-only); `/scoreboard` on mocks; contracts 77 + web 354 unit tests, Chromium E2E 322 passed / 2 skipped |
 | 17 | Claude | **Phase 5 follow-up: remaining gaps and administrator console** | Owner chose "gaps + admin console" when the Phase 5 brief was re-sent after the merge. Public subject responses, authority-signature standing, emergency suspension with 72-hour review, minimal profile, and the admin console (staff lifecycle with two-person rules, members, labels, suppressions); contracts 75 + web 348 unit tests, Chromium E2E 314 passed / 2 skipped |
 | 16 | Claude | **Phase 5: Frontend completion and integration validation** | Owner-authorized with four decisions (scope, ADR 0010 Part A accepted, scoreboard → ADR 0012 Proposed, shared server mock). Member report, suggestion, correction and appeal flows with status, replies and withdrawal; connected member↔staff journeys on a per-session demo store; transparency pages (drafts); requirements checklist; integration contracts; contracts 70 + web 321 unit tests, Chromium E2E 280 passed / 2 skipped |
 | 15 | Claude | **Phase 4: Staff review UI** | Owner-authorized, with the roadmap swap recorded (Staff UI = Phase 4, Reporting & Redress = Phase 5). Review dashboard, case workspace, approvals and admin audit on a mock moderation service that enforces roles, scope, transitions, assignment, conflicts, independence and step-up; contracts 70 + web 287 unit tests, Chromium E2E 238 passed / 2 skipped |
 | 14 | Claude | **Phase 3: Research UI (projects)** | Owner-authorized. Project directory and profiles on mocks; P1-05 source labels; P1-03 transfer scenarios; Proposed ADRs 0009–0011 for the owner's out-of-scope requests (not implemented); contracts 70 + web 243 unit tests, Chromium E2E 212 passed / 2 skipped |
 | 13 | Claude | **Phase 2 review corrections** | P2-01, P2-02 and P2-03 fixed within the approved design, with negative tests; contracts 60 + web 209 unit tests, Chromium E2E 172 passed / 2 skipped; Codex closure check requested |
 | 12 | Codex | **GitHub repository setup** | Owner requested a public `blacklist` repository and push. Created `Skyboyyt/blacklist`, pushed `chore/initial-repository`, verified remote commit and enabled secret scanning/push protection. |
+
+---
+
+## Session 18: Claude project risk ranking — ADR 0012 accepted, band-only (2026-10-12)
+
+### Decision
+
+- The owner asked to "build the score board". Claude reported the conflict with P-11 (no public number) and "no combined project rating".
+- The owner chose the **band-only ranking** over three alternatives: a numeric ranking (which would reverse P-11 with an unsigned calibration), a findings-count board, or not building it.
+- ADR 0012 is now **Accepted (band-only variant)**, with the decision recorded in full. P-11 and ADR 0009 are unchanged.
+
+### The rule (ADR 0012 Decision)
+
+- **Band:** the highest band among the project's official addresses' own assessments, on the chosen network when one is selected.
+- **Not ranked**, with a reason: stale profile, unavailable assessment, suspended finding, nothing assessed, low confidence on every address that sets the band, or no official addresses. Missing data is never ranked as low risk.
+- **Ranks** are shared within a band and listed A–Z. There is no score and no tie-break by score.
+- Project pages and directory cards still have **no combined rating**.
+
+### Completed work
+
+- **Contracts:** `scoreboardRequestSchema`, `scoreboardEntrySchema`, `scoreboardResponseSchema` in `project.ts`. Strict schemas, so score fields are rejected (tested).
+- **Service:** `ResearchApi.getScoreboard`. Mock rule in `lib/api/mock/scoreboard.ts` (reference for the research read model). Not-connected adapter fails like other research reads.
+- **UI:**
+  - public `/scoreboard` "Project risk ranking";
+  - network filter as a plain GET form (works without JavaScript; unsupported networks get the standard message);
+  - ranked list showing the deciding address and how many addresses are assessed, a "Not ranked" list, a reading guide and the "as of" time;
+  - "Risk ranking" in the main navigation and on the projects directory.
+- **Docs:** ADR 0012 and the ADR index; PRD §4.2 note; ARCHITECTURE public route and research endpoint; THREAT-MODEL T-31 note; frontend.md §7b row; requirements checklist (the scoreboard row is now Done (mock)); integration contracts.
+
+### Validation (real output, 2026-10-12)
+
+| Check | Result |
+|---|---|
+| format, lint, typecheck | Pass |
+| `pnpm test` | contracts **77 passed**; web **354 passed** |
+| `build`, `build:mock`, `check:mock-exclusion` | Pass |
+| E2E (Chromium desktop + Pixel 7) | **322 passed, 2 skipped**, 0 failed |
+| Firefox / WebKit | Not run (not installed) |
+
+New tests:
+
+- `scoreboard.test.ts` (6): order and ties, not-ranked reasons, no score in the output, network scoping, low confidence, following published decisions.
+- Contract tests (2).
+- `scoreboard.spec.ts`: ties and the not-ranked list, the network filter and an unsupported network, an approved finding moving a project from Low to High (rank "2="), axe and 360 px.
+
+### Next step
+
+Codex review of PR Skyboyyt/blacklist#4, which now also contains the ranking. Owner confirmation of the published aggregation rule wording in ADR 0012.
 
 ---
 

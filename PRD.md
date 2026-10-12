@@ -163,7 +163,7 @@ V1 proves one complete, trustworthy loop:
 | Counterparty analytics | Bounded, neutral, with authorization semantics |
 | Sanctions badge | After qualified legal review and an ADR |
 | Document evidence (PDF) | After a separate isolated-sanitization security design and ADR |
-| Project aggregate assessments | With published aggregation rules |
+| Project aggregate assessments | With published aggregation rules (a band-only ranking of projects by their highest official-address band is V1, ADR 0012; it is not a combined project rating) |
 | Association signals | Only via ADR + calibration, with authorization-basis safeguards |
 
 ### 4.3 Advanced / Future

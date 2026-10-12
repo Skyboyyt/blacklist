@@ -120,7 +120,7 @@ Contracts: `admin.ts`. Audience: active administrators in an assured session. Ev
 
 ## 5. `ResearchApi`, `AuthApi`, `AccountApi`, `StaffSecurityApi`
 
-Unchanged since Phases 1–3 and specified in [frontend.md](frontend.md) §1, §7–§7b, [identity.md](identity.md) and [chain-data.md](chain-data.md). Phase 5 adds the report status `needs_information`; the follow-up adds public `labels` and `responses` to address research, `suppressions` to the public assessment, `standingProvenAt` to responses, and timeline events for reinstatement, reversal, published responses and suppressions.
+Unchanged since Phases 1–3 and specified in [frontend.md](frontend.md) §1, §7–§7b, [identity.md](identity.md) and [chain-data.md](chain-data.md). `getScoreboard(request)` → `GET /projects/scoreboard?chain=` returns the band ranking of ADR 0012 (`scoreboardResponseSchema`; the research read model implements the rule in `lib/api/mock/scoreboard.ts`). Phase 5 adds the report status `needs_information`; the follow-up adds public `labels` and `responses` to address research, `suppressions` to the public assessment, `standingProvenAt` to responses, and timeline events for reinstatement, reversal, published responses and suppressions.
 
 ## 6. Backend capabilities the frontend depends on
 
@@ -163,4 +163,4 @@ Unchanged since Phases 1–3 and specified in [frontend.md](frontend.md) §1, §
 2. Correction and response statuses: the UI uses the interim sets `submitted, in_review, accepted, rejected` and `submitted, in_review, published, rejected, withdrawn`; the data model does not yet define them (documentation gaps).
 3. Endpoint additions to ARCHITECTURE §7.1 for ADR 0010 Part A, the member submission views, suspension reviews and the admin console (`/project-suggestions`, `/me/submissions*`, `/mod/cases/:id/{assignment,notes,decisions}`, `/mod/findings`, `/admin/overview`, `/admin/staff/*` detail).
 4. Staff recovery verifiers: the demo lets two administrators verify; identity §10.11 allows any two staff members, at least one an admin, which needs a staff-facing verification screen.
-5. Scoring sign-off (O-12) before staff scores leave "calibration proposal"; ADRs 0009, 0011 and 0012 remain Proposed.
+5. Scoring sign-off (O-12) before staff scores leave "calibration proposal"; ADRs 0009 and 0011 remain Proposed (0012 accepted, band-only).

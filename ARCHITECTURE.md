@@ -282,7 +282,7 @@ request
 
 | Group | Routes (V1) | Access |
 |---|---|---|
-| `(public)` | `/`, `/search`, `/address/[chain]/[address]`, `/tx/[chain]/[hash]`, `/projects`, `/project/[slug]`, `/finding/[id]`, `/methodology`, `/terms`, `/privacy`, `/security` | Anyone |
+| `(public)` | `/`, `/search`, `/address/[chain]/[address]`, `/tx/[chain]/[hash]`, `/projects`, `/project/[slug]`, `/scoreboard` (band ranking, ADR 0012), `/finding/[id]`, `/methodology`, `/terms`, `/privacy`, `/security` | Anyone |
 | `(auth)` | `/login`, `/register`, `/register/complete`, `/forgot-password`, `/reset-password`, `/email-change/confirm`, `/staff/enroll`, `/staff/verify` | Token/flow pages per [identity design](docs/design/identity.md); tokens travel in URL fragments |
 | `(app)` | `/dashboard`, `/reports`, `/reports/new`, `/reports/[id]`, `/appeals/new`, `/appeals/[id]`, `/responses/new`, `/responses/[id]`, `/corrections/new`, `/corrections/[id]`, `/projects/suggest`, `/projects/suggestions/[id]` (ADR 0010 Part A), `/notifications`, `/settings/profile`, `/settings/security` (password, email, sessions) | Signed-in member or staff |
 | `(staff)` | `/mod`, `/mod/cases/[id]`, `/mod/approvals`, `/mod/appeals`, `/mod/findings` (emergency suspension), `/mod/standing`, `/admin`, `/admin/staff`, `/admin/users`, `/admin/projects`, `/admin/labels`, `/admin/signals`, `/admin/audit` | Staff session with WebAuthn assurance. In the frontend phases standing is decided in the case workspace (`/mod/cases/[id]`) and project profiles are managed through correction and suggestion cases, so `/mod/standing` and `/admin/projects` have no separate page yet |
@@ -340,7 +340,7 @@ Indicative V1 endpoint groups:
 | Auth | `POST /auth/register/start`, `POST /auth/register/complete`, `POST /auth/login`, `POST /auth/logout`, `POST /auth/password/forgot`, `POST /auth/password/reset/challenge`, `POST /auth/password/reset`, `POST /auth/reauth`, `GET /auth/session` |
 | Staff auth | `POST /auth/staff/webauthn/challenge`, `POST /auth/staff/webauthn/verify`, `POST /auth/staff/stepup/challenge`, `POST /staff/enroll/*` |
 | Account | `GET/PATCH /me`, `GET /me/sessions`, `DELETE /me/sessions/:id`, `POST /me/sessions/revoke-others`, `POST /me/password`, `POST /me/email-change`, `POST /me/email-change/confirm` |
-| Research | `GET /search`, `GET /addresses/:chain/:address`, `…/transactions`, `…/assessment`, `…/assessment/history`, `GET /transactions/:chain/:hash`, `GET /projects` (directory: query, chain-scoped address match, category, findings status, sort, page), `GET /projects/:slug`, `GET /findings/:id` |
+| Research | `GET /search`, `GET /addresses/:chain/:address`, `…/transactions`, `…/assessment`, `…/assessment/history`, `GET /transactions/:chain/:hash`, `GET /projects` (directory: query, chain-scoped address match, category, findings status, sort, page), `GET /projects/:slug`, `GET /projects/scoreboard` (band-only, ADR 0012), `GET /findings/:id` |
 | Reports | `POST /reports`, `PATCH /reports/:id`, `POST /reports/:id/evidence`, `POST /reports/:id/submit`, `POST /reports/:id/withdraw`, `GET /me/reports` |
 | Redress | `POST /standing/challenges`, `POST /standing/claims`, `POST /subjects/:id/responses`, `POST /findings/:id/appeals`, `POST /corrections` |
 | Notifications | `GET /me/notifications`, `POST /me/notifications/read` |

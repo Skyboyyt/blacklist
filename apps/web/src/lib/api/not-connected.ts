@@ -25,6 +25,7 @@ export const notConnectedResearchApi: ResearchApi = {
   getDashboard: fail,
   listProjects: fail,
   getProject: fail,
+  getScoreboard: fail,
 };
 
 const unavailable = () => Promise.resolve({ kind: 'temporarily_unavailable' as const });

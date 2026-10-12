@@ -28,6 +28,7 @@ export const PRIMARY_NAV: NavSection = {
   items: [
     { href: '/search', label: 'Research', icon: 'search', matchPrefix: '/search' },
     { href: '/projects', label: 'Projects', icon: 'projects', matchPrefix: '/project' },
+    { href: '/scoreboard', label: 'Risk ranking', icon: 'projects' },
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { href: '/reports', label: 'Reports', icon: 'reports', matchPrefix: '/reports' },
     { href: '/appeals/new', label: 'Appeals & responses', icon: 'appeals', matchPrefix: '/appeals' },
