@@ -8,6 +8,7 @@ import {
   type AccountApi,
   type AuthApi,
   type HumanVerifierClient,
+  type ModerationApi,
   type ResearchApi,
   type StaffSecurityApi,
 } from './types';
@@ -62,4 +63,22 @@ export const notConnectedStaffSecurityApi: StaffSecurityApi = {
 /** No provider is chosen yet (O-6): the challenge fails closed. */
 export const notConnectedHumanVerifier: HumanVerifierClient = {
   challenge: () => Promise.resolve({ kind: 'unavailable' }),
+};
+
+const moderationUnavailable = () =>
+  Promise.resolve({ kind: 'error' as const, code: 'temporarily_unavailable' as const });
+
+/** No staff data exists without the API. Step-ups never succeed. */
+export const notConnectedModerationApi: ModerationApi = {
+  getQueue: moderationUnavailable,
+  getCase: moderationUnavailable,
+  assign: moderationUnavailable,
+  addNote: moderationUnavailable,
+  verifyStepUp: () => Promise.resolve({ kind: 'failed' }),
+  decide: moderationUnavailable,
+  listRevisions: moderationUnavailable,
+  approveRevision: moderationUnavailable,
+  rejectRevision: moderationUnavailable,
+  getAuditLog: moderationUnavailable,
+  getProfileState: moderationUnavailable,
 };

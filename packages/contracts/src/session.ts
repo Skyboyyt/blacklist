@@ -6,7 +6,7 @@
  */
 import { z } from './zod.ts';
 
-export const viewerRoleSchema = z.enum(['member', 'moderator', 'admin']);
+export const viewerRoleSchema = z.enum(['member', 'moderator', 'admin', 'appeal_reviewer']);
 export type ViewerRole = z.infer<typeof viewerRoleSchema>;
 
 export const viewerSchema = z.discriminatedUnion('kind', [

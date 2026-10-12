@@ -6,7 +6,7 @@
 
 ## 1. Project status
 
-- **Stage:** FRONTEND-FIRST DEVELOPMENT. Phase 0 and Phase 1 are closed. Phase 2 (frontend account, authentication and security flows) passed review (owner, 2026-10-12). Phase 3 (Research UI: project directory and profiles, research refinements) was authorized by the owner on 2026-10-12, implemented on contracts and mocks, and awaits Codex review. **Phase 4 is not authorized.** No backend or production feature exists. `AI_HANDOFF.md` holds the current state.
+- **Stage:** FRONTEND-FIRST DEVELOPMENT. Phase 0 and Phase 1 are closed. Phase 2 (frontend account, authentication and security flows) passed review (owner, 2026-10-12). Phase 3 (Research UI: project directory and profiles) was implemented and merged. Phase 4 (Staff review UI; the owner swapped the original Phases 4 and 5 on 2026-10-12) was authorized by the owner, implemented on contracts and mocks, and awaits Codex review. **Phase 5 is not authorized.** No backend or production feature exists. `AI_HANDOFF.md` holds the current state.
 - **Execution is frontend-first** (owner decision; ARCHITECTURE.md §36):
   - Phases 1–6 build and review the primary frontend against `@blacklist/contracts` and a typed mock client.
   - Phase 7 (Backend Foundation) starts with the backend acceptance gates (D1–D9, S1–S17).

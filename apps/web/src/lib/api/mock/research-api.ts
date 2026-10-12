@@ -138,8 +138,8 @@ export function createMockResearchApi(options: MockOptions = {}): ResearchApi {
   const viewer: Viewer =
     options.scenario === 'session_expired'
       ? { kind: 'anonymous', reason: 'session_expired' }
-      : viewerKey === 'anonymous' || viewerKey === 'moderator' || viewerKey === 'admin'
-        ? VIEWER_FIXTURES[viewerKey]
+      : viewerKey !== undefined && viewerKey in VIEWER_FIXTURES
+        ? VIEWER_FIXTURES[viewerKey as keyof typeof VIEWER_FIXTURES]
         : VIEWER_FIXTURES.member;
 
   return {

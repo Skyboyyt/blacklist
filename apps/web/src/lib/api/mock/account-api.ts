@@ -30,11 +30,22 @@ import {
   STAFF_AUTHENTICATOR_FIXTURES,
   STAFF_RECOVERY_FIXTURE,
 } from './fixtures/account';
-import { MOCK_COOKIES, currentPasskeyResult, currentScenario, currentViewerKey } from './scenario';
+import {
+  MOCK_COOKIES,
+  currentPasskeyResult,
+  currentScenario,
+  currentViewerKey,
+  isMockStaffViewer,
+} from './scenario';
 
 const REAUTH_WINDOW_MS = 10 * 60 * 1000;
 const COOLING_REMAINING_MS = 60 * 60 * 60 * 1000;
-const STAFF_HANDLES = { moderator: 'demo_moderator', admin: 'demo_admin' } as const;
+const STAFF_HANDLES = {
+  moderator: 'demo_moderator',
+  moderator_b: 'demo_moderator_b',
+  appeal_reviewer: 'demo_appeal_reviewer',
+  admin: 'demo_admin',
+} as const;
 
 export interface MockAccountOptions {
   /** Cookie string to read preview controls from (document.cookie in the browser). */
@@ -90,7 +101,7 @@ export function createMockAccountApis(options: MockAccountOptions): {
 
   const scenario = () => currentScenario(options.cookies());
   const viewer = () => currentViewerKey(options.cookies());
-  const isStaff = () => viewer() === 'moderator' || viewer() === 'admin';
+  const isStaff = () => isMockStaffViewer(viewer());
   const sessionGone = () => viewer() === 'anonymous' || scenario() === 'session_expired';
   const coolingUntil = () =>
     scenario() === 'cooling_period' ? new Date(now().getTime() + COOLING_REMAINING_MS).toISOString() : null;
@@ -126,13 +137,13 @@ export function createMockAccountApis(options: MockAccountOptions): {
       await wait(latency);
       if (sessionGone()) return error('session_expired');
       const staffKey = viewer();
-      const staff = staffKey === 'moderator' || staffKey === 'admin';
+      const staff = isMockStaffViewer(staffKey);
       const until = coolingUntil();
       return accountSecurityResultSchema.parse({
         kind: 'ok',
         data: {
           accountKind: staff ? 'staff' : 'member',
-          handle: staff ? STAFF_HANDLES[staffKey] : 'demo_member',
+          handle: isMockStaffViewer(staffKey) ? STAFF_HANDLES[staffKey] : 'demo_member',
           email: staff ? 'staff@example.test' : 'member@example.test',
           passwordChangedAt: until ? now().toISOString() : store.passwordChangedAt,
           cooling: until ? { reason: 'password_reset', until } : null,
@@ -203,7 +214,8 @@ export function createMockAccountApis(options: MockAccountOptions): {
       return {
         kind: 'ok',
         data: {
-          role: viewer() === 'admin' ? 'admin' : 'moderator',
+          role:
+            viewer() === 'admin' ? 'admin' : viewer() === 'appeal_reviewer' ? 'appeal_reviewer' : 'moderator',
           authenticators: store.authenticators,
           authenticatorDeficitSince: store.deficitSince,
         },

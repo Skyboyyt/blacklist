@@ -90,7 +90,7 @@ test.describe('staff passkey flows (mock)', () => {
     await preview(context, { bl_mock_passkey: 'verified' });
     await page.getByRole('button', { name: 'Try again' }).click();
     await expect(page).toHaveURL(/\/mod$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Moderation queue' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Review dashboard' })).toBeVisible();
   });
 
   test('staff enrollment requires the code and two authenticators; token leaves the URL', async ({

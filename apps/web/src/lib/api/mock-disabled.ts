@@ -30,3 +30,9 @@ export const mockHumanVerifier: typeof Mock.mockHumanVerifier = new Proxy(
     get: unavailable,
   },
 );
+export const mockModerationApi: typeof Mock.mockModerationApi = new Proxy(
+  {} as typeof Mock.mockModerationApi,
+  {
+    get: unavailable,
+  },
+);

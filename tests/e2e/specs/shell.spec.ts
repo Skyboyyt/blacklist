@@ -66,7 +66,7 @@ test.describe('application shell', () => {
     await expect(page.locator('#main')).toBeFocused();
   });
 
-  test('staff navigation is structural: hidden for members, shown for staff; staff pages hold no data', async ({
+  test('staff navigation is structural: hidden for members, shown for staff; staff data comes from the staff service', async ({
     page,
     context,
   }) => {
@@ -74,8 +74,9 @@ test.describe('application shell', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Staff access required' })).toBeVisible();
     await context.addCookies([{ name: 'bl_mock_viewer', value: 'moderator', url: 'http://localhost:3100' }]);
     await page.goto('/mod');
-    await expect(page.getByRole('heading', { level: 1, name: 'Moderation queue' })).toBeVisible();
-    await expect(page.getByText('This page holds no case data.')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Review dashboard' })).toBeVisible();
+    // Phase 4: case data is loaded from the (mock) moderation service, which itself refuses non-staff.
+    await expect(page.getByText('Open reports')).toBeVisible();
   });
 
   test('signed-in pages ask anonymous viewers to sign in', async ({ page, context }) => {

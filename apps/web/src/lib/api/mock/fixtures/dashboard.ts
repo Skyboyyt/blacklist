@@ -1,5 +1,6 @@
 /** Fictional dashboard fixture: the demo viewer's own activity only, no platform metrics. */
 import type { Dashboard, Viewer } from '@blacklist/contracts';
+import type { MockViewerKey } from '../scenario';
 import { EVM, SOLANA } from './ids';
 
 export const DASHBOARD_FIXTURE: Dashboard = {
@@ -32,9 +33,16 @@ export const DASHBOARD_FIXTURE: Dashboard = {
   ],
 };
 
-export const VIEWER_FIXTURES: Readonly<Record<'anonymous' | 'member' | 'moderator' | 'admin', Viewer>> = {
+export const VIEWER_FIXTURES: Readonly<Record<MockViewerKey, Viewer>> = {
   anonymous: { kind: 'anonymous' },
   member: { kind: 'signed_in', handle: 'demo_member', role: 'member', emailVerified: true },
   moderator: { kind: 'signed_in', handle: 'demo_moderator', role: 'moderator', emailVerified: true },
+  moderator_b: { kind: 'signed_in', handle: 'demo_moderator_b', role: 'moderator', emailVerified: true },
+  appeal_reviewer: {
+    kind: 'signed_in',
+    handle: 'demo_appeal_reviewer',
+    role: 'appeal_reviewer',
+    emailVerified: true,
+  },
   admin: { kind: 'signed_in', handle: 'demo_admin', role: 'admin', emailVerified: true },
 };
