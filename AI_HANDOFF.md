@@ -9,17 +9,17 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 2 review open)** |
-| Current phase | **Phase 2 — Frontend Account, Authentication & Security Experience: review findings open** |
+| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 2 closure check pending)** |
+| Current phase | **Phase 2 — Frontend Account, Authentication & Security Experience: P2-01–P2-03 fixed, awaiting Codex closure check** |
 | Authorized phase | Phase 2 (explicit owner authorization, 2026-10-05). **Phase 3 is NOT authorized.** |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex (secondary engineer): repository setup |
+| Last agent | Claude (primary engineer): Phase 2 review corrections |
 | Last updated | 2026-10-12 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
 >
-> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the pushed branch is `chore/initial-repository`.
+> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the pushed branches are `chore/initial-repository` and `claude/amazing-goodall-drtbc9` (Phase 2 corrections).
 
 ---
 
@@ -38,7 +38,34 @@ Read this first at the start of every session. Update it at the end of every ses
 | 10 | Claude | **Phase 2: Account & security frontend** | Login/logout/session-ended, registration and reset states, security settings, password/email change, sessions, staff enrollment/verification/step-up/recovery; member and staff DTOs; 242 unit + 168 Chromium e2e passing; Firefox/WebKit 95/96 (one load timeout, passes in isolation) |
 | 9 | Codex | **Final Phase 1 closure check** | APPROVED FOR PHASE 2 AUTHORIZATION; required fixes verified; root check exit 0, 149 unit/component passes, focused E2E 25 passes/1 skip; Phase 2 NOT authorized |
 | 11 | Codex | **Phase 2 initial review** | Three open findings: staff enrollment password discarded (High), staff reset lacks WebAuthn (High), login lacks human-verification challenge (Medium). Static review only; see review file. |
+| 13 | Claude | **Phase 2 review corrections** | P2-01, P2-02 and P2-03 fixed within the approved design, with negative tests; contracts 60 + web 209 unit tests, Chromium E2E 172 passed / 2 skipped; Codex closure check requested |
 | 12 | Codex | **GitHub repository setup** | Owner requested a public `blacklist` repository and push. Created `Skyboyyt/blacklist`, pushed `chore/initial-repository`, verified remote commit and enabled secret scanning/push protection. |
+
+---
+
+## Session 13: Claude Phase 2 review corrections (2026-10-12)
+
+- **Safety check:** the task is inside authorized Phase 2: findings on Phase 2 frontend code. No backend, no Phase 3 work, no new dependency, no architecture change (identity §6.3, §10.5 and §12 already require these behaviours). No ADR needed.
+- **Completed (commit `596112b`, branch `claude/amazing-goodall-drtbc9`):** full responses are in [the Phase 2 review](docs/reviews/2026-10-12-phase-2-codex-review.md).
+  - **P2-01:** `enrollmentPasswordRequestSchema` and `StaffSecurityApi.setEnrollmentPassword` send the chosen password to the bound enrollment flow. A new `enrollment_incomplete` account error blocks activation without a password and two authenticators. The mock tracks the flow state (whether a password was sent, never the value).
+  - **P2-02:** `resetPasswordOutcomeSchema` (`passkey_required`, `passkey_not_verified`) and `AuthApi.resetPassword(token, form, { withPasskey })`. `ResetPasswordForm` adds a token-bound passkey step. Mock reset tokens starting `staff` need a passkey.
+  - **P2-03:** `human_verification_required` login outcome and an optional opaque `humanVerification` on the login request. A provider-neutral `HumanVerifierClient` port and the `HumanVerification` component; the not-connected adapter fails closed. Mock email `challenge@example.test`.
+- **Files changed:** contracts `auth.ts`, `account.ts`, `staff.ts` and tests; web `lib/api/{types,browser,not-connected,mock-disabled}.ts`, mock `auth-api.ts`, `account-api.ts`, `fixtures/ids.ts`, `index.ts` and tests; `components/auth/{login-form,reset-password-form,human-verification}.tsx` and tests; `components/security/staff-enrollment-flow.tsx` and tests; `lib/auth/account-error-copy.ts`; `tests/e2e/specs/auth.spec.ts`; `docs/design/frontend.md` (§7, §7a); the review file; this handoff. **Migrations:** none. **Dependencies:** none.
+- **Tests and results (real exit codes, Node 24.21.0, pnpm 12.7.0):**
+  - Baseline before changes: all checks exit 0; contracts 55 and web 187 tests.
+  - After changes: `format:check`, `lint`, `typecheck`, `test` (contracts **60**, web **209**), `build` (27 routes), `build:mock` and `check:mock-exclusion` all exit 0.
+  - Chromium E2E: **172 passed, 2 skipped**. It ran on the cloud image's preinstalled Chromium 1194 through a temporary config override, deleted before commit, because Playwright 1.63 expects build 1243.
+  - Firefox and WebKit were **not** run.
+- **Security check:** T-01, T-02, T-03, T-05, T-17 and T-18.
+  - Passwords, reset tokens and verification responses never touch browser storage (tested). The reset password is held in component memory only between the two submissions.
+  - Each new outcome keeps responses generic. The staff passkey step tells the holder of a valid reset link that the account is staff; that holder already controls the mailbox, and the §6.3 challenge endpoint exposes the same fact.
+  - Mocks still grant nothing. The mock-exclusion check passes.
+- **Decisions:** none architectural. Contract additions are recorded in the review file and frontend.md.
+- **Deferred:**
+  - Human-verification provider (O-6, owner). When chosen: the CSP `script-src`/`frame-src` allowance for its widget, and a live `HumanVerifierClient`.
+  - Server enforcement of all three behaviours (Phase 7: S-gates, identity suites).
+- **Known issues:** the cloud image's Playwright browsers do not match the pinned Playwright version, so E2E needs the override described above. This is not a repository issue.
+- **Recommended next step:** a focused Codex closure check of P2-01 to P2-03, ideally including the Firefox/WebKit E2E run (`E2E_ALL_BROWSERS=1`). Phase 3 still needs separate owner authorization.
 
 ---
 
