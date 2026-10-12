@@ -9,9 +9,9 @@ Core principles:
 
 ## Current status
 
-> **Phase 4 (staff review UI) implemented on mocks and awaiting Codex review; no backend exists. Phase 5 is not authorized.**
+> **Phase 5 (frontend completion and integration validation) implemented on mocks and awaiting Codex review; no backend exists. Phase 6 is not authorized.**
 >
-> This repository contains the product requirements, architecture (revision 3), normative design documents, a threat model, engineering rules and ADRs. The frontend includes a design system, application shell, research previews, Phase 2 account and security screens, Phase 3 project directory and profile pages, and Phase 4 staff review screens running on typed contracts and a **mock adapter with fictional data** ([docs/design/frontend.md](docs/design/frontend.md)). **No real data, accounts or assessments exist.** Do not deploy this repository.
+> This repository contains the product requirements, architecture (revision 3), normative design documents, a threat model, engineering rules and ADRs. The frontend includes a design system, application shell, research previews, Phase 2 account and security screens, Phase 3 project directory and profile pages, Phase 4 staff review screens, and Phase 5 member submission flows connected to staff review on a shared demo store, running on typed contracts and a **mock adapter with fictional data** ([docs/design/frontend.md](docs/design/frontend.md)). **No real data, accounts or assessments exist.** Do not deploy this repository.
 >
 > **Development is frontend-first.** After Phase 0 closes:
 > 1. Phases 1–6 build and review the primary frontend against typed contracts and mocks.

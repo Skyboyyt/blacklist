@@ -36,3 +36,8 @@ export const mockModerationApi: typeof Mock.mockModerationApi = new Proxy(
     get: unavailable,
   },
 );
+export const mockMemberApi: typeof Mock.mockMemberApi = new Proxy({} as typeof Mock.mockMemberApi, {
+  get: unavailable,
+});
+export const handleMockRpc: typeof Mock.handleMockRpc = unavailable;
+export const resetMockSession: typeof Mock.resetMockSession = unavailable;

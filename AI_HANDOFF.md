@@ -9,17 +9,17 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 4 implemented, awaiting Codex review)** |
-| Current phase | **Phase 4 — Staff Review UI (owner reordered Phases 4 and 5 on 2026-10-12): implemented on mocks, awaiting Codex review.** Phase 3 merged (PR Skyboyyt/blacklist#1) |
-| Authorized phase | Phase 4 (explicit owner authorization, 2026-10-12). **Phase 5 is NOT authorized.** |
+| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 5 implemented, awaiting Codex review)** |
+| Current phase | **Phase 5 — Frontend Completion and Integration Validation: implemented on mocks, awaiting Codex review.** Phase 3 merged (PR Skyboyyt/blacklist#1); Phase 4 merged (PR Skyboyyt/blacklist#2) |
+| Authorized phase | Phase 5 (explicit owner authorization, 2026-10-12). **Phase 6 and all backend work are NOT authorized.** |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Claude (primary engineer): Phase 4 implementation |
+| Last agent | Claude (primary engineer): Phase 5 implementation |
 | Last updated | 2026-10-12 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
 >
-> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the pushed branches are `chore/initial-repository` and `claude/amazing-goodall-drtbc9` (Phase 2 corrections).
+> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the default branch is `chore/initial-repository`; Phase 5 work is on `claude/amazing-goodall-drtbc9` (restarted from the Phase 4 merge).
 
 ---
 
@@ -38,10 +38,158 @@ Read this first at the start of every session. Update it at the end of every ses
 | 10 | Claude | **Phase 2: Account & security frontend** | Login/logout/session-ended, registration and reset states, security settings, password/email change, sessions, staff enrollment/verification/step-up/recovery; member and staff DTOs; 242 unit + 168 Chromium e2e passing; Firefox/WebKit 95/96 (one load timeout, passes in isolation) |
 | 9 | Codex | **Final Phase 1 closure check** | APPROVED FOR PHASE 2 AUTHORIZATION; required fixes verified; root check exit 0, 149 unit/component passes, focused E2E 25 passes/1 skip; Phase 2 NOT authorized |
 | 11 | Codex | **Phase 2 initial review** | Three open findings: staff enrollment password discarded (High), staff reset lacks WebAuthn (High), login lacks human-verification challenge (Medium). Static review only; see review file. |
+| 16 | Claude | **Phase 5: Frontend completion and integration validation** | Owner-authorized with four decisions (scope, ADR 0010 Part A accepted, scoreboard → ADR 0012 Proposed, shared server mock). Member report, suggestion, correction and appeal flows with status, replies and withdrawal; connected member↔staff journeys on a per-session demo store; transparency pages (drafts); requirements checklist; integration contracts; contracts 70 + web 321 unit tests, Chromium E2E 280 passed / 2 skipped |
 | 15 | Claude | **Phase 4: Staff review UI** | Owner-authorized, with the roadmap swap recorded (Staff UI = Phase 4, Reporting & Redress = Phase 5). Review dashboard, case workspace, approvals and admin audit on a mock moderation service that enforces roles, scope, transitions, assignment, conflicts, independence and step-up; contracts 70 + web 287 unit tests, Chromium E2E 238 passed / 2 skipped |
 | 14 | Claude | **Phase 3: Research UI (projects)** | Owner-authorized. Project directory and profiles on mocks; P1-05 source labels; P1-03 transfer scenarios; Proposed ADRs 0009–0011 for the owner's out-of-scope requests (not implemented); contracts 70 + web 243 unit tests, Chromium E2E 212 passed / 2 skipped |
 | 13 | Claude | **Phase 2 review corrections** | P2-01, P2-02 and P2-03 fixed within the approved design, with negative tests; contracts 60 + web 209 unit tests, Chromium E2E 172 passed / 2 skipped; Codex closure check requested |
 | 12 | Codex | **GitHub repository setup** | Owner requested a public `blacklist` repository and push. Created `Skyboyyt/blacklist`, pushed `chore/initial-repository`, verified remote commit and enabled secret scanning/push protection. |
+
+---
+
+## Session 16: Claude Phase 5 — Frontend Completion and Integration Validation (2026-10-12)
+
+### Authorization, scope and discrepancies
+
+- **Owner instruction (2026-10-12):** "Phase 5: Frontend Completion and Integration Validation". Stop after Phase 5 for Codex review; no backend and no Phase 6. None was started.
+- **Phase 4 check:** merged as PR Skyboyyt/blacklist#2 (merge commit `2ae2926`). The branch was restarted from it. The full suite passed at the end of this session (below), and existing E2E specs needed only the two intended wording changes listed under "Test changes".
+- **Owner decisions (asked before building):**
+
+| Question | Decision | Result |
+|---|---|---|
+| Scope | Phase 5 + fixes | Documented Phase 5 member flows, connected journeys, contracts, plus accessibility/layout fixes found on the way. The full WCAG 2.2 AA audit stays in Phase 6 |
+| ADR 0010 (project submissions) | Accept Part A | Private project suggestions (`submitted / needs_information / accepted_into_profile / not_accepted`), image-only evidence; Part B (claims, self-service verification) stays Proposed / Post-V1 |
+| Scoreboard | Don't build; propose an ADR | ADR 0012 Proposed (no approved ranking rules; conflicts with P-11 and "no combined project rating") |
+| Mock store | Shared server mock | In-memory per demo session on the Next server, mock builds only; reset action |
+
+- **Roadmap differences (reported, not silently changed):**
+  - The brief's name and scope differ from ARCHITECTURE §36 Phase 5 ("Reporting & Redress UI"). §36 now carries a factual note: the brief adds connected journeys, the checklist and the integration contracts.
+  - **Not built** (listed in the checklist):
+    - emergency suspension and the admin console beyond the audit viewer (§36 Phase 4);
+    - public subject responses and the authority-signature standing mechanism (§36 Phase 5);
+    - real upload processing states (Phase 7, ADR 0004);
+    - profile settings (still a placeholder; no profile contract exists).
+
+### Completed work
+
+- **Contracts:**
+  - `submissions.ts` (new, member-private): request schemas for report, project suggestion, correction, appeal with standing proof, and information reply, with per-network address and transaction checks and image-only evidence metadata; the member's own summary and detail views (no notes, rationales or staff identities); notices; typed member errors; the appeal target.
+  - `moderation.ts` extended: case type `project_suggestion`, standing outcome `pending`, decisions `accept_suggestion`, `reject_suggestion`, `grant_standing`, `deny_standing`, information request and submitter messages on every case, `openSuggestions` count.
+  - `member.ts`: report status `needs_information`.
+- **Shared demo store** (`lib/api/mock/store.ts`) behind every mock service:
+  - `proxy.ts` issues an httpOnly `bl_mock_session` cookie in mock mode.
+  - Client components reach the store through `POST /api/mock/rpc`: mock builds only, same-origin, exact shape, method allowlist shared with the client (`rpc-methods.ts`). It returns 404 otherwise, and the handler is a stub in non-mock builds.
+  - "Reset demo data" sits in the demo banner.
+  - Public effects (`public-effects.ts`):
+    - publication of an approved finding and band recomputation from the §15.3 proposal;
+    - appeal "under appeal" (never downgrading a suspension), and uphold, amend or reverse;
+    - correction → profile revision;
+    - suggestion → staff profile.
+- **Member service** (`member-api.ts`) enforces sign-in, ownership (`not_found` for others' items), validation, versions, transitions, one open appeal per finding per member, and simulated standing labelled `SIMULATED`.
+- **Member UI:**
+  - forms: report, project suggestion, correction and appeal (signature, DNS or documentary standing);
+  - private status pages for each kind: history, staff request and reply, withdraw with confirmation, reason, public outcome and link, conflict → "Load the latest status";
+  - "Your submissions" on the dashboard, and `/notifications`.
+  - Evidence upload is simulated and image-only, with progress, failure, retry and remove; it sends metadata only.
+- **Entry points:**
+  - "Appeal this finding" on every published finding;
+  - "Propose a correction" on project pages;
+  - "Suggest a project" in the directory and dashboard.
+- **Staff UI:**
+  - project suggestions appear in the queue, counts and filters;
+  - the workspace shows suggestion details (defanged links) and the submitter's replies;
+  - standing is decided before an appeal decision (offered only once the review has started).
+- **Transparency:** `/privacy`, `/security` and `/terms` are drafts labelled "pending legal review". Methodology gained "How reviews work". Footer links appear on every page.
+- **Docs:**
+  - [docs/frontend-requirements-checklist.md](docs/frontend-requirements-checklist.md) (new);
+  - [docs/design/api-integration-contracts.md](docs/design/api-integration-contracts.md) (new);
+  - frontend.md §7d (new) plus updates to §1, the contract table, §7b and §7c;
+  - ARCHITECTURE: routes, the §7.1 pointer and the §36 note;
+  - PRD §4.4;
+  - ADR 0010 (Part A Accepted), ADR 0012 (new, Proposed) and the ADR index;
+  - data-model `project_suggestions` (documented, not migrated);
+  - README and AGENTS status.
+
+### Bugs found and fixed during the phase
+
+1. "Accept and publish profile" never showed its public-explanation field, so the decision could not be completed. Fixed; a regression test fails without the fix.
+2. Filing an appeal downgraded a suspended finding to "under appeal". Withdrawing one appeal cleared the dispute even while another person's appeal was still open. Both fixed and tested.
+3. The browser RPC client was a `Proxy`: awaiting it called `.then`, so every member page hung. Replaced by plain objects built from the shared method list.
+4. Finding `demo-finding-501` had no participant record, so its appeal link ended in "not found". Added.
+5. The dashboard overflowed by 84 px at 360 px once the "Information requested" badge appeared. Fixed with a `minmax(0,1fr)` grid.
+6. Standing decisions were offered while an appeal was still `submitted` (unassigned), which raced with "Start review". Now offered, and accepted by the service, only in `in_review`.
+
+### Validation (real output, 2026-10-12, Node 24.21.0)
+
+| Check | Result |
+|---|---|
+| `pnpm format:check` | All files use Prettier style |
+| `pnpm lint` | 0 problems |
+| `pnpm typecheck` | Pass (contracts, web app and tests) |
+| `pnpm test` | contracts **70 passed** (4 files); web **321 passed** (32 files) |
+| `build` / `build:mock` | Both compile; all routes listed, including `/api/mock/rpc` |
+| `check:mock-exclusion` | PASS (Phase 5 markers added: none in the production build, present in the mock build) |
+| E2E (Chromium desktop + Pixel 7) | **280 passed, 2 skipped** (the same two skips as Phase 4), 0 failed |
+| Firefox / WebKit | **Not run**: the browsers are not installed in this environment |
+
+New E2E (`journeys.spec.ts`):
+
+- report → information request → reply → accept → independent approval → public finding (internal text and the staff message absent from the public page);
+- project suggestion → moderator cannot accept → administrator accepts with a security key → public profile and directory;
+- correction → profile change;
+- documentary appeal → participant refused → standing granted → reversal → finding removed, history explains;
+- stale reply conflict;
+- demo reset;
+- signed-out boundaries;
+- cross-member privacy;
+- RPC refusals;
+- axe and 360 px checks on 7 member pages;
+- transparency pages via the footer.
+
+New unit tests:
+
+- `member-api.test.ts` (15), `public-effects.test.ts` (1), `rpc-server.test.ts` (5), `route.test.ts` (2);
+- `submissions.test.tsx` (11: upload validation and retry, report form, status page, appeal form);
+- `staff-review.test.tsx` (+1, suggestion acceptance).
+
+E2E was run with a temporary local config pointing Playwright at `/opt/pw-browsers/chromium`. The config was deleted before committing.
+
+### Test changes (intentional)
+
+- `projects.test.tsx` and `projects.spec.ts`: the signed-in project action is now "Propose a correction" (→ `/corrections/new?project=…`) instead of the generic "Respond, correct or appeal" (→ `/appeals/new`). Appeals start from a specific finding.
+- `moderation-api.test.ts` and `project-api.test.ts`: adapted to the store-based factories (same assertions).
+
+### Security check (AGENTS §9)
+
+- **Authorization:** every new mock method checks sign-in, ownership, permission, version and transition. The pages are UX only. The integration contract lists the server checks required in Phase 7. **The frontend permission demos are not production authorization** (frontend.md §7d).
+- **Privacy:**
+  - member views are strict and exclude notes, rationales and staff identities (tested);
+  - unreviewed reports and suggestions have no public effect;
+  - public pages were checked for internal text after a full journey.
+- **Storage:** nothing from submissions is stored in the browser. The mock cookies are fictional, and `bl_mock_session` is a random UUID. The store is in-memory on the mock server and capped at 500 sessions.
+- **Rendering:** evidence is names only, links are defanged text and never fetched, and nothing is rendered as HTML.
+- **Wallet requests:** the signing challenge text says it authorizes no transaction. No seed phrase, key or transaction signature is ever requested.
+- **New mutation surface:** `POST /api/mock/rpc` is mock builds only (404 otherwise, tested), same-origin and allowlisted. It must never be deployed as an API.
+- **Other checklist items:** no new dependencies and no secrets.
+- **Threats:** affected threat IDs are T-07 (exact Origin on the mock route), T-08 (no markup rendering), T-11 / T-12 (ownership, roles, server enforcement required in Phase 7), T-26 / T-27 (reports inert until reviewed), T-32 / T-36 (image-only metadata, links never fetched) and T-38 / T-39 (simulated standing; the real challenge must be nonce-bound and transaction-free). E-1 is unaffected. THREAT-MODEL is unchanged because no production surface was added.
+
+### Known issues, gaps and deferred decisions
+
+- **Open ADRs:** 0009 (numeric score), 0011 (more EVM networks) and 0012 (scoreboard) are Proposed. O-12 scoring sign-off is open.
+- **Correction statuses** remain an interim set (documentation gap since Phase 4).
+- **Pagination:** the directory and queue use pages while ARCHITECTURE §7.1 says cursors; decision needed (integration contracts §1).
+- **Endpoint additions** for ADR 0010 Part A and the member submission views are to be added to ARCHITECTURE §7.1 in Phase 7 (integration contracts §8).
+- **Not built:** emergency suspension, the admin console (staff lifecycle, users, labels, suppressions), public subject responses, authority-signature standing, profile settings.
+- **Legal:** privacy, security and terms are drafts; legal review is a launch blocker.
+- **Browsers:** Firefox and WebKit were not run.
+- **Not done:** no deployment (owner asked earlier; requires an explicit hosting decision and credentials).
+
+### Recommended next step
+
+Codex review of Phase 5: the member flows, the shared mock store and RPC route, the public effects, and the integration contracts. Then owner decisions on:
+
+- pagination;
+- correction statuses;
+- Phase 6 scope: WCAG audit, the remaining UI gaps above, Firefox and WebKit runs.
 
 ---
 

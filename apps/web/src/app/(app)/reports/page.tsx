@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { DataCard } from '@/components/app/data-card';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
@@ -32,7 +33,12 @@ export default async function ReportsPage() {
                 key={r.id}
                 className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <span className="text-sm font-medium text-text">{r.title}</span>
+                <Link
+                  href={`/reports/${r.id}`}
+                  className="text-sm font-medium break-words text-text hover:underline"
+                >
+                  {r.title}
+                </Link>
                 <span className="flex items-center gap-3">
                   <span className="text-xs text-muted">
                     {r.submittedAt ? `Submitted ${formatDateUtc(r.submittedAt)} · ` : 'Draft · '}Updated{' '}

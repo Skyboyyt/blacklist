@@ -2,7 +2,9 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../test/a11y';
+import { createMockMemberApi } from '@/lib/api/mock/member-api';
 import { createMockModerationApi } from '@/lib/api/mock/moderation-api';
+import { createStore } from '@/lib/api/mock/store';
 import type { ModerationApi } from '@/lib/api/types';
 import { ApprovalsView } from './approvals-view';
 import { AuditLogView } from './audit-log-view';
@@ -228,6 +230,46 @@ describe('case workspace', () => {
       ),
     );
     expect(await screen.findByText('You can’t take this decision')).toBeInTheDocument();
+  });
+
+  it('an administrator accepts a project suggestion with a public explanation', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    const options = { cookies: () => cookies, latencyMs: 0, now: () => new Date(NOW), store };
+    api = createMockModerationApi(options);
+    as('member');
+    const submitted = await createMockMemberApi(options).submitSuggestion({
+      name: 'Demo Lending Hub',
+      category: 'defi',
+      chain: 'ethereum',
+      identifier: `0xb1ac${'7'.repeat(36)}`,
+      links: ['https://lending-hub.example'],
+      description: 'A fictional lending market used to demonstrate suggestions.',
+      relationship: 'I am a fictional community member.',
+      evidence: [],
+    });
+    if (submitted.kind !== 'ok') throw new Error('suggestion not created');
+    as('admin');
+    await api.assign(submitted.data.id, 1, { to: 'me' });
+    workspace(submitted.data.id, 'admin', 'admin');
+    expect(await screen.findByText('lending-hub[.]example', { exact: false })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Accept and publish profile' }));
+    await user.type(
+      screen.getByLabelText('Public explanation'),
+      'Profile created from a checked suggestion.',
+    );
+    await user.type(screen.getByLabelText('Internal rationale'), 'Official link and contract matched.');
+    await user.click(screen.getByRole('button', { name: 'Review and confirm' }));
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Continue to security key' }),
+    );
+    await user.click(
+      within(await screen.findByRole('dialog', { name: 'Verify with your security key' })).getByRole(
+        'button',
+        { name: 'Verify and continue' },
+      ),
+    );
+    expect(await screen.findByRole('link', { name: /\/project\/demo-lending-hub/ })).toBeInTheDocument();
   });
 
   it('refuses a moderator changing a project profile, and applies it for an administrator', async () => {

@@ -9,9 +9,10 @@ import { EVM, PROJECT_SOLANA, SOLANA } from './fixtures/ids';
 import { PROJECT_ADDRESS_FIXTURES, PROJECT_FIXTURES } from './fixtures/projects';
 import { createProjectCatalog } from './project-api';
 
-const catalog = createProjectCatalog(
-  addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
-);
+const catalog = createProjectCatalog({
+  addresses: addressResearchSchema.array().parse([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
+  projects: PROJECT_FIXTURES,
+});
 const list = (request: ProjectDirectoryRequest) => catalog.list(projectDirectoryRequestSchema.parse(request));
 const slugs = (request: ProjectDirectoryRequest) => {
   const res = list(request);

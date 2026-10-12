@@ -4,7 +4,8 @@ import { Badge, type BadgeTone } from '@/components/ui/badge';
 const STATUS: Record<ReportSummary['status'], { label: string; tone: BadgeTone }> = {
   draft: { label: 'Draft', tone: 'neutral' },
   submitted: { label: 'Submitted', tone: 'info' },
-  in_review: { label: 'In review', tone: 'warning' },
+  in_review: { label: 'In review', tone: 'info' },
+  needs_information: { label: 'Information requested', tone: 'warning' },
   closed: { label: 'Closed', tone: 'neutral' },
 };
 

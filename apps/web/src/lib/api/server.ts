@@ -7,6 +7,7 @@ import type { ResearchApi } from './types';
 /** Mock-only preview cookies (viewer and scenario). They confer no authority. */
 const MOCK_VIEWER_COOKIE = 'bl_mock_viewer';
 const MOCK_SCENARIO_COOKIE = 'bl_mock_scenario';
+const MOCK_SESSION_COOKIE = 'bl_mock_session';
 
 /** Research API for server components. */
 export async function getResearchApi(): Promise<ResearchApi> {
@@ -16,6 +17,8 @@ export async function getResearchApi(): Promise<ResearchApi> {
     return createMockResearchApi({
       viewer: jar.get(MOCK_VIEWER_COOKIE)?.value,
       scenario: jar.get(MOCK_SCENARIO_COOKIE)?.value,
+      // The shared demo store for this browser's demo session (set by the proxy in mock builds).
+      sessionId: jar.get(MOCK_SESSION_COOKIE)?.value,
     });
   }
   return notConnectedResearchApi;

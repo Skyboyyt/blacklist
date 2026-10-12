@@ -86,6 +86,31 @@ export default function MethodologyPage() {
         </DataCard>
       </div>
 
+      <DataCard title="How reviews work">
+        <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm text-muted">
+          <li>
+            A signed-in member sends a private report, project suggestion or correction. Until staff review
+            it, it has no public effect.
+          </li>
+          <li>
+            A moderator reviews it and can ask the submitter for more information. Each decision is recorded
+            in an audit history.
+          </li>
+          <li>
+            Accepting a report drafts a finding. It is published only after approval, and a severe finding
+            needs a second moderator who did not write it.
+          </li>
+          <li>
+            Profile corrections and new project profiles are published by administrators, and the profile
+            keeps its revision history.
+          </li>
+          <li>
+            Anyone affected can appeal a published finding. Standing is checked per case, and the appeal is
+            decided by someone who did not take part in the original decision.
+          </li>
+        </ol>
+      </DataCard>
+
       <DataCard title="Where information comes from">
         <ul className="grid gap-4 sm:grid-cols-2">
           {PROVENANCE.map((p) => (

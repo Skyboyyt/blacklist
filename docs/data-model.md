@@ -137,6 +137,9 @@ PK `(chain_id, tx_hash)`; `block_number` / `slot`, `block_hash` (EVM), `block_ti
 ### `chain_fact_invalidations` [append-only]
 `id`, `fact_type`, `fact_ref`, `reason`, `discovered_at`, `recorded_by`.
 
+### `project_suggestions` (ADR 0010 Part A; not yet migrated)
+`id`, `submitter_user_id`, `name`, `category`, `chain_id`, `identifier`, `links_text` (defanged text, never fetched), `description`, `status` (`submitted` | `needs_information` | `accepted_into_profile` | `not_accepted`), `submitter_reason` (fixed list, visible to the submitter only), `resulting_project_id`, `revision`, `submitted_at`, `decided_at`. Private to the submitter and staff; a suggestion has no public effect until staff publish a project revision. Evidence links via `evidence_links.project_suggestion_id` (to be added with the migration).
+
 ### `address_labels`, `projects`, `project_revisions` [append-only], `project_addresses`, `project_domains`
 As revision 1. `project_addresses.basis` is an attribution basis with time and evidence; it is **not** an ownership verdict. External labels have `provenance = 'external_source'`.
 

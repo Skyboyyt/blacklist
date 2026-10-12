@@ -29,19 +29,20 @@ export interface ProjectAddressRef {
   readonly assessmentUnavailable?: true;
 }
 
+/** A project profile record. The mock store keeps mutable per-session copies. */
 export interface ProjectFixture {
-  readonly slug: string;
-  readonly name: string;
-  readonly category: ProjectCategory;
-  readonly description: string;
-  readonly addresses: readonly ProjectAddressRef[];
-  readonly domains: readonly OfficialDomain[];
-  readonly responses: readonly ProjectResponse[];
-  readonly history: readonly ProjectHistoryEvent[];
-  readonly profileRevision: number;
-  readonly lastReviewedAt: string;
-  readonly updatedAt: string;
-  readonly freshness: ProjectDetail['freshness'];
+  slug: string;
+  name: string;
+  category: ProjectCategory;
+  description: string;
+  addresses: ProjectAddressRef[];
+  domains: OfficialDomain[];
+  responses: ProjectResponse[];
+  history: ProjectHistoryEvent[];
+  profileRevision: number;
+  lastReviewedAt: string;
+  updatedAt: string;
+  freshness: ProjectDetail['freshness'];
 }
 
 /** Detail slugs that exercise failure states; they are not listed in the directory. */
@@ -72,7 +73,7 @@ function created(slug: string, at: string): ProjectHistoryEvent {
 }
 
 /** Minimal research records for addresses that are only reachable through project profiles. */
-function projectOnlyAddress(
+export function projectOnlyAddress(
   chain: ChainSlugDto,
   address: string,
   kind: AddressResearch['kind'],

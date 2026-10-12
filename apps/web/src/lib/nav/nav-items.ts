@@ -35,6 +35,14 @@ export const PRIMARY_NAV: NavSection = {
   ],
 };
 
+/** Transparency pages (PRD §4.3), linked from the footer on every page. */
+export const POLICY_LINKS: readonly { readonly href: string; readonly label: string }[] = [
+  { href: '/methodology', label: 'Methodology' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/security', label: 'Security' },
+  { href: '/terms', label: 'Terms' },
+];
+
 export const ACCOUNT_NAV: NavSection = {
   id: 'account',
   label: 'Account',

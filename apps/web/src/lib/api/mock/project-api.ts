@@ -21,20 +21,21 @@ import {
 } from '@blacklist/contracts';
 import { classifyInput } from '@/lib/search/classify';
 import type { ResearchResult } from '../types';
-import {
-  PROJECT_FIXTURES,
-  PROJECT_SPECIAL_QUERIES,
-  PROJECT_SPECIAL_SLUGS,
-  type ProjectFixture,
-} from './fixtures/projects';
+import { PROJECT_SPECIAL_QUERIES, PROJECT_SPECIAL_SLUGS, type ProjectFixture } from './fixtures/projects';
 
 const UNAVAILABLE = { kind: 'provider_unavailable', retryAfterSeconds: 30 } as const;
 const DISPUTE_RANK: Record<DisputeState, number> = { none: 0, under_appeal: 1, suspended_pending_review: 2 };
 const NETWORK_NAMES = { ethereum: 'Ethereum', solana: 'Solana' } as const;
 
-export function createProjectCatalog(addresses: readonly AddressResearch[]) {
+export interface CatalogSource {
+  readonly addresses: readonly AddressResearch[];
+  readonly projects: readonly ProjectFixture[];
+}
+
+/** Read-only view over a store's projects and addresses; recomputed on every call. */
+export function createProjectCatalog(source: CatalogSource) {
   const findAddress = (chain: ChainSlugDto, address: string) =>
-    addresses.find((a) => a.chain === chain && a.address === address);
+    source.addresses.find((a) => a.chain === chain && a.address === address);
 
   function compose(fixture: ProjectFixture): ProjectDetail {
     const officialAddresses = fixture.addresses.map((ref) => {
@@ -69,7 +70,7 @@ export function createProjectCatalog(addresses: readonly AddressResearch[]) {
     });
   }
 
-  const details = PROJECT_FIXTURES.map(compose);
+  const allDetails = () => source.projects.map(compose);
 
   /** With a selected network, the card's identifier is on that network. */
   function summarize(d: ProjectDetail, chain: ChainSlugDto | undefined): ProjectSummary {
@@ -127,6 +128,7 @@ export function createProjectCatalog(addresses: readonly AddressResearch[]) {
     if (request.query === PROJECT_SPECIAL_QUERIES.unavailable) return UNAVAILABLE;
     if (request.query === PROJECT_SPECIAL_QUERIES.error)
       throw new Error('Mock failure for the error-state fixture.');
+    const details = allDetails();
     if (details.length === 0) return { kind: 'empty_directory' };
 
     const matched = matchQuery(details, request.query, request.chain);
@@ -174,9 +176,15 @@ export function createProjectCatalog(addresses: readonly AddressResearch[]) {
   function get(slug: string): ResearchResult<ProjectDetail> {
     if (slug === PROJECT_SPECIAL_SLUGS.unavailable) return UNAVAILABLE;
     if (slug === PROJECT_SPECIAL_SLUGS.error) throw new Error('Mock failure for the error-state fixture.');
-    const found = details.find((d) => d.slug === slug);
+    const found = allDetails().find((d) => d.slug === slug);
     return found ? { kind: 'found', data: found } : { kind: 'not_found' };
   }
 
-  return { list, get, details };
+  return {
+    list,
+    get,
+    get details() {
+      return allDetails();
+    },
+  };
 }

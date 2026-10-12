@@ -8,6 +8,7 @@ import {
   type AccountApi,
   type AuthApi,
   type HumanVerifierClient,
+  type MemberApi,
   type ModerationApi,
   type ResearchApi,
   type StaffSecurityApi,
@@ -81,4 +82,22 @@ export const notConnectedModerationApi: ModerationApi = {
   rejectRevision: moderationUnavailable,
   getAuditLog: moderationUnavailable,
   getProfileState: moderationUnavailable,
+};
+
+const memberUnavailable = () =>
+  Promise.resolve({ kind: 'error' as const, code: 'temporarily_unavailable' as const });
+
+/** Member submissions need the API (Phase 7+); nothing is stored without it. */
+export const notConnectedMemberApi: MemberApi = {
+  listSubmissions: memberUnavailable,
+  getSubmission: memberUnavailable,
+  submitReport: memberUnavailable,
+  submitSuggestion: memberUnavailable,
+  submitCorrection: memberUnavailable,
+  submitAppeal: memberUnavailable,
+  respond: memberUnavailable,
+  withdraw: memberUnavailable,
+  listNotices: memberUnavailable,
+  getAppealTarget: memberUnavailable,
+  getStandingChallenge: memberUnavailable,
 };

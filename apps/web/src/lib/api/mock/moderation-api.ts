@@ -8,11 +8,11 @@
  *    `not_found`, as the API does for inaccessible private resources);
  * 3. role permission (ARCHITECTURE §9.2);
  * 4. optimistic version (`conflict`, nothing overwritten);
- * 5. allowed transition for the case type and status (moderation §9–§10);
+ * 5. allowed transition for the case type and status (moderation §9–§10; ADR 0010);
  * 6. assignment (only the assigned reviewer decides);
  * 7. independence (moderation §4.1, §7, §9);
  * 8. a fresh, single-use, action-bound step-up for consequential decisions.
- * State lives in memory for the page session. The audit trail is MOCK history only.
+ * State lives in the shared demo store (store.ts). The audit trail is MOCK history only.
  */
 import {
   caseDecisionSchema,
@@ -21,36 +21,39 @@ import {
   type CaseDecision,
   type CaseDetail,
   type CaseSummary,
-  type FindingRevision,
   type PasskeyResult,
   type QueueQuery,
   type StaffRef,
   type StaffRole,
 } from '@blacklist/contracts';
 import { hasPermission, type StaffPermission } from '@/lib/staff/permissions';
-import type { ModerationApi, ModerationResult, ProfileState } from '../types';
-import { ADDRESS_FIXTURES } from './fixtures/addresses';
+import type { ModerationApi, ModerationResult } from '../types';
+import { CONFLICT_CASE_ID, QUEUE_ERROR_QUERY, STAFF } from './fixtures/moderation';
 import {
-  CASE_FIXTURES,
-  CONFLICT_CASE_ID,
-  QUEUE_ERROR_QUERY,
-  REVISION_FIXTURES,
-  STAFF,
-} from './fixtures/moderation';
-import { PROJECT_ADDRESS_FIXTURES, PROJECT_FIXTURES } from './fixtures/projects';
-import { applyCorrection } from './profile-corrections';
+  applyAppealOutcome,
+  applyProjectCorrection,
+  createProjectFromSuggestion,
+  publishFinding,
+} from './public-effects';
 import { currentPasskeyResult, currentScenario, currentViewerKey, type MockViewerKey } from './scenario';
 import { staffAssessmentFor } from './staff-scoring';
+import { createStore, type MockStore } from './store';
 
 export interface MockModerationOptions {
   readonly cookies: () => string;
   readonly now?: () => Date;
   readonly latencyMs?: number;
+  /** Shared demo store; a fresh one from the fixtures when omitted (unit tests). */
+  readonly store?: MockStore;
 }
 
 const STEP_UP_TTL_MS = 5 * 60 * 1000;
-const OPEN_REPORT = ['submitted', 'screening', 'queued', 'in_review', 'needs_info'];
-const OPEN_REVIEW = ['submitted', 'in_review'];
+const OPEN_STATUSES: Readonly<Record<CaseDetail['type'], readonly string[]>> = {
+  report_review: ['submitted', 'screening', 'queued', 'in_review', 'needs_info'],
+  appeal_review: ['submitted', 'in_review'],
+  correction_request: ['submitted', 'in_review'],
+  project_suggestion: ['submitted', 'needs_information'],
+};
 
 const IDENTITIES: Partial<Record<MockViewerKey, { ref: StaffRef; role: StaffRole }>> = {
   moderator: { ref: STAFF.moderatorA, role: 'moderator' },
@@ -59,17 +62,17 @@ const IDENTITIES: Partial<Record<MockViewerKey, { ref: StaffRef; role: StaffRole
   admin: { ref: STAFF.admin, role: 'admin' },
 };
 
-/** Rules per decision: which case type, from which statuses, to which status, with which permission. */
-const TRANSITIONS: Record<
-  CaseDecision['action'],
-  {
-    readonly type: CaseDetail['type'];
-    readonly from: readonly string[];
-    readonly to: string;
-    readonly permission: StaffPermission;
-    readonly stepUp: boolean;
-  }[]
-> = {
+interface Rule {
+  readonly type: CaseDetail['type'];
+  readonly from: readonly string[];
+  /** `null` keeps the status (standing decisions). */
+  readonly to: string | null;
+  readonly permission: StaffPermission;
+  readonly stepUp: boolean;
+}
+
+/** Rules per decision: case type, allowed statuses, resulting status, permission, step-up. */
+const TRANSITIONS: Readonly<Record<CaseDecision['action'], readonly Rule[]>> = {
   start_review: [
     {
       type: 'report_review',
@@ -99,6 +102,13 @@ const TRANSITIONS: Record<
       from: ['in_review'],
       to: 'needs_info',
       permission: 'finding:propose',
+      stepUp: false,
+    },
+    {
+      type: 'project_suggestion',
+      from: ['submitted'],
+      to: 'needs_information',
+      permission: 'correction:decide',
       stepUp: false,
     },
   ],
@@ -156,6 +166,42 @@ const TRANSITIONS: Record<
       stepUp: true,
     },
   ],
+  accept_suggestion: [
+    {
+      type: 'project_suggestion',
+      from: ['submitted'],
+      to: 'accepted_into_profile',
+      permission: 'project:manage',
+      stepUp: true,
+    },
+  ],
+  reject_suggestion: [
+    {
+      type: 'project_suggestion',
+      from: ['submitted'],
+      to: 'not_accepted',
+      permission: 'correction:decide',
+      stepUp: true,
+    },
+  ],
+  grant_standing: [
+    {
+      type: 'appeal_review',
+      from: ['in_review'],
+      to: null,
+      permission: 'standing:decide',
+      stepUp: false,
+    },
+  ],
+  deny_standing: [
+    {
+      type: 'appeal_review',
+      from: ['in_review'],
+      to: null,
+      permission: 'standing:decide',
+      stepUp: false,
+    },
+  ],
 };
 
 /** The step-up action name a decision is bound to (identity §10.7). */
@@ -181,25 +227,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
   const now = options.now ?? (() => new Date());
   const latency = options.latencyMs ?? 300;
   const wait = () => (latency > 0 ? new Promise<void>((r) => setTimeout(r, latency)) : Promise.resolve());
-
-  const cases = new Map<string, CaseDetail>(CASE_FIXTURES.map((c) => [c.id, clone(c)]));
-  let revisions: FindingRevision[] = REVISION_FIXTURES.map(clone);
-  const audit: AuditEntry[] = CASE_FIXTURES.flatMap((c) => c.history.map(clone));
-  const grants = new Map<string, number>();
-  const profiles = new Map<string, ProfileState>(
-    PROJECT_FIXTURES.map((p) => [
-      p.slug,
-      {
-        slug: p.slug,
-        revision: p.profileRevision,
-        description: p.description,
-        domains: p.domains.map((d) => d.hostname),
-      },
-    ]),
-  );
-  let conflictPending = true;
-  let auditSeq = 0;
-  const research = [...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES];
+  const store = options.store ?? createStore();
 
   const identity = () => IDENTITIES[currentViewerKey(options.cookies())] ?? null;
   const at = () => now().toISOString();
@@ -212,21 +240,40 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
   }
 
   function record(entry: Omit<AuditEntry, 'id' | 'at'>): void {
-    auditSeq += 1;
-    audit.push({ id: `audit-${auditSeq}`, at: at(), ...entry });
+    store.seq += 1;
+    store.audit.push({ id: `audit-${store.seq}`, at: at(), ...entry });
+  }
+
+  function notifyOwner(c: CaseDetail, text: string): void {
+    const handle = store.owners.get(c.id);
+    if (!handle) return;
+    store.seq += 1;
+    const href =
+      c.type === 'report_review'
+        ? `/reports/${c.id}`
+        : c.type === 'project_suggestion'
+          ? `/projects/suggestions/${c.id}`
+          : c.type === 'appeal_review'
+            ? `/appeals/${c.id}`
+            : `/corrections/${c.id}`;
+    store.notices.unshift({ handle, id: `notice-${store.seq}`, text, at: at(), href });
   }
 
   function inScope(role: StaffRole, c: CaseDetail): boolean {
     return role !== 'appeal_reviewer' || c.type === 'appeal_review';
   }
 
+  const isOpen = (c: CaseDetail) => OPEN_STATUSES[c.type].includes(c.status);
+
   function view(c: CaseDetail): CaseDetail {
     const detail = clone(c);
-    detail.history = audit.filter((e) => e.caseId === c.id).sort((a, b) => a.at.localeCompare(b.at));
+    detail.history = store.audit.filter((e) => e.caseId === c.id).sort((a, b) => a.at.localeCompare(b.at));
     if (c.subject.kind === 'address') {
       const subject = c.subject;
-      const r = research.find((a) => a.chain === subject.chain && a.address === subject.address);
+      const r = store.addresses.find((a) => a.chain === subject.chain && a.address === subject.address);
       detail.assessment = r ? staffAssessmentFor(r) : null;
+    } else {
+      detail.assessment = null;
     }
     return detail;
   }
@@ -243,10 +290,16 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       slaDueAt: c.slaDueAt,
       version: c.version,
     };
-    if (c.type === 'report_review')
-      return { ...common, type: c.type, status: c.status, category: c.category };
-    if (c.type === 'appeal_review') return { ...common, type: c.type, status: c.status };
-    return { ...common, type: c.type, status: c.status };
+    switch (c.type) {
+      case 'report_review':
+        return { ...common, type: c.type, status: c.status, category: c.category };
+      case 'appeal_review':
+        return { ...common, type: c.type, status: c.status };
+      case 'correction_request':
+        return { ...common, type: c.type, status: c.status };
+      case 'project_suggestion':
+        return { ...common, type: c.type, status: c.status };
+    }
   }
 
   function touch(c: CaseDetail): void {
@@ -263,10 +316,10 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
     | { ok: false; result: ModerationResult<CaseDetail> } {
     const who = identity();
     if (!who) return { ok: false, result: err('forbidden', 'Staff access is required.') };
-    const c = cases.get(caseId);
+    const c = store.cases.get(caseId);
     if (!c || !inScope(who.role, c)) return { ok: false, result: { kind: 'error', code: 'not_found' } };
-    if (caseId === CONFLICT_CASE_ID && conflictPending) {
-      conflictPending = false;
+    if (caseId === CONFLICT_CASE_ID && store.conflictPending) {
+      store.conflictPending = false;
       const other = who.ref.id === STAFF.moderatorB.id ? STAFF.moderatorA : STAFF.moderatorB;
       touch(c);
       c.notes.push({
@@ -294,8 +347,8 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
 
   function consumeGrant(action: string, targetId: string): boolean {
     const key = `${action}:${targetId}`;
-    const expires = grants.get(key);
-    grants.delete(key);
+    const expires = store.grants.get(key);
+    store.grants.delete(key);
     return expires !== undefined && expires > now().getTime();
   }
 
@@ -304,7 +357,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
     me: StaffRef,
     d: Extract<CaseDecision, { action: 'accept_report' }>,
   ): void {
-    const findingId = `demo-finding-${600 + revisions.filter((r) => r.revisionNumber === 1).length}`;
+    const findingId = `demo-finding-${600 + store.revisions.filter((r) => r.revisionNumber === 1).length}`;
     const content = JSON.stringify([
       findingId,
       1,
@@ -313,24 +366,21 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       d.publicSummary,
       d.internalRationale,
     ]);
-    revisions = [
-      ...revisions,
-      {
-        findingId,
-        revisionNumber: 1,
-        subject: c.subject,
-        severity: d.severity,
-        publicSummary: d.publicSummary,
-        internalRationale: d.internalRationale,
-        evidenceIds: c.evidence.filter((e) => e.state === 'available').map((e) => e.id),
-        author: me,
-        createdAt: at(),
-        contentHash: demoHash(content),
-        status: d.severity === 'severe' ? 'pending_second_approval' : 'proposed',
-        isLatest: true,
-        sourceCaseId: c.id,
-      },
-    ];
+    store.revisions.push({
+      findingId,
+      revisionNumber: 1,
+      subject: c.subject,
+      severity: d.severity,
+      publicSummary: d.publicSummary,
+      internalRationale: d.internalRationale,
+      evidenceIds: c.evidence.filter((e) => e.state === 'available').map((e) => e.id),
+      author: me,
+      createdAt: at(),
+      contentHash: demoHash(content),
+      status: d.severity === 'severe' ? 'pending_second_approval' : 'proposed',
+      isLatest: true,
+      sourceCaseId: c.id,
+    });
     record({
       actor: me,
       action: 'finding_revision_submitted',
@@ -340,6 +390,92 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
     });
   }
 
+  /** Member-visible effects of a decision: notices, public changes. Never internal text. */
+  function applyEffects(c: CaseDetail, me: StaffRef, d: CaseDecision): void {
+    switch (d.action) {
+      case 'request_info':
+        c.infoRequest = d.messageToSubmitter;
+        notifyOwner(c, `Staff asked for more information about “${c.title}”.`);
+        return;
+      case 'accept_report':
+        createRevision(c, me, d);
+        notifyOwner(c, `Your report “${c.title}” was accepted. A finding is being prepared for approval.`);
+        return;
+      case 'reject_report':
+      case 'reject_abusive':
+      case 'reject_correction':
+      case 'reject_suggestion':
+        notifyOwner(c, `A decision was recorded on “${c.title}”.`);
+        return;
+      case 'uphold':
+      case 'amend':
+      case 'reverse':
+        if (c.type === 'appeal_review') {
+          const outcome = d.action === 'uphold' ? 'upheld' : d.action === 'amend' ? 'amended' : 'reversed';
+          applyAppealOutcome(store, c.appealedDecision.findingId, outcome, d.publicSummary, at());
+          notifyOwner(c, `Your appeal “${c.title}” was decided: ${outcome}.`);
+        }
+        return;
+      case 'accept_correction':
+        if (c.type === 'correction_request') {
+          applyProjectCorrection(store, c, at());
+          const subject = c.subject;
+          const project =
+            subject.kind === 'project' ? store.projects.find((p) => p.slug === subject.slug) : undefined;
+          if (project) {
+            record({
+              actor: me,
+              action: 'profile_revised',
+              caseId: c.id,
+              reason: null,
+              changes: [
+                {
+                  field: 'profile revision',
+                  from: String(project.profileRevision - 1),
+                  to: String(project.profileRevision),
+                },
+                ...c.changes.map((ch) => ({ field: ch.label, from: ch.current, to: ch.proposed })),
+              ],
+            });
+          }
+          notifyOwner(c, `Your correction “${c.title}” was accepted and the profile was updated.`);
+        }
+        return;
+      case 'accept_suggestion':
+        if (c.type === 'project_suggestion') {
+          const slug = createProjectFromSuggestion(store, c, at());
+          c.resultingSlug = slug;
+          record({
+            actor: me,
+            action: 'profile_revised',
+            caseId: c.id,
+            reason: null,
+            changes: [{ field: 'project profile', from: null, to: slug }],
+          });
+          notifyOwner(c, `Your suggestion “${c.title}” was accepted. Staff published a project profile.`);
+        }
+        return;
+      case 'grant_standing':
+      case 'deny_standing':
+        if (c.type === 'appeal_review') {
+          c.standing = {
+            ...c.standing,
+            outcome: d.action === 'grant_standing' ? 'granted' : 'denied',
+            decidedAt: at(),
+          };
+          notifyOwner(
+            c,
+            d.action === 'grant_standing'
+              ? `Standing was granted for your appeal “${c.title}”.`
+              : `Standing could not be established for your appeal “${c.title}”. You can reply with more documents.`,
+          );
+        }
+        return;
+      case 'start_review':
+        return;
+    }
+  }
+
   const api: ModerationApi = {
     async getQueue(request) {
       await wait();
@@ -347,24 +483,19 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!who || !hasPermission(who.role, 'moderation:queue:read')) {
         return err('forbidden', 'Staff access is required.');
       }
-      const q: QueueQuery = {
-        assignment: 'any',
-        sort: 'sla_due',
-        page: 1,
-        ...request,
-      };
+      const q: QueueQuery = { assignment: 'any', sort: 'sla_due', page: 1, ...request };
       if (q.query === QUEUE_ERROR_QUERY) throw new Error('Mock failure for the error-state fixture.');
-      const visible = [...cases.values()].filter((c) => inScope(who.role, c));
-      const open = (c: CaseDetail) =>
-        c.type === 'report_review' ? OPEN_REPORT.includes(c.status) : OPEN_REVIEW.includes(c.status);
+      const visible = [...store.cases.values()].filter((c) => inScope(who.role, c));
       const counts = {
-        openReports: visible.filter((c) => c.type === 'report_review' && open(c)).length,
-        needsInfo: visible.filter((c) => c.type === 'report_review' && c.status === 'needs_info').length,
-        openAppeals: visible.filter((c) => c.type === 'appeal_review' && open(c)).length,
-        openCorrections: visible.filter((c) => c.type === 'correction_request' && open(c)).length,
-        unassigned: visible.filter((c) => open(c) && c.assignedTo === null).length,
+        openReports: visible.filter((c) => c.type === 'report_review' && isOpen(c)).length,
+        needsInfo: visible.filter((c) => c.status === 'needs_info' || c.status === 'needs_information')
+          .length,
+        openAppeals: visible.filter((c) => c.type === 'appeal_review' && isOpen(c)).length,
+        openCorrections: visible.filter((c) => c.type === 'correction_request' && isOpen(c)).length,
+        openSuggestions: visible.filter((c) => c.type === 'project_suggestion' && isOpen(c)).length,
+        unassigned: visible.filter((c) => isOpen(c) && c.assignedTo === null).length,
         pendingApprovals: hasPermission(who.role, 'finding:publish')
-          ? revisions.filter(
+          ? store.revisions.filter(
               (r) => r.isLatest && (r.status === 'proposed' || r.status === 'pending_second_approval'),
             ).length
           : 0,
@@ -392,7 +523,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           if (q.sort === 'newest') return b.submittedAt.localeCompare(a.submittedAt) || tie;
           if (q.sort === 'last_activity') return b.lastActivityAt.localeCompare(a.lastActivityAt) || tie;
           // Deadline order puts open cases first: a closed case's deadline no longer matters.
-          return Number(!open(a)) - Number(!open(b)) || a.slaDueAt.localeCompare(b.slaDueAt) || tie;
+          return Number(!isOpen(a)) - Number(!isOpen(b)) || a.slaDueAt.localeCompare(b.slaDueAt) || tie;
         })
         .map(summary);
       const totalPages = Math.max(1, Math.ceil(items.length / QUEUE_PAGE_SIZE));
@@ -410,7 +541,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       await wait();
       const who = identity();
       if (!who) return err('forbidden', 'Staff access is required.');
-      const c = cases.get(caseId);
+      const c = store.cases.get(caseId);
       if (!c || !inScope(who.role, c)) return { kind: 'error', code: 'not_found' };
       return ok(view(c));
     },
@@ -480,7 +611,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!identity() || currentScenario(options.cookies()) === 'session_expired')
         return { kind: 'session_expired' };
       const kind = currentPasskeyResult(options.cookies());
-      if (kind === 'verified') grants.set(`${action}:${targetId}`, now().getTime() + STEP_UP_TTL_MS);
+      if (kind === 'verified') store.grants.set(`${action}:${targetId}`, now().getTime() + STEP_UP_TTL_MS);
       return { kind };
     },
 
@@ -494,8 +625,14 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       const d = parsed.data;
       const rule = TRANSITIONS[d.action].find((t) => t.type === c.type);
       if (!rule) return err('invalid_transition', 'This decision does not apply to this kind of case.');
-      if (!hasPermission(role, rule.permission))
-        return err('forbidden', 'Your role cannot make this decision.');
+      if (!hasPermission(role, rule.permission)) {
+        return err(
+          'forbidden',
+          rule.permission === 'project:manage'
+            ? 'Creating a project profile needs project management permission (administrators).'
+            : 'Your role cannot make this decision.',
+        );
+      }
       if (d.action === 'accept_correction' && !hasPermission(role, 'project:manage')) {
         return err(
           'forbidden',
@@ -505,8 +642,19 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!rule.from.includes(c.status)) {
         return err(
           'invalid_transition',
-          `A case that is “${c.status.replace('_', ' ')}” cannot take this decision.`,
+          `A case that is “${c.status.replaceAll('_', ' ')}” cannot take this decision.`,
         );
+      }
+      if (c.type === 'appeal_review') {
+        if (
+          (d.action === 'grant_standing' || d.action === 'deny_standing') &&
+          c.standing.outcome !== 'pending'
+        ) {
+          return err('invalid_transition', 'Standing has already been decided for this appeal.');
+        }
+        if (['uphold', 'amend', 'reverse'].includes(d.action) && c.standing.outcome !== 'granted') {
+          return err('invalid_transition', 'Standing must be granted before the appeal can be decided.');
+        }
       }
       if (d.action !== 'start_review') {
         if (!c.assignedTo) return err('not_eligible', 'Assign the case to yourself before deciding.');
@@ -524,7 +672,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         if (participants.includes(me.id)) {
           return err(
             'not_eligible',
-            'You took part in the decision under appeal (author or approver), so you cannot review this appeal.',
+            'You took part in the decision under appeal (author or approver), so you cannot review this appeal or its standing.',
           );
         }
       }
@@ -542,7 +690,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           changes: [{ field: 'assigned_to', from: null, to: me.handle }],
         });
       }
-      Object.assign(c, { status: rule.to });
+      if (rule.to !== null) Object.assign(c, { status: rule.to });
       touch(c);
       const reason = 'internalRationale' in d ? d.internalRationale : null;
       record({
@@ -550,39 +698,28 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         action:
           c.type === 'appeal_review' && rule.stepUp
             ? 'appeal_decided'
-            : c.type === 'correction_request' && rule.stepUp
+            : (c.type === 'correction_request' || c.type === 'project_suggestion') && rule.stepUp
               ? 'correction_decided'
               : d.action === 'request_info'
                 ? 'info_requested'
                 : 'case_status_changed',
         caseId,
         reason,
-        changes: [{ field: 'status', from, to: rule.to }],
+        changes:
+          rule.to !== null
+            ? [{ field: 'status', from, to: rule.to }]
+            : [
+                {
+                  field: 'standing',
+                  from: 'pending',
+                  to: d.action === 'grant_standing' ? 'granted' : 'denied',
+                },
+              ],
       });
       if ('publicSummary' in d) c.publicSummary = d.publicSummary;
       if ('reason' in d) c.submitterReason = d.reason;
-      if (d.action === 'accept_report') createRevision(c, me, d);
-      if (
-        d.action === 'accept_correction' &&
-        c.type === 'correction_request' &&
-        c.subject.kind === 'project'
-      ) {
-        const before = profiles.get(c.subject.slug);
-        if (before) {
-          const after = applyCorrection(before, c.changes);
-          profiles.set(after.slug, after);
-          record({
-            actor: me,
-            action: 'profile_revised',
-            caseId,
-            reason: null,
-            changes: [
-              { field: 'profile revision', from: String(before.revision), to: String(after.revision) },
-              ...c.changes.map((ch) => ({ field: ch.label, from: ch.current, to: ch.proposed })),
-            ],
-          });
-        }
-      }
+      if (d.action !== 'request_info' && rule.to !== null) c.infoRequest = null;
+      applyEffects(c, me, d);
       return ok(view(c));
     },
 
@@ -592,7 +729,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!who || !hasPermission(who.role, 'finding:publish')) {
         return err('forbidden', 'Approving findings needs a moderator or administrator role.');
       }
-      return ok(revisions.map(clone));
+      return ok(store.revisions.map(clone));
     },
 
     async approveRevision(findingId, revisionNumber, contentHash) {
@@ -601,10 +738,12 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!who || !hasPermission(who.role, 'finding:publish')) {
         return err('forbidden', 'Approving findings needs a moderator or administrator role.');
       }
-      const target = revisions.find((r) => r.findingId === findingId && r.revisionNumber === revisionNumber);
+      const target = store.revisions.find(
+        (r) => r.findingId === findingId && r.revisionNumber === revisionNumber,
+      );
       if (!target) return { kind: 'error', code: 'not_found' };
       if (!target.isLatest || target.contentHash !== contentHash) {
-        const latest = revisions.find((r) => r.findingId === findingId && r.isLatest);
+        const latest = store.revisions.find((r) => r.findingId === findingId && r.isLatest);
         return {
           kind: 'error',
           code: 'conflict',
@@ -619,7 +758,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (target.severity === 'severe') {
         if (!hasPermission(who.role, 'finding:approve_severe'))
           return err('forbidden', 'Severe approval needs finding:approve_severe.');
-        const authors = revisions.filter((r) => r.findingId === findingId).map((r) => r.author.id);
+        const authors = store.revisions.filter((r) => r.findingId === findingId).map((r) => r.author.id);
         if (authors.includes(who.ref.id)) {
           return err(
             'not_eligible',
@@ -627,7 +766,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           );
         }
       }
-      const allEvidence = [...cases.values()].flatMap((c) => c.evidence);
+      const allEvidence = [...store.cases.values()].flatMap((c) => c.evidence);
       const missing = target.evidenceIds.filter(
         (id) => allEvidence.find((e) => e.id === id)?.state !== 'available',
       );
@@ -638,22 +777,24 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         );
       }
       if (!consumeGrant('finding.approve', findingId)) return { kind: 'error', code: 'stepup_required' };
-      revisions = revisions.map((r) =>
-        r.findingId !== findingId
-          ? r
-          : r === target
-            ? { ...r, status: 'published' }
-            : r.status === 'published'
-              ? { ...r, status: 'superseded' }
-              : r,
-      );
+      const previous = target.status;
+      for (const r of store.revisions) {
+        if (r.findingId !== findingId) continue;
+        if (r === target) r.status = 'published';
+        else if (r.status === 'published') r.status = 'superseded';
+      }
+      store.findingParticipants.set(findingId, {
+        author: target.author,
+        approver: who.ref,
+        severity: target.severity,
+      });
       const caseId = target.sourceCaseId;
       record({
         actor: who.ref,
         action: 'finding_approved',
         caseId,
         reason: `Approved revision ${revisionNumber} (${contentHash}).`,
-        changes: [{ field: `finding ${findingId}`, from: target.status, to: 'approved' }],
+        changes: [{ field: `finding ${findingId}`, from: previous, to: 'approved' }],
       });
       record({
         actor: 'system',
@@ -662,7 +803,8 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         reason: null,
         changes: [{ field: `finding ${findingId}`, from: 'approved', to: 'published' }],
       });
-      return ok(revisions.map(clone));
+      publishFinding(store, target, at());
+      return ok(store.revisions.map(clone));
     },
 
     async rejectRevision(findingId, revisionNumber, rationale) {
@@ -671,7 +813,9 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!who || !hasPermission(who.role, 'finding:publish')) {
         return err('forbidden', 'Rejecting findings needs a moderator or administrator role.');
       }
-      const target = revisions.find((r) => r.findingId === findingId && r.revisionNumber === revisionNumber);
+      const target = store.revisions.find(
+        (r) => r.findingId === findingId && r.revisionNumber === revisionNumber,
+      );
       if (!target) return { kind: 'error', code: 'not_found' };
       if (target.status !== 'proposed' && target.status !== 'pending_second_approval') {
         return err('invalid_transition', 'This revision is not waiting for approval.');
@@ -679,15 +823,16 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (rationale.trim().length < 10)
         return err('invalid_transition', 'A rejection needs a rationale of at least 10 characters.');
       if (!consumeGrant('finding.reject', findingId)) return { kind: 'error', code: 'stepup_required' };
-      revisions = revisions.map((r) => (r === target ? { ...r, status: 'rejected' } : r));
+      const previous = target.status;
+      target.status = 'rejected';
       record({
         actor: who.ref,
         action: 'finding_rejected',
         caseId: target.sourceCaseId,
         reason: rationale.trim(),
-        changes: [{ field: `finding ${findingId}`, from: target.status, to: 'rejected' }],
+        changes: [{ field: `finding ${findingId}`, from: previous, to: 'rejected' }],
       });
-      return ok(revisions.map(clone));
+      return ok(store.revisions.map(clone));
     },
 
     async getAuditLog(caseId) {
@@ -696,7 +841,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!who || !hasPermission(who.role, 'audit:read')) {
         return err('forbidden', 'The audit history is available to administrators only.');
       }
-      const entries = audit
+      const entries = store.audit
         .filter((e) => !caseId || e.caseId === caseId)
         .sort((a, b) => b.at.localeCompare(a.at));
       return ok(entries.map(clone));
@@ -707,13 +852,16 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       const who = identity();
       if (!who || !hasPermission(who.role, 'moderation:case:read'))
         return err('forbidden', 'Staff access is required.');
-      const profile = profiles.get(slug);
-      return profile ? ok(clone(profile)) : { kind: 'error', code: 'not_found' };
+      const project = store.projects.find((p) => p.slug === slug);
+      return project
+        ? ok({
+            slug,
+            revision: project.profileRevision,
+            description: project.description,
+            domains: project.domains.map((d) => d.hostname),
+          })
+        : { kind: 'error', code: 'not_found' };
     },
   };
   return api;
 }
-
-export const mockModerationApi = createMockModerationApi({
-  cookies: () => (typeof document === 'undefined' ? '' : document.cookie),
-});

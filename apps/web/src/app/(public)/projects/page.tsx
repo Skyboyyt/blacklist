@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { PageHeader } from '@/components/app/page-header';
 import { ProjectDirectoryResults } from '@/components/projects/project-directory-results';
+import { ButtonLink } from '@/components/ui/button';
 import { ProjectFilters } from '@/components/projects/project-filters';
 import { UnsupportedNetwork } from '@/components/research/research-unavailable';
 import { ResultsSkeleton } from '@/components/states/skeletons';
@@ -29,6 +30,11 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       <PageHeader
         title="Projects"
         description="Project profiles created and reviewed by Blacklist staff, with their official addresses, findings and history."
+        actions={
+          <ButtonLink href="/projects/suggest" variant="secondary" size="sm">
+            Suggest a project
+          </ButtonLink>
+        }
       />
       <p className="text-sm text-muted">
         {PROFILE_DISCLAIMER} {NAME_WARNING}

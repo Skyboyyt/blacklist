@@ -1,9 +1,10 @@
 import type { Viewer } from '@blacklist/contracts';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { SeedPhraseNotice } from '@/components/app/seed-phrase-notice';
 import { LogoutButton } from '@/components/security/logout-button';
 import { Icon } from '@/components/ui/icon';
-import { navSectionsFor } from '@/lib/nav/nav-items';
+import { navSectionsFor, POLICY_LINKS } from '@/lib/nav/nav-items';
 import { AccountMenu } from './account-menu';
 import { Brand } from './brand';
 import { MobileMenu, MobileTabBar } from './mobile-nav';
@@ -78,8 +79,21 @@ export function AppShell({ viewer, children }: AppShellProps) {
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>
 
-        <footer className="border-t border-border px-4 pt-4 pb-24 sm:px-6 lg:hidden">
-          <SeedPhraseNotice />
+        <footer className="flex flex-col gap-3 border-t border-border px-4 pt-4 pb-24 sm:px-6 lg:px-8 lg:pb-4">
+          <div className="lg:hidden">
+            <SeedPhraseNotice />
+          </div>
+          <nav aria-label="Transparency">
+            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+              {POLICY_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="text-muted hover:text-text hover:underline">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </footer>
       </div>
 
