@@ -1,0 +1,257 @@
+{
+  "date": "2026-10-13",
+  "status": "Tested: Neon staging database integration complete; application services held",
+  "sourceCommit": "ede392909b1c9d8ae91e862b0b5ca5edb4356b37",
+  "neon": {
+    "project": "curly-thunder-05276273",
+    "branch": "br-wispy-unit-b95vz858",
+    "database": "blacklist_staging",
+    "region": "aws-eu-central-1",
+    "version": 18,
+    "plan": "free",
+    "directNativeTLS": "certificate/hostname verified",
+    "computeSslFlag": "false; informational behind verified endpoint",
+    "productionProjectChanged": false
+  },
+  "operator": {
+    "groupId": "evg-db759a7f3r2c73d8gm80",
+    "services": {
+      "provision": {
+        "id": "srv-db759agn74is739oqrn0",
+        "deployId": "dep-db75ognf3r2c73da1570",
+        "commit": "ede392909b1c9d8ae91e862b0b5ca5edb4356b37",
+        "cleaned": true,
+        "dormantHealth": 200,
+        "dormantPublicStatus": 404,
+        "verifiedBuildDeployment": "dep-db75ognf3r2c73da1570",
+        "activationDeployId": "dep-db75ptd9fdbs73f4qrkg",
+        "readonlyFullBuildDeployment": "dep-db75vpou01pc73cckuo0",
+        "provisioningDeployment": "dep-db761ibrjlhs73a2334g"
+      },
+      "migrate": {
+        "id": "srv-db763mrncjis73fku75g",
+        "deployId": "dep-db763nbncjis73fku7n0",
+        "commit": "ede392909b1c9d8ae91e862b0b5ca5edb4356b37",
+        "cleaned": true,
+        "dormantHealth": 200,
+        "dormantPublicStatus": 404,
+        "verifiedBuildDeployment": "dep-db763nbncjis73fku7n0",
+        "activationDeployId": "dep-db765ohsrm7s73c52rv0"
+      }
+    },
+    "receipts": {
+      "provision": {
+        "runId": "bda3cf71-9454-437b-93f1-0c1851a244e8",
+        "sourceCommit": "ede392909b1c9d8ae91e862b0b5ca5edb4356b37",
+        "phase": "provision",
+        "state": "succeeded",
+        "code": "operator_verified",
+        "tlsVerified": true,
+        "rolesVerified": true,
+        "migrations": 0,
+        "tables": 0,
+        "queues": 0,
+        "targetRoles": 0,
+        "targetObjects": 0,
+        "serverReportsTls": false
+      },
+      "migrate": {
+        "runId": "5ffb5e10-2e59-4360-a304-fac9b8cae381",
+        "sourceCommit": "ede392909b1c9d8ae91e862b0b5ca5edb4356b37",
+        "phase": "migrate",
+        "state": "succeeded",
+        "code": "operator_verified",
+        "tlsVerified": true,
+        "rolesVerified": true,
+        "migrations": 7,
+        "tables": 27,
+        "queues": 16,
+        "targetRoles": 0,
+        "targetObjects": 0,
+        "serverReportsTls": false
+      }
+    },
+    "applicationResumed": false,
+    "paidResources": false,
+    "privilegedApplicationUrlRemoved": true,
+    "attemptHistory": [
+      {
+        "runId": "bda3cf71-9454-437b-93f1-0c1851a244e8",
+        "sourceCommit": "964f469e5d4b2d386c9ecb9e1a00a29c8fd464f8",
+        "phase": "provision",
+        "state": "failed",
+        "code": "operator_failed",
+        "tlsVerified": false,
+        "rolesVerified": false,
+        "migrations": 0,
+        "tables": 0,
+        "queues": 0
+      },
+      {
+        "runId": "bda3cf71-9454-437b-93f1-0c1851a244e8",
+        "sourceCommit": "41679647146cf518f7f32b81f875685b61c4441e",
+        "phase": "provision",
+        "state": "failed",
+        "code": "operator_server_tls_not_verified",
+        "tlsVerified": false,
+        "rolesVerified": false,
+        "migrations": 0,
+        "tables": 0,
+        "queues": 0,
+        "targetRoles": 0,
+        "targetObjects": 0
+      },
+      {
+        "runId": "bda3cf71-9454-437b-93f1-0c1851a244e8",
+        "sourceCommit": "ede392909b1c9d8ae91e862b0b5ca5edb4356b37",
+        "phase": "provision",
+        "state": "failed",
+        "code": "operator_inspection_only",
+        "tlsVerified": true,
+        "rolesVerified": false,
+        "migrations": 0,
+        "tables": 0,
+        "queues": 0,
+        "targetRoles": 0,
+        "targetObjects": 0,
+        "serverReportsTls": false
+      }
+    ],
+    "temporaryAdminCopyDeleted": true,
+    "runtimeConfigurationVerified": true,
+    "retainedOperatorStorageKeys": ["DATABASE_MIGRATION_URL", "DATABASE_RUNTIME_URL"],
+    "operatorStorageServiceLinks": 0,
+    "unusedControlSecretsDeleted": true,
+    "executorDeletionReadbackVerified": true
+  },
+  "migrationManifestMatchedByOperator": [
+    {
+      "name": "0000_fixed_alex_wilder.sql",
+      "sha256": "775f41df461cb2702685ae670216b272173ec14365999bd7f08b7bac3dcdaf29"
+    },
+    {
+      "name": "0001_rich_tomorrow_man.sql",
+      "sha256": "f0e67d86f1c92eb764ef7cd541b3eef6eb39a36b3f5d30e3a986d2014edbe39d"
+    },
+    {
+      "name": "0002_material_thunderbird.sql",
+      "sha256": "8746fa0feb13db7fbca15952a1f0a96bb8ef207267471243e69a9ff35aa19cce"
+    },
+    {
+      "name": "0003_absurd_miek.sql",
+      "sha256": "54aa4549df9cc82ac2d4a5b61eb1dd3c4283fe16e233fcefce8d7f6713ca9c28"
+    },
+    {
+      "name": "0004_harsh_molten_man.sql",
+      "sha256": "e46d1bcd6639a185009d2ddda6cad46a04b5933398e58e0db7987890a8d96eca"
+    },
+    {
+      "name": "0001_security_boundaries.sql",
+      "sha256": "eccc90e793edf9a2bec8241b1527dc46d4e5990cb43567611c0426f6fe088642"
+    },
+    {
+      "name": "0002_identity_guards.sql",
+      "sha256": "197cd3b5cee18ed91ba6e12712740a96d0f7bd535b47d3e197ca11fdb60178c1"
+    }
+  ],
+  "verification": {
+    "existingProvisionScriptExecuted": true,
+    "existingMigrationRunnerExecutedTwice": true,
+    "appliedHashesMatched": 7,
+    "applicationTables": 27,
+    "queues": 16,
+    "runtimeAuthenticationAndPermissionsVerified": true,
+    "negativeChecks": [
+      "CREATE public table denied42501",
+      "CREATE TEMP table denied42501",
+      "raw auth_verifications read denied42501",
+      "audit deletion denied42501",
+      "security delivery deletion denied42501"
+    ],
+    "noTestAccountsSeeded": true,
+    "noResetOrDropSharedDatabase": true
+  },
+  "boundaries": {
+    "date": "2026-10-13",
+    "runtimeServices": [
+      {
+        "service": "api",
+        "id": "srv-db72r4d9fdbs73erf1s0",
+        "suspended": true,
+        "plan": "free",
+        "region": "frankfurt",
+        "autoDeploy": "off",
+        "databaseRole": "blacklist_app",
+        "directConnection": true,
+        "tlsMode": "verify-full",
+        "operatorCredentialsPresent": false,
+        "unrelatedSettingsPreserved": true,
+        "trustedProxyCidrsConfigured": false
+      },
+      {
+        "service": "worker",
+        "id": "srv-db72r5ou01pc73c32l5g",
+        "suspended": true,
+        "plan": "free",
+        "region": "frankfurt",
+        "autoDeploy": "off",
+        "databaseRole": "blacklist_app",
+        "directConnection": true,
+        "tlsMode": "verify-full",
+        "operatorCredentialsPresent": false,
+        "unrelatedSettingsPreserved": true,
+        "trustedProxyCidrsConfigured": null
+      }
+    ],
+    "operatorStorageId": "evg-db759a7f3r2c73d8gm80",
+    "operatorStorageServiceLinks": 0,
+    "onlyRuntimeAndMigratorURLsRetained": true,
+    "temporaryExecutorsDeleted": true,
+    "temporaryAdminAndControlCopiesDeleted": true,
+    "frontendDatabaseOrSignerOrMailCredentialsPresent": false,
+    "signedOutFrontendCheck": {
+      "httpStatus": 302,
+      "authenticationRedirect": true
+    },
+    "productionOrPhase8Activated": false,
+    "credentialValuesInEvidence": false
+  },
+  "tests": {
+    "rootCheck": "passed again on final implementation: format/lint/types/500unit/Next build",
+    "backendBuild": "passed",
+    "expandedOperatorTypecheck": "passed",
+    "databaseIntegration": {
+      "passed": 48,
+      "failed": 0
+    },
+    "focusedOperatorAndRealTLSProxy": {
+      "passed": 11,
+      "failed": 0,
+      "includedInRootAndIntegrationCounts": true
+    },
+    "productionDependencyAudit": "passed0 vulnerabilities",
+    "fullDependencyAudit": "failed1high development braces advisory GHSA-vfj7-8cjw-p6xm",
+    "requiredCoverage": "failed59.16% branches vs75%; security package thresholds also fail",
+    "browserSuite": "not rerun for infrastructure; prior full416pass2timeouts82skips remain recorded",
+    "hostedAppAuthEmailRestartRestore": "untested; services held"
+  },
+  "receiptCounterSemantics": "targetRoles/targetObjects are inspection counters; execution receipts leave defaults. Actual role verification independently requires exactly2 safe roles. Success flags/hashes/table/queue counts are verified, not inferred from liveness.",
+  "renderRuntimeSettingsObservation": "image reuse/restart did not expose updated authenticated status; same-source full rebuild applied protected file/flags. File excluded from context; no secret build mounts or ordinary credential ARG/env.",
+  "cost": {
+    "newRecurringBaseUSD": 0,
+    "paidResourcesActivated": false,
+    "savedPaymentMethod": "owner reports none; not API verified",
+    "actualRemainingQuotas": "unverified; may stop builds/services, no paid fallback"
+  },
+  "notActivated": ["API", "worker", "production", "Phase8"],
+  "remainingBlockers": [
+    "Claude independent review",
+    "coverage thresholds",
+    "full dev dependency audit",
+    "trusted ingress/proxy configuration",
+    "hosted auth/email/restart/restore",
+    "sender domain for other recipients",
+    "recovery/legal/retention/monitoring decisions"
+  ],
+  "credentialOrUserDataValuesInEvidence": false
+}
