@@ -145,6 +145,62 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
       await app.close();
     }
   });
+  it('rejects spoofed proxy peers and confines SSR client-IP authority to the internal route', async () => {
+    if (!ctx) throw new Error('fixture_runtime_missing');
+    const settings = config();
+    const app = createServer(ctx, settings, false);
+    let observedPrefix: string | undefined;
+    app.addHook('preHandler', async (request) => {
+      observedPrefix = request.clientPrefix;
+    });
+    const gate = { 'x-blacklist-staging-access': stagingToken };
+    const internal = { ...gate, 'x-bl-internal-token': settings.INTERNAL_API_TOKEN };
+    try {
+      const spoofed = await app.inject({
+        url: '/api/internal/v1/viewer',
+        remoteAddress: '192.0.2.9',
+        headers: { ...internal, 'x-forwarded-for': '127.0.0.1', 'x-bl-client-ip': '198.51.100.7' },
+      });
+      expect(spoofed.statusCode).toBe(404);
+      expect(observedPrefix).toBeUndefined();
+      for (const supplied of [undefined, 'wrong']) {
+        const rejected = await app.inject({
+          url: '/api/internal/v1/viewer',
+          remoteAddress: '127.0.0.1',
+          headers: { ...gate, ...(supplied ? { 'x-bl-internal-token': supplied } : {}) },
+        });
+        expect(rejected.statusCode).toBe(404);
+        expect(observedPrefix).toBeUndefined();
+      }
+      for (const test of [
+        { peer: '192.0.2.9', forwarded: '198.51.100.7', expected: 'ip4:192.0.2.9' },
+        { peer: '127.0.0.1', forwarded: '198.51.100.7', expected: 'ip4:198.51.100.7' },
+        { peer: '127.0.0.1', forwarded: '198.51.100.7, 192.0.2.9', expected: 'ip4:127.0.0.1' },
+        { peer: '127.0.0.1', forwarded: 'malformed', expected: 'ip4:127.0.0.1' },
+      ]) {
+        const result = await app.inject({
+          url: '/api/v1/viewer',
+          remoteAddress: test.peer,
+          headers: { ...internal, 'x-forwarded-for': test.forwarded, 'x-bl-client-ip': '203.0.113.8' },
+        });
+        expect(result.statusCode).toBe(200);
+        expect(result.json()).toEqual({ kind: 'anonymous' });
+        expect(observedPrefix).toBe(test.expected);
+        expect(result.body).not.toContain(test.forwarded);
+        expect(result.body).not.toContain(settings.INTERNAL_API_TOKEN);
+      }
+      const authorized = await app.inject({
+        url: '/api/internal/v1/viewer',
+        remoteAddress: '127.0.0.1',
+        headers: { ...internal, 'x-forwarded-for': '192.0.2.9', 'x-bl-client-ip': '198.51.100.7' },
+      });
+      expect(authorized.statusCode).toBe(200);
+      expect(authorized.json()).toEqual({ kind: 'anonymous' });
+      expect(observedPrefix).toBe('ip4:198.51.100.7');
+    } finally {
+      await app.close();
+    }
+  });
   it('reports a database health failure safely instead of returning fake readiness', async () => {
     if (!ctx) throw new Error('fixture_runtime_missing');
     const app = createServer(ctx, config(), false);

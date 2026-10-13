@@ -1,6 +1,29 @@
 # Render + Neon + Resend restricted staging
 
-Status: **partially provisioned; API/worker and complete staging validation blocked**. All four correctly named protected API bindings now pass supported read-only access checks. A separate Free Neon PG18 staging project was created in Frankfurt; application migrations have not run there. Vercel signed-out preview requests redirect to Authentication. Render API/worker resources exist but are suspended, Resend default-sender transport is accepted/provider-reported delivered to the approved account mailbox, but no owned domain is verified and this workspace cannot connect to PostgreSQL. Final owner selections on 2026-10-13: free Render for the backend/API, **Neon PostgreSQL** for the database, Resend HTTPS for activation/reset mail, Vercel frontend with Vercel Authentication, Frankfurt region, and **authenticated TLS over Neon’s public endpoint accepted for staging**. Production changes, paid resources, automatic merge and Phase 8 remain unauthorized.
+Status: **Neon database integration verified; application activation and complete staging validation blocked by security gates**. All four protected provider bindings work. The Free Frankfurt Neon PG18 staging database has the two ordinary SQL roles, seven hash-verified migrations applied twice, 27 owned application tables and 16 queues. Actual verified endpoint TLS and app-role permission denials passed through the owner-accepted isolated Render operator, which has been deleted. Both existing Render services now have the verified app URL and remain suspended. Signed-out Vercel access redirects to Authentication. Resend transport was accepted/provider-reported delivered to the authorized account mailbox, but no sender domain is verified. This cloud machine still cannot connect directly to PostgreSQL; the completed operator execution is separately evidenced. Owner reported review and requested completion; this does not waive the failing coverage/full audit or establish Render ingress trust. Production changes, paid resources and Phase 8 remain unauthorized. Earlier blocked checkpoints below are historical; use the latest evidence and AI_HANDOFF.
+
+## Finalization after owner review
+
+See [finalization review](../reviews/2026-10-13-staging-finalization.md) and [actual check results](../evidence/2026-10-13-staging-finalization.json). Database preparation is complete; do not repeat provisioning, regenerate role passwords or rerun cloud jobs as onboarding. Local builds/tests and the ingress adversary regression pass, but required coverage and full audit fail. Actual trusted proxy CIDRs are unset, so internal viewer/SSR fails closed. Obtain authoritative ingress peers/header guarantees or a specific approved architectural resolution; never guess broad CIDRs or remove the peer check. Owner review is recorded separately from pending independent Claude review. Keep application activation and conditional merge blocked until required checks pass; no further credential entry or repeat approval of the completed database job is needed.
+
+| Required report item | Actual status | Evidence / limit |
+| --- | --- | --- |
+| Repository / Phase 7 | Tested | Main `ece2e76`, Phase 6 repairs and preserved stash unchanged; PR #8 is unmerged |
+| Backend architecture | Implemented | Existing Fastify API, separate pg-boss worker, headless Better Auth; Node24.21.0 / pnpm12.7.0 preserved |
+| Database architecture | Tested | Existing Drizzle/pg, ordinary SQL roles, 27 application tables, 16 queues; no later-phase business schema fabricated |
+| Render API configuration | Implemented | Free Frankfurt, repository-root build/start wrappers, protected runtime settings, auto-deploy off, suspended |
+| PostgreSQL configuration | Tested | Free PG18 Frankfurt, direct endpoint, certificate/hostname-verified TLS, app role restricted; actual SQL proof in prior cloud receipt |
+| Staging deployment | Blocked | Database executed in staging; API/worker application deployment remains held |
+| Hosted health | Blocked | Both reserved URLs return provider HTML503, not application health |
+| DB connectivity | Tested | Actual native Render-to-Neon TLS/SQL proof; this cloud development machine still lacks TCP5432 access |
+| Security review | Blocked | Negative ingress/role tests pass; full audit/coverage/actual ingress remain unresolved |
+| Automated checks | Blocked | Passed unit/integration/build/type/lint checks and individual browser results are in finalization evidence; coverage/audit failures remain mandatory |
+| Environment inventory | Implemented | Safe `.env.example` and inventory below; server-only DB/signer/mail values excluded from frontend; no secret values in evidence |
+| Hosting costs | Implemented | Selected new Free resources base0USD within allowances; no card owner-reported, quotas unverified; no paid fallback or always-on worker promise |
+| Files / GitHub | Implemented | Ingress regression, finalization evidence/review, current runbook/rulebook/handoff on infrastructure branch / PR #8; publication readback recorded after push |
+| Remaining blockers | Blocked | Coverage, upstream dev advisory, trusted ingress, hosted workflows/recovery and independent review; other mail recipients require a verified domain |
+| Production readiness | Blocked | No production activation, managed recovery/launch/legal decisions or readiness claim |
+| Phase 8 | Blocked | Not authorized or started; owner/Claude must resolve foundation gates and decisions before proceeding |
 
 The selected review template is `infrastructure/render/blueprint.staging-neon-free.yaml`: a free API and a **separate** free web-hosted worker with only a status listener. `infrastructure/neon/project.staging.json` is a reviewed project specification, **not an API creation payload**. No project/service/credential value or public URL is fabricated. Earlier Render-database/free and paid templates are superseded alternatives, never selected or applied.
 

@@ -1,0 +1,357 @@
+{
+  "date": "2026-10-13",
+  "status": "database integration complete; application activation blocked by security gates",
+  "ownerReview": {
+    "reportedInChat": true,
+    "completionRequested": true,
+    "formalGithubReviewEvents": 0,
+    "independentClaudeReview": "pending",
+    "securityGateWaiver": false
+  },
+  "source": {
+    "repository": "Skyboyyt/blacklist",
+    "branch": "chore/render-staging-deployment",
+    "validatedBaseCommit": "e891f4d68f0c8d31d6cecebbf231844d2c65953f",
+    "mainUnchanged": "ece2e769fafc9a381ed1b540ae8b7e05fccdbab5",
+    "successfulCloudSqlSource": "ede392909b1c9d8ae91e862b0b5ca5edb4356b37",
+    "newIngressTestFile": "tests/backend-acceptance/src/render-deployment.integration.test.ts",
+    "newIngressTestSha256": "adf31484184e1c8f3fed84210429688678bf0844dd566aef853fa08278d0b8f6",
+    "applicationOrMigrationSourceChanged": false,
+    "pr": "https://github.com/Skyboyyt/blacklist/pull/8",
+    "prMerged": false
+  },
+  "database": {
+    "priorRealSqlEvidence": "docs/evidence/2026-10-13-neon-render-integration-complete.json",
+    "freshHashComparison": "passed7 unchanged migration files match cloud execution manifest",
+    "newCloudSqlExecuted": false,
+    "resetOrDestructiveOperation": false,
+    "runtimeRole": "blacklist_app",
+    "tls": "direct endpoint sslmode=verify-full"
+  },
+  "cloudBoundaries": {
+    "date": "2026-10-13",
+    "runtimeServices": [
+      {
+        "service": "api",
+        "id": "srv-db72r4d9fdbs73erf1s0",
+        "suspended": true,
+        "plan": "free",
+        "region": "frankfurt",
+        "autoDeploy": "off",
+        "databaseRole": "blacklist_app",
+        "directConnection": true,
+        "tlsMode": "verify-full",
+        "operatorCredentialsPresent": false,
+        "unrelatedSettingsPreserved": true,
+        "trustedProxyCidrsConfigured": false
+      },
+      {
+        "service": "worker",
+        "id": "srv-db72r5ou01pc73c32l5g",
+        "suspended": true,
+        "plan": "free",
+        "region": "frankfurt",
+        "autoDeploy": "off",
+        "databaseRole": "blacklist_app",
+        "directConnection": true,
+        "tlsMode": "verify-full",
+        "operatorCredentialsPresent": false,
+        "unrelatedSettingsPreserved": true,
+        "trustedProxyCidrsConfigured": null
+      }
+    ],
+    "operatorStorageId": "evg-db759a7f3r2c73d8gm80",
+    "operatorStorageServiceLinks": 0,
+    "onlyRuntimeAndMigratorURLsRetained": true,
+    "temporaryExecutorsDeleted": true,
+    "temporaryAdminAndControlCopiesDeleted": true,
+    "frontendDatabaseOrSignerOrMailCredentialsPresent": false,
+    "signedOutFrontendCheck": {
+      "httpStatus": 302,
+      "authenticationRedirect": true
+    },
+    "productionOrPhase8Activated": false,
+    "credentialValuesInEvidence": false
+  },
+  "healthAndMail": {
+    "healthProbes": [
+      {
+        "url": "https://blacklist-staging-api.onrender.com/healthz",
+        "status": 503,
+        "contentType": "text/html; charset=utf-8"
+      },
+      {
+        "url": "https://blacklist-staging-worker.onrender.com/healthz",
+        "status": 503,
+        "contentType": "text/html; charset=utf-8"
+      }
+    ],
+    "emailSenderInspection": {
+      "verifiedDomains": 0,
+      "mailSent": false
+    }
+  },
+  "tests": {
+    "rootCheck": {
+      "command": "pnpm check",
+      "status": "passed",
+      "unitTests": 500,
+      "exitCode": 0
+    },
+    "backendBuild": {
+      "command": "pnpm build:backend",
+      "status": "passed",
+      "exitCode": 0
+    },
+    "integration": {
+      "command": "pnpm test:backend",
+      "status": "passed",
+      "exitCode": 0,
+      "passed": 48,
+      "failed": 0,
+      "note": "Full suite began before ingress regression addition; focused rerun separately validates changed file."
+    },
+    "ingressRegression": {
+      "command": "pnpm --filter @blacklist/backend-acceptance exec vitest run render-deployment.integration.test.ts",
+      "status": "passed",
+      "passed": 6,
+      "failed": 0,
+      "overlapWithFullIntegration": 5,
+      "newTests": 1
+    },
+    "changedTestTypecheckAndLint": {
+      "status": "passed",
+      "exitCode": 0
+    },
+    "coverage": {
+      "command": "pnpm --filter @blacklist/backend-acceptance test:coverage",
+      "exitCode": 1,
+      "assertionsPassed": 33,
+      "assertionsFailed": 0,
+      "globalBranchPercent": 59.38,
+      "failedFloors": [
+        {
+          "scope": "global",
+          "actualPercent": 59.38,
+          "requiredPercent": 75.0,
+          "status": "failed"
+        },
+        {
+          "scope": "../../packages/domain/src/identity/**",
+          "actualPercent": 58.82,
+          "requiredPercent": 90.0,
+          "status": "failed"
+        },
+        {
+          "scope": "../../packages/domain/src/access/**",
+          "actualPercent": 77.27,
+          "requiredPercent": 90.0,
+          "status": "failed"
+        },
+        {
+          "scope": "../../packages/domain/src/audit/**",
+          "actualPercent": 80.0,
+          "requiredPercent": 90.0,
+          "status": "failed"
+        },
+        {
+          "scope": "../../packages/domain/src/staff/**",
+          "actualPercent": 48.65,
+          "requiredPercent": 75.0,
+          "status": "failed"
+        },
+        {
+          "scope": "../../packages/db/src/**",
+          "actualPercent": 62.5,
+          "requiredPercent": 75.0,
+          "status": "failed"
+        },
+        {
+          "scope": "../../apps/api/src/**",
+          "actualPercent": 73.58,
+          "requiredPercent": 75.0,
+          "status": "failed"
+        },
+        {
+          "scope": "../../apps/worker/src/**",
+          "actualPercent": 68.96,
+          "requiredPercent": 75.0,
+          "status": "failed"
+        }
+      ],
+      "noThresholdOrAssertionChanged": true
+    },
+    "productionAudit": {
+      "status": "passed",
+      "exitCode": 0,
+      "vulnerabilities": 0
+    },
+    "fullAudit": {
+      "status": "failed",
+      "exitCode": 1,
+      "highDevelopmentAdvisories": 1,
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces@3.0.3",
+      "publishedPatchedVersion": null,
+      "registryLatest": "3.0.3",
+      "independentGithubAdvisoryRechecked": true,
+      "policySuppressed": false
+    },
+    "mockBuild": {
+      "status": "passed",
+      "exitCode": 0
+    },
+    "mockExclusion": {
+      "status": "passed",
+      "checks": 4,
+      "serverOnlyNamesAbsentFromBrowserBundles": true
+    },
+    "browserInitialAttempt": {
+      "status": "interrupted after missing default Playwright browser failures",
+      "stats": {
+        "startTime": "2026-10-13T17:29:11.242Z",
+        "duration": 85877.009,
+        "expected": 4,
+        "skipped": 287,
+        "unexpected": 209,
+        "flaky": 0
+      },
+      "readinessEvidence": false,
+      "assertionsWeakened": false
+    },
+    "browserCorrectedFullRun": {
+      "status": "passed",
+      "config": "existing ignored .cache/cloud-playwright.config.ts",
+      "browser": "system Chromium154",
+      "projects": ["desktop", "mobile"],
+      "workers": 2,
+      "assertionsAndTimeoutsUnchanged": true,
+      "exitCode": 0,
+      "stats": {
+        "startTime": "2026-10-13T17:30:38.842Z",
+        "duration": 801938.409,
+        "expected": 418,
+        "skipped": 82,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "earlierFullBrowserTimeoutBlocker": "closed for this complete Chromium rerun",
+      "preexistingIntentionalSkips": 82,
+      "hostedBackendBehaviorProven": false
+    },
+    "localApplicationSmoke": {
+      "initial": "API not running; connection attempts failed before starting local services",
+      "restoredWithoutVolumeReset": true,
+      "checks": [
+        {
+          "check": "health",
+          "status": 200
+        },
+        {
+          "check": "anonymousPrivate",
+          "status": 401
+        },
+        {
+          "check": "foreignOrigin",
+          "status": 403
+        }
+      ]
+    }
+  },
+  "secretScan": {
+    "history": {
+      "tool": "digest-pinned Gitleaks, network disabled, all refs, redaction100%",
+      "exitCode": 1,
+      "rawFindings": 4,
+      "manualTriage": "four existing fictional configuration placeholders/security-boundary prose",
+      "actualCredentialsIdentified": 0,
+      "suppressionRulesAdded": false,
+      "locations": [
+        {
+          "rule": "generic-api-key",
+          "file": "docs/phase7-acceptance.md",
+          "line": 52,
+          "commit": "baafe57220b5b42c4e457d92bbae43cf468ff5fd"
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+          "line": 18,
+          "commit": "baafe57220b5b42c4e457d92bbae43cf468ff5fd"
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+          "line": 18,
+          "commit": "b1800e89491e1eeec4a80c252d3c8a80c83a52a1"
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/reviews/2026-10-12-phase-2-codex-review.md",
+          "line": 42,
+          "commit": "9704983a416d8bb436dd6ba8c273f56af20768f6"
+        }
+      ]
+    },
+    "changedFiles": {
+      "status": "passed",
+      "exitCode": 0,
+      "files": 6,
+      "findings": 0,
+      "networkDisabled": true,
+      "redactionPercent": 100
+    },
+    "exactProtectedValueCheck": {
+      "protectedValuesChecked": 8,
+      "filesScanned": 795,
+      "scopes": [
+        "current tracked source and new finalization files",
+        "production browser static assets",
+        "mock browser static assets"
+      ],
+      "filesWithExactCredentialMatches": 0,
+      "credentialValuesOutput": false,
+      "operatorGroupUnlinked": true
+    }
+  },
+  "hostingCosts": {
+    "selectedNewResourceBaseUsdPerMonth": 0,
+    "render": "Free API + separate Free optional web-hosted worker",
+    "neon": "Free PG18 Frankfurt, six-hour history",
+    "resend": "existing Free restricted default sender",
+    "paymentMethodSaved": "no, owner-reported",
+    "remainingQuotas": "unverified",
+    "paidFallback": "none"
+  },
+  "untested": [
+    "hosted API/worker startup and health",
+    "authorized Vercel SSR/cookies",
+    "DB-backed activation/login/logout/reset",
+    "hosted restart persistence",
+    "Neon provider restoration",
+    "other-recipient email delivery and tracking/retention",
+    "Firefox/WebKit/physical devices/assistive technology"
+  ],
+  "blockingActions": [
+    "complete unchanged application coverage floors",
+    "resolve unpatched development dependency without removing security checks or suppressing audit",
+    "verify Render trusted socket peer CIDRs/header guarantees or obtain a specific accepted architectural resolution",
+    "independent architecture/recovery review; real staff onboarding remains blocked by ADR0013/P13/O6"
+  ],
+  "notPerformed": [
+    "Render application resume",
+    "PR8 merge",
+    "main push",
+    "production database or Vercel configuration change",
+    "paid provisioning/billing change",
+    "additional external email",
+    "Phase8"
+  ],
+  "credentialOrPrivateUserDataValuesInEvidence": false,
+  "onboarding": {
+    "startSkill": "saved complete current startup instructions",
+    "installScript": "preserved",
+    "bindingsAndNetwork": "preserved",
+    "publication": "requires user publication; not claimed"
+  }
+}
