@@ -14,9 +14,21 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Post-Phase 7 restricted staging preparation/deployment on free Render + Neon + Resend, protected Vercel. Feature-branch commit/push/PR authorized. No automatic merge, paid resource, production/public launch, Vercel production change or Phase 8. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: owner-selected free staging preparation, local validation and security self-review; provider access missing |
+| Last agent | Codex: credential metadata/API recheck; rotated correctly named bindings required before deployment |
 | Last updated | 2026-10-13 |
 
+
+## Credential recheck — 2026-10-13
+
+**Blocked; rotation and configuration correction required.** Owner reported entering all four credentials. Metadata confirms four saved bindings, but the saved names/targets are API-key-like strings instead of the literal `RENDER_API_KEY`, `NEON_API_KEY`, `VERCEL_TOKEN` and `RESEND_API_KEY`. All four intended variables remain absent; alternate bindings are present. Do not publish or print the actual saved names: they contain secret-like material. Codex surfaced those names in a metadata tool result, notified the owner and requires rotation under AGENTS.md §7. No actual name/value belongs in this handoff, evidence or GitHub.
+
+Read-only account/resource requests using the available scoped bindings returned **Render 403 / Neon 401 / Vercel 403 / Resend 400**. These are unsuccessful access checks, not proof that every failure is an invalid credential rather than scope/proxy/account policy. No provider account details, service, database, sender, staging URL or real delivery was verified; no resource or billing mutation occurred. Further deployment is paused pending rotated, correctly configured credentials. Do not retry unchanged failures or weaken TLS/authorization.
+
+Correctly named scoped requirements were saved in the environment configuration draft while preserving existing scripts/network/settings; the complete startup instructions now include this blocker and safe metadata handling. Saving does not move existing secret values, rotate credentials, inject variables or publish. Owner must rotate/revoke the four old provider keys, remove entries whose names are keys, enter new keys in the **secret value** fields under the four exact variable names, and save/publish the environment configuration. Keys must never be pasted in chat.
+
+Git verification: main remains `ece2e769fafc9a381ed1b540ae8b7e05fccdbab5`; preparation PR #8 is open/draft/unmerged with infrastructure/receipt head `2d7817d6390fe63aef448f19ab185efe4017756a`. This session changes only sanitized credential-check evidence and handoff; the prior application tests are not rerun or relabelled. Existing coverage/audit/browser/Claude-review gaps remain. Next action after corrected bindings: verify read-only account access and actual Free capabilities before any staging provisioning. No merge, paid resources, public/production activation or Phase 8.
+
+---
 
 ## Restricted staging infrastructure handoff — 2026-10-13
 
