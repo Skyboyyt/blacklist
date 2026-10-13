@@ -48,6 +48,7 @@ function build(action: Action, f: Fields): unknown {
     case 'request_info':
       return { action, messageToSubmitter: f.messageToSubmitter };
     case 'accept_report':
+    case 'amend':
       return {
         action,
         severity: f.severity,
@@ -66,7 +67,6 @@ function build(action: Action, f: Fields): unknown {
     case 'reject_abusive':
       return { action, internalRationale: f.internalRationale };
     case 'uphold':
-    case 'amend':
     case 'reverse':
     case 'accept_correction':
     case 'accept_suggestion':
@@ -82,6 +82,7 @@ const needs = {
   publicSummary: (a: Action) => fieldsOf(a).includes('publicSummary'),
   rationale: (a: Action) => fieldsOf(a).includes('internalRationale'),
   reason: (a: Action) => fieldsOf(a).includes('reason'),
+  severity: (a: Action) => fieldsOf(a).includes('severity'),
 };
 
 interface DecisionPanelProps {
@@ -184,7 +185,7 @@ export function DecisionPanel({ detail, staffRole, onDecide, verifyStepUp }: Dec
         >
           <p className="text-sm text-muted">{copy.consequence}</p>
           {limit ? <p className="text-sm font-medium text-warning">{limit}</p> : null}
-          {selected === 'accept_report' ? (
+          {needs.severity(selected) ? (
             <Field id="decision-severity" label="Finding severity">
               {(control) => (
                 <Select
@@ -221,8 +222,12 @@ export function DecisionPanel({ detail, staffRole, onDecide, verifyStepUp }: Dec
           {needs.publicSummary(selected) ? (
             <Field
               id="decision-public"
-              label="Public explanation"
-              hint="Published with the outcome. Factual language only; no reporter details."
+              label={selected === 'amend' ? 'Amended public summary' : 'Public explanation'}
+              hint={
+                selected === 'amend'
+                  ? 'Becomes revision text of the finding. It is public only after a separate approval. Factual language only; no reporter details.'
+                  : 'Published with the outcome. Factual language only; no reporter details.'
+              }
               error={errors.publicSummary}
             >
               {(control) => (

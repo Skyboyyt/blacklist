@@ -462,7 +462,18 @@ export const caseDecisionSchema = z.discriminatedUnion('action', [
   }),
   z.strictObject({ action: z.literal('reject_abusive'), internalRationale: rationale }),
   z.strictObject({
-    action: z.enum(['uphold', 'amend', 'reverse']),
+    action: z.enum(['uphold', 'reverse']),
+    publicSummary: publicText,
+    internalRationale: rationale,
+  }),
+  /**
+   * An amendment is a new revision (moderation §8.1, §9): the appeal reviewer states the
+   * amended severity and public text; the revision then needs fresh approval (independent
+   * when either the new or the currently public revision is severe).
+   */
+  z.strictObject({
+    action: z.literal('amend'),
+    severity: findingSeveritySchema,
     publicSummary: publicText,
     internalRationale: rationale,
   }),
@@ -588,3 +599,32 @@ export const suspensionRequestSchema = z.strictObject({
   reason: rationale,
 });
 export type SuspensionRequest = z.infer<typeof suspensionRequestSchema>;
+
+/**
+ * A new revision of an existing finding (moderation §2): every change creates a new
+ * immutable revision with a new content hash, based on the latest revision the editor saw.
+ */
+export const revisionDraftSchema = z.strictObject({
+  severity: findingSeveritySchema,
+  publicSummary: publicText,
+  internalRationale: rationale,
+});
+export type RevisionDraft = z.infer<typeof revisionDraftSchema>;
+
+/** The revision the editor started from; a different latest revision is a conflict. */
+export const revisionBaseSchema = z.strictObject({
+  revisionNumber: z.number().int().positive(),
+  contentHash: findingRevisionSchema.shape.contentHash,
+});
+export type RevisionBase = z.infer<typeof revisionBaseSchema>;
+
+/** A finding's immutable revision history, oldest first, with what the public sees now. */
+export const findingHistorySchema = z.strictObject({
+  finding: staffFindingSchema,
+  revisions: z.array(findingRevisionSchema),
+  /** The public summary currently shown; null while suspended (the public sees only the suspension notice). */
+  publicText: z.string().nullable(),
+  /** Why approval is blocked right now, if it is (e.g. an open suspension review). */
+  approvalBlockedReason: z.string().nullable(),
+});
+export type FindingHistory = z.infer<typeof findingHistorySchema>;

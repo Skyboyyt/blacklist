@@ -342,10 +342,11 @@ Indicative V1 endpoint groups:
 | Account | `GET/PATCH /me`, `GET /me/sessions`, `DELETE /me/sessions/:id`, `POST /me/sessions/revoke-others`, `POST /me/password`, `POST /me/email-change`, `POST /me/email-change/confirm` |
 | Research | `GET /search`, `GET /addresses/:chain/:address`, `…/transactions`, `…/assessment`, `…/assessment/history`, `GET /transactions/:chain/:hash`, `GET /projects` (directory: query, chain-scoped address match, category, findings status, sort, page), `GET /projects/:slug`, `GET /projects/scoreboard` (band-only, ADR 0012), `GET /findings/:id` |
 | Reports | `POST /reports`, `PATCH /reports/:id`, `POST /reports/:id/evidence`, `POST /reports/:id/submit`, `POST /reports/:id/withdraw`, `GET /me/reports` |
+| Member submissions | `GET /me/submissions`, `GET /me/submissions/:id`, `POST /me/submissions/:id/{reply,withdraw}`, `POST /project-suggestions` (ADR 0010 Part A) |
 | Redress | `POST /standing/challenges`, `POST /standing/claims`, `POST /subjects/:id/responses`, `POST /findings/:id/appeals`, `POST /corrections` |
 | Notifications | `GET /me/notifications`, `POST /me/notifications/read` |
-| Moderation | `GET /mod/queue`, `GET /mod/cases/:id`, `POST /mod/findings/:id/revisions`, `POST /mod/findings/:id/approvals`, `POST /mod/findings/:id/publish`, `POST /mod/findings/:id/suspend`, `POST /mod/standing/:id/decision`, `POST /mod/appeals/:id/decision` |
-| Admin | `/admin/staff/*` (invitations, role requests, suspensions, recovery, offboarding), `/admin/users/*`, `/admin/projects/*`, `/admin/labels/*`, `/admin/signals/suppressions`, `/admin/audit` |
+| Moderation | `GET /mod/queue`, `GET /mod/cases/:id`, `POST /mod/cases/:id/{assignment,notes,decisions}`, `GET /mod/findings`, `GET/POST /mod/findings/:id/revisions`, `POST /mod/findings/:id/approvals`, `POST /mod/findings/:id/publish`, `POST /mod/findings/:id/suspend`, `POST /mod/standing/:id/decision`, `POST /mod/appeals/:id/decision`, `GET /mod/recovery`, `POST /mod/recovery/:id/verifications` (identity §10.11 step 2) |
+| Admin | `GET /admin/overview`, `/admin/staff/*` (invitations, role requests, suspensions, recovery, offboarding), `/admin/users/*`, `/admin/projects/*`, `/admin/labels/*`, `/admin/signals/suppressions`, `/admin/audit` |
 | Ops (internal only) | `GET /healthz`, `GET /readyz` |
 
 The frontend's typed service interfaces, the member submission views (ADR 0010 Part A) and the endpoint additions they need are specified in [docs/design/api-integration-contracts.md](docs/design/api-integration-contracts.md) (Phase 5); that document's open items are resolved here before Phase 7.
@@ -467,7 +468,7 @@ Defined in code (`domain/access`). Only assignments are stored in the database.
 | Role | Representative permissions |
 |---|---|
 | `member` | `research:read`, `report:create`, `report:read:own`, `evidence:upload`, `standing:prove`, `response:create`, `appeal:create`, `correction:create`, `notification:read:own`, `profile:update:own`, `session:manage:own` |
-| `moderator` | `moderation:queue:read`, `moderation:case:read`, `moderation:case:assign`, `finding:propose`, `finding:publish`, `finding:approve_severe`, `finding:suspend`, `standing:decide`, `appeal:decide`, `response:moderate`, `correction:decide`, `evidence:read_derivative`, `evidence:redact`, `report:read:any` |
+| `moderator` | `moderation:queue:read`, `moderation:case:read`, `moderation:case:assign`, `finding:propose`, `finding:publish`, `finding:approve_severe`, `finding:suspend`, `standing:decide`, `appeal:decide`, `response:moderate`, `correction:decide`, `evidence:read_derivative`, `evidence:redact`, `report:read:any`, `staff:recovery:verify` (identity verification in a recovery case, identity §10.11) |
 | `appeal_reviewer` | `moderation:case:read` (appeal cases only), `appeal:decide`, `evidence:read_derivative` (appeal scope) |
 | `admin` | moderator permissions + `staff:invite`, `staff:role:request`, `staff:role:approve`, `staff:suspend`, `staff:recovery:*`, `staff:offboard`, `user:suspend`, `project:manage`, `label:manage`, `signal:suppress`, `audit:read`, `config:manage`, `evidence:unpublish`, `evidence:purge:request` |
 | Operator CLI (never web) | `staff:bootstrap`, `staff:approve-invitation` (< 2 admins), `staff:break-glass`, `evidence:purge:execute`, `evidence:forensic_export` |

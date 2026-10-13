@@ -32,6 +32,7 @@ describe('navigation', () => {
     expect(staffLinks('appeal_reviewer')).toEqual(['/mod/appeals']);
     expect(staffLinks('moderator')).not.toContain('/admin');
     expect(staffLinks('moderator')).toContain('/mod/findings');
+    expect(staffLinks('moderator')).toContain('/mod/recovery');
     expect(staffLinks('admin')).toContain('/admin');
   });
 });

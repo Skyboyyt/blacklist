@@ -22,7 +22,8 @@ export function Badge({ tone = 'neutral', children, className }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+        // Long labels wrap rather than push the page sideways (WCAG 1.4.10, 1.4.12).
+        'inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium break-words',
         tones[tone],
         className,
       )}

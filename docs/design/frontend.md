@@ -180,6 +180,14 @@ Normative sources: PRD §5.24, identity §10 (staff lifecycle), ARCHITECTURE §9
 
 Every consequential action goes through `ProtectedAction`: a confirmation screen (with an internal reason where required), then an action-bound security-key step-up, then the action. The service enforces the rules itself (active admin, two-person rules, step-up grants); a suspended or offboarded staff member loses access in the moderation service at once. Preview viewer `admin_b` is the second administrator. **None of this is production authorization.**
 
+## 7f. Frontend quality pass (Phase 6, mock)
+
+- **Finding revisions** (`/mod/findings/[id]`, linked from `/mod/findings`): the immutable history newest first with status, author, source case and content hash; the current public text; and an editor that names its exact base (revision number and hash). Saving proposes a new revision; nothing public changes until that revision is approved on `/mod/approvals`. A stale base reports a conflict with "Load the latest revision". The page says when an independent approver is needed (new or public revision severe) and when an open suspension review blocks publication.
+- **Appeal amendment**: the "Amend finding" decision asks for the new severity and the amended public summary (labelled as becoming public only after approval) and creates a revision from the appeal case.
+- **Recovery verification** (`/mod/recovery`, moderators and administrators): open recovery cases with the verifications so far and a "How did you verify identity?" field. It warns never to verify through the account email and never to ask for a password, recovery code or seed phrase.
+- **Quality fixes from the audit**: the header keeps the menu button at 44 px and hides the brand name visually below 360 px; danger buttons use a theme token (`--danger-fg`) so system dark mode keeps contrast; tab panels keep the global focus outline; badges wrap instead of overflowing under WCAG 1.4.12 text spacing.
+- **Audit spec** `tests/e2e/specs/quality-audit.spec.ts`: 39 routes at 320, 375, 768, 1024, 1280 and 1440 px and 740×360 landscape (no sideways scroll, no element wider than the viewport, controls ≥ 24 px), text spacing at 320 px, axe in dark theme, visible focus through 40 Tab presses on five pages, and dialog focus trap and restore.
+
 ## 8. Security headers
 
 `src/proxy.ts` sets a per-request nonce CSP: `script-src 'self' 'nonce-…' 'strict-dynamic'`, `object-src 'none'`, `base-uri 'none'`, `frame-ancestors 'none'`, `form-action 'self'`. It runs for **every** page and RSC request, including prefetch-marked ones, so document security headers never depend on caller-controlled request metadata (review P1-04). It also answers 400 to malformed path percent-encoding (malformed query strings render a normal UI state), and it never makes authorization decisions. `next.config.ts` adds `nosniff`, `Referrer-Policy`, `X-Frame-Options`, COOP and `Permissions-Policy`.

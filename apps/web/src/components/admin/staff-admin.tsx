@@ -488,7 +488,7 @@ export function StaffAdmin() {
 
       <DataCard
         title={`Staff recovery (${recoveries.length})`}
-        description="Two administrators verify identity, a different administrator approves, then a 24-hour objection window runs."
+        description="Two staff members (at least one an administrator) verify identity, a different administrator approves, then a 24-hour objection window runs. Moderators verify from Recovery verification."
       >
         {recoveries.length === 0 ? (
           <p className="text-sm text-muted">No recovery cases.</p>

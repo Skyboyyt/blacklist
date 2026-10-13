@@ -136,7 +136,13 @@ export function FindingsView() {
                     {formatDateUtc(f.publishedAt)}
                   </p>
                 </div>
-                <div className="shrink-0">
+                <div className="flex shrink-0 flex-wrap items-center gap-3">
+                  <Link
+                    href={`/mod/findings/${encodeURIComponent(f.findingId)}`}
+                    className="text-sm font-medium text-accent hover:underline"
+                  >
+                    Revisions<span className="sr-only"> of {f.findingId}</span>
+                  </Link>
                   {f.status === 'published' ? (
                     <Button size="sm" variant="danger" onClick={() => suspend(f)}>
                       Suspend<span className="sr-only"> {f.findingId}</span>

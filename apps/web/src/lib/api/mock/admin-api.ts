@@ -17,7 +17,6 @@ import {
   invitationRequestSchema,
   labelRequestSchema,
   reasonRequestSchema,
-  recoveryVerificationSchema,
   roleChangeRequestSchema,
   suppressionRequestSchema,
   type AuditEntry,
@@ -31,6 +30,7 @@ import { KNOWN_ACCOUNT_EMAILS } from './fixtures/admin';
 import { STAFF } from './fixtures/moderation';
 import { applySuppression, liftSuppression, syncLabel } from './public-effects';
 import { currentPasskeyResult, currentScenario, currentViewerKey, type MockViewerKey } from './scenario';
+import { addRecoveryVerification } from './recovery';
 import { createStore, nextId, type MockStore } from './store';
 
 export interface MockAdminOptions {
@@ -430,22 +430,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       await wait();
       const me = admin();
       if (!me) return forbidden();
-      const parsed = recoveryVerificationSchema.safeParse({ method });
-      if (!parsed.success) return err('invalid_transition', 'Describe how identity was verified.');
-      const r = store.recoveries.find((x) => x.id === id);
-      if (!r) return notFound;
-      if (r.state !== 'verifying')
-        return err('invalid_transition', 'This case is not collecting verifications.');
-      if (r.subject.id === me.id) return err('not_eligible', 'The subject cannot verify their own identity.');
-      if (r.verifications.some((v) => v.verifier.id === me.id)) {
-        return err('not_eligible', 'Two different staff members must each verify identity.');
-      }
-      r.verifications.push({ verifier: me, method: parsed.data.method, at: at() });
-      if (r.verifications.length >= 2) r.state = 'awaiting_approval';
-      record(me, 'staff_recovery_verified', null, [
-        { field: r.subject.handle, from: null, to: 'identity verified' },
-      ]);
-      return ok(clone(r));
+      return addRecoveryVerification(store, id, { ref: me, isAdmin: true }, method, at());
     },
 
     async approveRecovery(id) {

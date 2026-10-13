@@ -9,12 +9,12 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (six review findings repaired; frontend quality work remains)** |
-| Current phase | **Phase 6 review: six findings repaired by Codex; manual quality/cross-browser and other documented gaps remain.** Phase 3 merged (#1), Phase 4 merged (#2), Phase 5 merged (#3), administrator follow-up and band-only ranking merged (#4). No backend exists. |
-| Authorized phase | Phase 5 implementation (2026-10-12) and owner-requested complete frontend review (2026-10-13). This session authorizes no Phase 7/backend implementation. |
+| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 6 quality pass implemented; awaiting Codex review and owner sign-off)** |
+| Current phase | **Phase 6 (Frontend Quality Pass and Final Review) implemented on `claude/amazing-goodall-drtbc9`; awaiting Codex review and owner sign-off.** Phases 3–5 merged (#1–#4); Codex's six review repairs merged (#5). No backend exists. |
+| Authorized phase | Phase 6 (owner, 2026-10-13). **Phase 7 is not authorized**; no backend, deployment or production-readiness claim. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: repair pass for all six frontend review findings |
+| Last agent | Claude: Phase 6 frontend quality pass |
 | Last updated | 2026-10-13 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
@@ -24,6 +24,84 @@ Read this first at the start of every session. Update it at the end of every ses
 ---
 
 ## Session log
+
+### Session 19: Claude Phase 6 — Frontend Quality Pass and Final Review (2026-10-13)
+
+- **Branch:** `claude/amazing-goodall-drtbc9`, restarted from `chore/initial-repository` at `0e9bf58`, which includes PR #5 (Codex's six repairs). All six fixes and their 13 regression tests are preserved unchanged (`review-regressions.test.ts` passes). Read AGENTS, CLAUDE, PRD, ESSENTIALS, ARCHITECTURE §36, THREAT-MODEL, this file, the checklist, the integration contracts and the 2026-10-13 Codex review.
+- **Baseline before changes:** `pnpm check` exit 0 (77 contract + 367 web tests, build); full Chromium E2E 322 passed, 2 skipped (desktop-only/mobile-only cases).
+
+**Completed**
+
+1. **Finding revision editor** (`/mod/findings/[id]`; moderation §2, §8.1). `ModerationApi.getFindingHistory` and `proposeRevision(findingId, base, draft)`. The base is the exact latest revision number and hash, else `conflict`; unchanged content is refused; revisions are never edited (a test compares the earlier revision field by field). A revision still awaiting approval is superseded, and the public revision stays public until the new one is approved. Status is `pending_second_approval` when the new **or** the currently public revision is severe. Proposals during a suspension are allowed; approval stays blocked by PR #5's barrier. The approval path is PR #5's `approveRevision` (latest + hash + suspension barrier + severe-replacement independence + bound step-up); it is not modified. Fixture findings 301 and 401 now have a seeded published revision 1 (hashed by the shared `revision-hash.ts`) so the editor has an exact base. No step-up for a proposal: it publishes nothing and is not in identity §10.7's list.
+2. **Appeal amendment** (moderation §8.1, §9). The `amend` decision now carries `severity` and an amended public summary (contract split from uphold/reverse). It creates a new revision authored by the reviewer, with `sourceCaseId` set to the appeal. The public page and timeline do not show the amended text until that exact revision is approved. A severe amendment needs a non-participant approver. A published later revision keeps an open "under appeal" notice.
+3. **Staff recovery verification** (`/mod/recovery`; identity §10.11 step 2). Shared rule in `mock/recovery.ts`, used by both `ModerationApi.verifyRecoveryIdentity` and `AdminApi.verifyRecovery`: two different verifiers, at least one an admin, never the subject. New permission `staff:recovery:verify` for moderators and admins; appeal reviewers are excluded because they may be external (moderation §9). The page warns never to verify by email and never to ask for passwords, recovery codes or seed phrases.
+4. **Quality audit and fixes.** New `quality-audit.spec.ts` (80 checks, desktop project). It found and I fixed:
+   - (a) at 320 px the signed-out header squeezed the menu button to 22.75 px wide; it now stays fixed-size, and the brand name is visually hidden below 360 px;
+   - (b) **danger buttons were white on #ff8a7a (~2:1) in system dark mode**, because the `dark:` variant only applies to an explicit theme choice; new `--danger-fg` token;
+   - (c) tab panels are focusable but suppressed their focus outline (WCAG 2.4.7); outline restored;
+   - (d) badges overflowed at 320 px under WCAG 1.4.12 text spacing; they now wrap.
+5. **Integration docs reconciled** (`api-integration-contracts.md` §3, §4, §9; ARCHITECTURE §7.1 endpoint list; §9.2 moderator permission). Mock-exclusion markers added for Phase 6 mock text.
+6. **Docs:** checklist (new rows, WCAG and cross-browser status stated honestly), frontend.md §7f, AGENTS §1 status, this file.
+
+**Actual validation (final run, after all changes)**
+
+| Gate | Result |
+|---|---|
+| `pnpm check` (format, lint, typecheck, unit/component, production build) | exit 0: 79 contract + 378 web tests passed |
+| `build:mock` | exit 0 |
+| `check:mock-exclusion` | exit 0 (4/4 PASS) |
+| Playwright Chromium (pre-installed `/opt/pw-browsers/chromium`, via a temporary local config that only sets `executablePath`; deleted before commit) desktop + Pixel 7 | **418 passed, 82 skipped**: 80 skips are the audit spec on the mobile project, by design (it sets its own viewports); 2 are the existing desktop/mobile-only shell cases. No assertion weakened |
+| New E2E | `revisions.spec.ts` (6 tests × 2 projects), `recovery.spec.ts` (2 × 2), `quality-audit.spec.ts` (80, desktop) |
+| Journeys covered by E2E | report → review → approval → public finding, correction, suggestion, appeal reversal (`journeys.spec.ts`); responses and suspension (`admin.spec.ts`); revision edit and appeal amendment (`revisions.spec.ts`); staff recovery (`recovery.spec.ts`, `admin-api.test.ts`); admin console; scoreboard |
+| **Firefox / WebKit** | **Not run (open).** `playwright install firefox` fails with HTTP 403 from the browser download host (`cdn.playwright.dev`), which the environment's network policy blocks. No substitute browser used. To run: allow that host in the environment's network settings, then `E2E_ALL_BROWSERS=1 pnpm test:e2e` |
+
+**Accessibility: what was actually checked (agent-performed, no assistive technology)**
+
+- Automated: axe WCAG 2.2 AA tags in light (existing specs) and dark (39 routes) themes; target size ≥ 24 px for buttons, inputs, selects and tabs at 7 viewports; reflow with no sideways scroll at 320–1440 px and 740×360 landscape; WCAG 1.4.12 text spacing at 320 px.
+- Scripted keyboard: 40 Tab presses on five pages (home, address, report form, case workspace, admin staff), each focused element checked for a visible outline/ring; dialog focus trap (12 Tabs stay inside), Escape closes, focus returns to the trigger; existing skip-link and mobile-menu focus tests.
+- Visual: I inspected screenshots at 320 px and 1440 px dark for home, severe address, scoreboard, case workspace, revision editor, admin staff, report form and recovery: no clipping, overlap or unreadable identifiers found. Full-page captures show the fixed tab bar mid-page; that is a screenshot artifact, not a layout bug.
+- **Not done:** screen reader testing (NVDA/JAWS/VoiceOver), real touch devices, browser zoom on real hardware, a human colour/contrast review. **No WCAG 2.2 AA conformance is claimed.**
+
+**Security UX recheck** (all with existing or new test evidence):
+- fragment tokens removed and not stored (`auth.spec.ts`, `token-forms.test.tsx`);
+- safe redirects (`safe-redirect.test.ts`) and generic errors (`login-form.test.tsx`);
+- seed-phrase warnings (`auth.spec.ts`, footer; the recovery page too);
+- defanged links as plain text (`staff-review.test.tsx`, `projects.test.tsx`);
+- public/private separation: new tests check that internal rationale and unapproved revision text never reach public pages;
+- mock exclusion (gate above);
+- exact confirmed parameters to step-up: unchanged PR #5 binding, and the amend decision is bound like every other decision;
+- missing data never shown as zero/low (`risk-components.test.tsx`, `search-results.test.tsx`);
+- bands never numeric (`research.spec.ts`, contract strictness).
+
+The six Codex fixes are untouched. No test, security setting, CSP or dependency policy was weakened: the audit applies text spacing through the CSSOM because the CSP correctly refused an injected style tag.
+
+**Decisions made (within the approved design)**
+- Revision proposals need no step-up.
+- Appeal reviewers are not recovery verifiers.
+- ARCHITECTURE §9.2 now lists `staff:recovery:verify` for moderators, to match normative identity §10.11. **Codex/owner: please confirm** this summary-table change. If you prefer a formal record, I will write an ADR.
+
+**Open decisions and gaps (not invented)**
+1. Pagination: approved §7.1 says cursors, but the directory and queue use page numbers. Owner chooses between moving to cursors (about a day of frontend work) or an ADR for bounded page lists.
+2. Correction and response status sets are undefined in docs/data-model.md.
+3. Evidence changes on an existing finding wait for the upload pipeline (Phase 7).
+4. O-12 scoring sign-off; ADRs 0009 and 0011 remain Proposed.
+5. Legal review of the transparency pages (launch blocker).
+6. Firefox/WebKit runs (environment).
+7. Assistive-technology accessibility audit.
+
+**Files:**
+- contracts `moderation.ts` (+ new `moderation.test.ts`);
+- mock `moderation-api.ts`, `admin-api.ts`, `store.ts`, `public-effects.ts`, `rpc-methods.ts`, new `revision-hash.ts`, `recovery.ts`, `finding-revisions.test.ts`, `admin-api.test.ts`;
+- `types.ts`, `not-connected.ts`, `permissions.ts`, `nav-items.ts` (+ test), `copy.ts`;
+- UI: new `finding-revision-editor.tsx`, `recovery-verification-view.tsx`, pages `/mod/findings/[id]` and `/mod/recovery`; `decision-panel.tsx`, `findings-view.tsx`, `approvals-view.tsx`, `staff-admin.tsx`, `app-shell.tsx`, `brand.tsx`, `mobile-nav.tsx`, `badge.tsx`, `tabs.tsx`, `button-styles.ts`, `globals.css`;
+- E2E: `revisions.spec.ts`, `recovery.spec.ts`, `quality-audit.spec.ts`;
+- `check-mock-exclusion.mjs`;
+- docs listed above.
+
+No dependency, migration, CI, infrastructure or backend change.
+
+**Verdict: ready for Codex review and frontend sign-off, with the open items above stated** (none blocks a frontend sign-off; Firefox/WebKit and an assistive-technology audit remain open checks rather than passes). **Next step:** Codex reviews Phase 6; the owner decides pagination and the §9.2 confirmation, then signs off. Stop here: Phase 7 is not authorized.
+
 
 ### Codex frontend repair pass (2026-10-13)
 

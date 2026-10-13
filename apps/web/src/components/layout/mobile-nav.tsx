@@ -22,7 +22,7 @@ export function MobileMenu({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        className="flex size-11 items-center justify-center rounded-md text-text hover:bg-surface-2 lg:hidden"
+        className="flex size-11 shrink-0 items-center justify-center rounded-md text-text hover:bg-surface-2 lg:hidden"
         aria-label="Open navigation menu"
       >
         <Icon name="menu" className="size-5" />

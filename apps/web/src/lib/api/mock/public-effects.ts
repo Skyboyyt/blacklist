@@ -67,6 +67,7 @@ export function publishFinding(store: MockStore, revision: FindingRevision, now:
     address.assessment.coverage = 'Only a reviewed finding is available. No chain data has been loaded.';
     store.addresses.push(address);
   }
+  const previous = address.findings.find((f) => f.id === revision.findingId);
   const summary = {
     id: revision.findingId,
     title:
@@ -74,7 +75,8 @@ export function publishFinding(store: MockStore, revision: FindingRevision, now:
     summary: revision.publicSummary,
     provenance: 'moderator_finding' as const,
     publishedAt: now,
-    disputeState: 'none' as const,
+    // A revision published while an appeal is open keeps the "under appeal" notice.
+    disputeState: previous?.disputeState === 'under_appeal' ? previous.disputeState : ('none' as const),
   };
   address.findings = [...address.findings.filter((f) => f.id !== revision.findingId), summary];
   const factorId = store.findingFactors.get(revision.findingId) ?? `${revision.findingId}-factor`;
@@ -91,7 +93,10 @@ export function publishFinding(store: MockStore, revision: FindingRevision, now:
   address.timeline.push({
     id: `${revision.findingId}-published-${revision.revisionNumber}`,
     kind: 'finding_published',
-    label: `${revision.severity === 'severe' ? 'Severe' : 'A'} finding was published after approval`,
+    label:
+      revision.revisionNumber > 1
+        ? `Revision ${revision.revisionNumber} of a finding was published after approval; it replaces the earlier text`
+        : `${revision.severity === 'severe' ? 'Severe' : 'A'} finding was published after approval`,
     at: now,
     actor: 'system',
   });
@@ -169,7 +174,8 @@ export function applyAppealOutcome(
     outcome === 'reversed'
       ? `Finding reversed on appeal. ${publicSummary}`
       : outcome === 'amended'
-        ? `Appeal decided: the finding will be amended. ${publicSummary}`
+        ? // The amended text is not public until its revision is approved (moderation §8.1).
+          'Appeal decided: the finding will be amended. The amended version appears after approval.'
         : `Appeal reviewed: the finding stays. ${publicSummary}`;
   address.timeline.push({
     id: `${findingId}-decided-${now}`,

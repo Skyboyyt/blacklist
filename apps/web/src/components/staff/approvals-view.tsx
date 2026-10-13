@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { getModerationApi } from '@/lib/api/browser';
 import { truncateMiddle } from '@/lib/format/address';
 import { formatDateTimeUtc } from '@/lib/format/date';
-import { SEVERITY_LABEL } from '@/lib/staff/copy';
+import { REVISION_STATUS_LABEL, SEVERITY_LABEL } from '@/lib/staff/copy';
 import { moderationErrorAlert } from '@/lib/staff/errors';
 import { AccessDenied, StaffLoadError } from './staff-states';
 
@@ -25,13 +25,7 @@ type Load =
 
 type Pending = { readonly kind: 'approve' | 'reject'; readonly revision: FindingRevision } | null;
 
-const STATUS = {
-  proposed: 'Awaiting approval',
-  pending_second_approval: 'Awaiting an independent approver',
-  published: 'Published',
-  rejected: 'Rejected',
-  superseded: 'Superseded by a newer revision',
-} as const;
+const STATUS = REVISION_STATUS_LABEL;
 
 /**
  * Finding revisions awaiting approval (moderation §4). An approval names one exact
