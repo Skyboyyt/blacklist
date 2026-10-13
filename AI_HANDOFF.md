@@ -58,7 +58,7 @@ Read this first at the start of every session. Update it at the end of every ses
 
 **Next step:** review the feature PR and obtain Claude's operating/security review; resolve baseline checks. Owner supplies the four protected bindings, then inspect existing Render workspace, Neon **Free** organization/PG18/Frankfurt limits, exact protected Vercel staging URL and Resend verified sender. Verify a concrete free plan without billing changes; only then provision a fresh synthetic staging DB, run operator roles/unchanged migrations separately, deploy the intended reviewed API/worker commit and test real authentication/authorization/email/restoration before availability. Stop at infrastructure; production activation and Phase 8 need separate authorization.
 
-**GitHub publication receipt:** pending the final safe feature-branch commit/push/PR; no merge authorized. A receipt will be recorded below after the GitHub operation succeeds.
+**GitHub publication receipt:** implementation commit **`acd4ea62e958c070eeca039cb27aff5823669790`** was normally pushed to `origin/chore/render-staging-deployment`. Draft **[PR #8](https://github.com/Skyboyyt/blacklist/pull/8)** targets **`main`**; it is open and unmerged. Main remains `ece2e769fafc9a381ed1b540ae8b7e05fccdbab5`. This receipt/evidence is a documentation-only follow-up; no cloud resource or deployed commit exists. No force push, main push or merge occurred in this task. A receipt will be recorded below after the GitHub operation succeeds.
 
 ---
 

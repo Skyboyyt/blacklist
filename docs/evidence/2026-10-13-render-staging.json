@@ -10,7 +10,14 @@
     "phase6Integrated": "4b16cdb6324e1f5d3b979bd8d5e82ef36ca168ba",
     "githubDefault": "chore/initial-repository",
     "mainPublication": "Owner-authorized direct push, not a PR merge",
-    "publication": "Feature PR publication receipt in AI_HANDOFF.md; no automatic merge",
+    "publication": {
+      "status": "Pushed feature branch; open draft PR, not merged",
+      "implementationCommit": "acd4ea62e958c070eeca039cb27aff5823669790",
+      "pullRequest": "https://github.com/Skyboyyt/blacklist/pull/8",
+      "base": "main",
+      "mainUnchanged": "ece2e769fafc9a381ed1b540ae8b7e05fccdbab5",
+      "followup": "Documentation-only publication receipt"
+    },
     "preservationStashRetained": true,
     "openIssuesAtInspection": 0
   },
@@ -756,7 +763,7 @@
         "rulesDisabled": false
       },
       {
-        "kind": "history",
+        "kind": "history before infrastructure feature commit; all refs",
         "scannerExitCode": 1,
         "rawFindings": 4,
         "classifiedFindings": [
