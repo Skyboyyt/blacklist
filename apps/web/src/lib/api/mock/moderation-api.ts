@@ -869,6 +869,22 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         return err('not_eligible', `This case is assigned to ${c.assignedTo.handle}. Take it over first.`);
       }
       if (c.type === 'appeal_review') {
+        const publishedRevision = store.revisions.find(
+          (revision) =>
+            revision.findingId === c.appealedDecision.findingId && revision.status === 'published',
+        );
+        if (
+          store.reversedFindings.has(c.appealedDecision.findingId) ||
+          !publishedRevision ||
+          publishedRevision.revisionNumber !== c.appealedDecision.revisionNumber
+        ) {
+          return {
+            kind: 'error',
+            code: 'conflict',
+            currentVersion: publishedRevision?.revisionNumber ?? c.appealedDecision.revisionNumber,
+            detail: 'The published finding changed. Review a fresh appeal against its current revision.',
+          };
+        }
         const participants = [c.appealedDecision.author.id, c.appealedDecision.approver.id];
         if (participants.includes(me.id) || participantIds(store, c.appealedDecision.findingId).has(me.id)) {
           return err(
@@ -991,6 +1007,12 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
             'A newer revision of this finding exists. An approval only authorizes the exact revision it names.',
           currentVersion: latest?.revisionNumber ?? revisionNumber,
         };
+      }
+      if (store.reversedFindings.has(findingId)) {
+        return err(
+          'invalid_transition',
+          'This finding was reversed and cannot be republished through a pending revision.',
+        );
       }
       if (target.status !== 'proposed' && target.status !== 'pending_second_approval') {
         return err('invalid_transition', 'This revision is not waiting for approval.');

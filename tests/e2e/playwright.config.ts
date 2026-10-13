@@ -5,10 +5,9 @@ import { defineConfig, devices } from '@playwright/test';
  * backend). Build it first: `pnpm --filter @blacklist/web build:mock`.
  *
  * Chromium (desktop + mobile) runs everything. Set E2E_ALL_BROWSERS=1 to also run the
- * auth and account journeys in Firefox and WebKit (desktop and iPhone viewport).
+ * all journeys in Firefox and WebKit (desktop and iPhone viewport).
  */
 const ALL_BROWSERS = process.env['E2E_ALL_BROWSERS'] === '1';
-const CROSS_BROWSER_SPECS = /(auth|account)\.spec\.ts$/;
 const PORT = 3100;
 
 export default defineConfig({
@@ -28,21 +27,18 @@ export default defineConfig({
       ? [
           {
             name: 'firefox',
-            testMatch: CROSS_BROWSER_SPECS,
             timeout: 90_000,
             expect: { timeout: 15_000 },
             use: { ...devices['Desktop Firefox'] },
           },
           {
             name: 'webkit',
-            testMatch: CROSS_BROWSER_SPECS,
             timeout: 90_000,
             expect: { timeout: 15_000 },
             use: { ...devices['Desktop Safari'] },
           },
           {
             name: 'webkit-mobile',
-            testMatch: CROSS_BROWSER_SPECS,
             timeout: 90_000,
             expect: { timeout: 15_000 },
             use: { ...devices['iPhone 14'] },

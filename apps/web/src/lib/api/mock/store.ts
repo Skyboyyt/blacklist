@@ -52,6 +52,8 @@ export interface MockStore {
   /** caseId → handle of the member who submitted it. */
   owners: Map<string, string>;
   revisions: FindingRevision[];
+  /** Reversed findings cannot regain publication authority through pending revisions. */
+  reversedFindings: Set<string>;
   audit: AuditEntry[];
   /** Single-use grants keyed by actor, demo session, action and target, with exact parameters. */
   grants: Map<string, { parameters: string; expires: number }>;
@@ -146,6 +148,7 @@ export function createStore(): MockStore {
     cases: new Map(CASE_FIXTURES.map((c) => [c.id, structuredClone(c)])),
     owners: new Map(Object.entries(CASE_OWNERS)),
     revisions: seedPublishedRevisions(addresses),
+    reversedFindings: new Set(),
     audit: CASE_FIXTURES.flatMap((c) => structuredClone(c.history)),
     grants: new Map(),
     findingFactors: new Map(Object.entries(FINDING_FACTORS)),

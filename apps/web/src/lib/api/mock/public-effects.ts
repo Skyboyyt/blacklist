@@ -153,6 +153,14 @@ export function clearAppeal(store: MockStore, findingId: string): void {
   setDispute(address);
 }
 
+/** Retains revision history while removing all old publication authority. */
+function invalidateReversedFinding(store: MockStore, findingId: string): void {
+  store.reversedFindings.add(findingId);
+  for (const revision of store.revisions) {
+    if (revision.findingId === findingId) revision.status = 'superseded';
+  }
+}
+
 export function applyAppealOutcome(
   store: MockStore,
   findingId: string,
@@ -163,6 +171,7 @@ export function applyAppealOutcome(
   const address = addressWithFinding(store, findingId);
   if (!address) return;
   if (outcome === 'reversed') {
+    invalidateReversedFinding(store, findingId);
     store.suspended.delete(findingId);
     const factorId = store.findingFactors.get(findingId);
     address.findings = address.findings.filter((f) => f.id !== findingId);
@@ -377,6 +386,7 @@ export function reverseSuspendedFinding(
 ): void {
   const address = addressWithFinding(store, findingId);
   if (!address) return;
+  invalidateReversedFinding(store, findingId);
   store.suspended.delete(findingId);
   address.findings = address.findings.filter((f) => f.id !== findingId);
   address.timeline.push({

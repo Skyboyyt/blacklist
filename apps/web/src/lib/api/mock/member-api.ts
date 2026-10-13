@@ -637,6 +637,22 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
       const finding = address?.findings.find((f) => f.id === r.findingId);
       const participants = store.findingParticipants.get(r.findingId);
       if (!address || !finding || !participants) return { kind: 'error', code: 'not_found' };
+      const publishedRevision =
+        store.revisions.find(
+          (revision) => revision.findingId === r.findingId && revision.status === 'published',
+        ) ??
+        (finding.disputeState === 'suspended_pending_review'
+          ? // Legacy suspended fixtures retain their original public revision as revision 1.
+            store.revisions.find(
+              (revision) => revision.findingId === r.findingId && revision.revisionNumber === 1,
+            )
+          : undefined);
+      if (!publishedRevision || store.reversedFindings.has(r.findingId))
+        return {
+          kind: 'error',
+          code: 'invalid_transition',
+          detail: 'No authoritative finding revision is available to appeal.',
+        };
       const open = [...store.cases.values()].some(
         (c) =>
           c.type === 'appeal_review' &&
@@ -671,7 +687,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
           appellantRef: `Appellant ${me === 'demo_member' ? 'A-1000' : 'A-1001'}`,
           appealedDecision: {
             findingId: r.findingId,
-            revisionNumber: 1,
+            revisionNumber: publishedRevision.revisionNumber,
             severity:
               participants.severity === 'severe'
                 ? 'severe'
