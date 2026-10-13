@@ -63,6 +63,7 @@ export type OperatorReceipt = {
   queues: number;
   targetRoles: number;
   targetObjects: number;
+  serverReportsTls: boolean;
 };
 export function validStatusToken(input: string | string[] | undefined, expected: string) {
   return (

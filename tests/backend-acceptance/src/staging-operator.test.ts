@@ -116,6 +116,7 @@ describe('isolated staging operator boundaries', () => {
       queues: 0,
       targetRoles: 0,
       targetObjects: 0,
+      serverReportsTls: false,
     };
     const server = operatorStatusServer(
       () => receipt,

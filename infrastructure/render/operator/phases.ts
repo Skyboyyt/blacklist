@@ -17,14 +17,14 @@ export async function inspectOperatorTarget(config: StagingOperatorConfig) {
     config.adminUrl,
     'blacklist_provisioner',
     stagingTarget.database,
-    async (client) => {
+    async (client, transport) => {
       const inventory = await operatorTargetInventory(client);
       let rolesVerified = false;
       if (inventory.targetRoles === 2) {
         await verifyOperatorRoles(client);
         rolesVerified = true;
       }
-      return { ...inventory, rolesVerified };
+      return { ...inventory, ...transport, rolesVerified };
     },
   );
 }
@@ -53,11 +53,14 @@ async function script(name: 'provision' | 'migrate', env: Record<string, string>
 export async function executeOperatorPhase(config: StagingOperatorConfig) {
   const database = stagingTarget.database;
   if (config.phase === 'provision') {
-    await withVerifiedOperatorConnection(
+    const transport = await withVerifiedOperatorConnection(
       config.adminUrl,
       'blacklist_provisioner',
       database,
-      verifyFreshOperatorTarget,
+      async (client, transport) => {
+        await verifyFreshOperatorTarget(client);
+        return transport;
+      },
     );
     await script('provision', {
       DATABASE_ADMIN_URL: config.adminUrl,
@@ -70,7 +73,7 @@ export async function executeOperatorPhase(config: StagingOperatorConfig) {
       database,
       verifyOperatorRoles,
     );
-    return { migrations: 0, tables: 0, queues: 0 };
+    return { migrations: 0, tables: 0, queues: 0, ...transport };
   }
   await withVerifiedOperatorConnection(
     config.migrationUrl,
@@ -86,6 +89,14 @@ export async function executeOperatorPhase(config: StagingOperatorConfig) {
     database,
     verifyOperatorMigrations,
   );
-  await withVerifiedOperatorConnection(config.runtimeUrl, 'blacklist_app', database, verifyOperatorRuntime);
-  return counts;
+  const transport = await withVerifiedOperatorConnection(
+    config.runtimeUrl,
+    'blacklist_app',
+    database,
+    async (client, transport) => {
+      await verifyOperatorRuntime(client);
+      return transport;
+    },
+  );
+  return { ...counts, ...transport };
 }

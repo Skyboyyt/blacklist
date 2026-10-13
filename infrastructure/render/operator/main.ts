@@ -47,6 +47,7 @@ if (process.env['OPERATOR_ENABLED'] === 'true') {
       queues: 0,
       targetRoles: 0,
       targetObjects: 0,
+      serverReportsTls: false,
     };
     await validateOperatorConfiguration(config);
     if (stagingOperatorMode(process.env['OPERATOR_INSPECT_ONLY']) === 'inspect') {

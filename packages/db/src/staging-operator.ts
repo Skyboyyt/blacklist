@@ -8,7 +8,7 @@ export async function withVerifiedOperatorConnection<T>(
   url: string,
   role: string,
   database: string,
-  operation: (client: PoolClient) => Promise<T>,
+  operation: (client: PoolClient, transport: { serverReportsTls: boolean }) => Promise<T>,
 ): Promise<T> {
   const pool = new Pool({
     connectionString: url,
@@ -32,10 +32,16 @@ export async function withVerifiedOperatorConnection<T>(
          (SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()) AS tls`,
       );
       const row = result.rows[0];
-      if (!row || row.role !== role || row.database !== database || row.version < 180000)
+      if (
+        !row ||
+        row.role !== role ||
+        row.database !== database ||
+        row.version < 180000 ||
+        typeof row.tls !== 'boolean'
+      )
         throw new Error('operator_database_identity_invalid');
-      if (!row.tls) throw new Error('operator_server_tls_not_verified');
-      return await operation(client);
+      // Neon terminates verified client TLS at its proxy; compute's pg_stat_ssl is informational.
+      return await operation(client, { serverReportsTls: row.tls });
     } finally {
       client.release();
     }

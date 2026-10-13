@@ -18,6 +18,12 @@ Read this first at the start of every session. Update it at the end of every ses
 | Last updated | 2026-10-13 |
 
 
+## Neon proxy transport finding — 2026-10-13
+
+Protected read-only diagnostic at `4167964` reports `operator_server_tls_not_verified`. Reaching that check proves the preceding authorized native TLSSocket and exact SQL role/database/PG18 checks passed: Render-to-Neon transport **works with certificate/hostname verification**. Neon compute's `pg_stat_ssl.ssl` reports false behind its verified endpoint. The executor incorrectly used this internal-compute flag as the external transport gate. Corrected within ADR0014's accepted endpoint-TLS model: require encrypted/authorized client socket, exact direct URL/role/database/version, retain compute flag separately as `serverReportsTls` (informational). No SSL/certificate/hostname guard disabled, no alternate driver or provider added.
+
+Regression uses real signed synthetic TLS proxy + local PG18 plaintext compute: verified endpoint works while compute flag is false; wrong CA and wrong hostname are rejected before callback/SQL. Eleven focused config/operator/catalog/proxy tests pass; expanded types/lint pass. Current executor suspended, protected file removed; temporary admin copy retained only in unlinked operator group for diagnosis. No write retry or migration yet. Rebuild/review source, repeat read-only inventory, then continue original provisioning only if genuinely fresh; unchanged scripts/passwords/journal preserved. Baseline coverage rerun **FAIL59.16%/75%**, security-package thresholds still fail; full auditFAIL1high development advisory, production auditPASS0.
+
 ## Operator execution failed closed; diagnosis in progress — 2026-10-13
 
 Temporary provision service `srv-db759agn74is739oqrn0` built/deployed exact `964f469e5d4b2d386c9ecb9e1a00a29c8fd464f8`. Dormant health200 and status404 verified before protected file activation; activation reused the existing build. Authenticated receipt then reported **failed/operator_failed**, no verified TLS/roles/migrations. This does not prove there were no partial writes. Render log-read API403 prevents driver diagnosis; no raw provider logs/credentials copied into evidence.

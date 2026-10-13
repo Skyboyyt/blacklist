@@ -107,6 +107,10 @@ Provisioning checks a fresh target and absent app/migrator roles before the exis
 
 After authenticated successful phase2 evidence, write only the verified `blacklist_app` URL to API/worker; verify both remain suspended and all unrelated settings unchanged. Suspend/delete only temporary executors and their files; retain unlinked migrator storage for future authorized migration/recovery. Re-run held-runtime secret checks. Hosted auth/email/restart/restore/ingress checks, baseline coverage/audit failures, Claude review and separate application-activation approval remain open. Do not merge PR8, resume API/worker, change Vercel production, or begin Phase8.
 
+### Verified TLS at the Neon endpoint
+
+The real Render diagnostic passed authorized native TLSSocket and SQL role/database/PG18 checks but observed `pg_stat_ssl.ssl=false` on Neon compute. This is separate from the client-to-endpoint connection: [Neon secure connections](https://neon.com/docs/connect/connect-securely) supports `sslmode=verify-full`. Enforce encrypted, certificate-authorized native TLS to the exact approved direct endpoint; retain compute's flag as informational `serverReportsTls`. Never use that flag to disable client TLS or claim the internal compute connection is TLS-encrypted. Real synthetic TLS-proxy regression checks verified frontend TLS with plaintext compute and denies wrong CA/hostname; the plaintext connector negative still fails. Target/query-option/source/role guards stay mandatory.
+
 ### Operator authorization matrix and failure diagnosis
 
 | Method/path | Authorization | Effect |
