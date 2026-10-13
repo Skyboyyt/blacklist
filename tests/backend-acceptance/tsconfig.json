@@ -6,5 +6,5 @@
     "lib": ["ES2023", "DOM"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "*.ts"]
+  "include": ["src/**/*.ts", "*.ts", "../../infrastructure/render/operator/**/*.ts"]
 }

@@ -8,7 +8,7 @@ const server = operatorStatusServer(
   () => receipt,
   () => token,
 );
-const port = Number(process.env.PORT ?? '10000');
+const port = Number(process.env['PORT'] ?? '10000');
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('operator_port_invalid');
 server.listen(port, '0.0.0.0');
 process.on('SIGTERM', () => {
@@ -20,7 +20,7 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 // A cold dormant build proves source/image identity before protected runtime activation.
-if (process.env.OPERATOR_ENABLED === 'true') {
+if (process.env['OPERATOR_ENABLED'] === 'true') {
   try {
     const config = await readOperatorConfig();
     token = config.statusToken;

@@ -8,8 +8,12 @@ export async function readOperatorConfig() {
   if (!info.isFile() || info.size > 16384 || (info.mode & 0o022) !== 0)
     throw new Error('operator_secret_file_invalid');
   const config = parseStagingOperatorConfig(JSON.parse(await readFile(operatorSecretFile, 'utf8')));
-  validateOperatorTarget(config, process.env.RENDER_GIT_COMMIT);
-  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0' || process.env.NODE_OPTIONS || process.env.PGSSLMODE)
+  validateOperatorTarget(config, process.env['RENDER_GIT_COMMIT']);
+  if (
+    process.env['NODE_TLS_REJECT_UNAUTHORIZED'] === '0' ||
+    process.env['NODE_OPTIONS'] ||
+    process.env['PGSSLMODE']
+  )
     throw new Error('operator_environment_invalid');
   return config;
 }

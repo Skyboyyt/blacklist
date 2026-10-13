@@ -127,7 +127,7 @@ export async function verifyOperatorMigrations(client: PoolClient) {
   )
     throw new Error('operator_queues_invalid');
   await verifyOperatorRoles(client);
-  return { migrations: journal.rowCount, tables: tables.rows[0].n, queues: queues.rowCount };
+  return { migrations: journal.rows.length, tables: tables.rows[0].n, queues: queues.rows.length };
 }
 
 export async function verifyOperatorRuntime(client: PoolClient) {

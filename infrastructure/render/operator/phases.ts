@@ -13,7 +13,7 @@ import { stagingTarget } from './target.ts';
 async function script(name: 'provision' | 'migrate', env: Record<string, string>) {
   return new Promise<void>((resolve, reject) => {
     const child = spawn(process.execPath, [`infrastructure/render/${name}.mjs`], {
-      env: { PATH: process.env.PATH, NODE_ENV: 'production', ...env },
+      env: { PATH: process.env['PATH'], NODE_ENV: 'production', ...env },
       stdio: ['ignore', 'ignore', 'ignore'],
     });
     const timeout = setTimeout(() => {
