@@ -32,8 +32,9 @@ export async function withVerifiedOperatorConnection<T>(
          (SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()) AS tls`,
       );
       const row = result.rows[0];
-      if (!row || row.role !== role || row.database !== database || row.version < 180000 || !row.tls)
+      if (!row || row.role !== role || row.database !== database || row.version < 180000)
         throw new Error('operator_database_identity_invalid');
+      if (!row.tls) throw new Error('operator_server_tls_not_verified');
       return await operation(client);
     } finally {
       client.release();
@@ -44,7 +45,7 @@ export async function withVerifiedOperatorConnection<T>(
 }
 
 /** Fresh-target check: no role/password changes or migration on an unexpected existing database. */
-export async function verifyFreshOperatorTarget(client: PoolClient) {
+export async function operatorTargetInventory(client: PoolClient) {
   const roles = await client.query<{ n: number }>(
     "SELECT count(*)::int AS n FROM pg_roles WHERE rolname IN ('blacklist_app','blacklist_migrator')",
   );
@@ -53,7 +54,19 @@ export async function verifyFreshOperatorTarget(client: PoolClient) {
      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
      AND n.nspname NOT LIKE 'pg_temp%' AND c.relkind IN ('r','p','v','m','S','f')`,
   );
-  if (roles.rows[0]?.n !== 0 || objects.rows[0]?.n !== 0) throw new Error('operator_target_not_fresh');
+  const tables = await client.query<{ n: number }>(
+    "SELECT count(*)::int AS n FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='blacklist' AND c.relkind IN ('r','p')",
+  );
+  return {
+    targetRoles: roles.rows[0]?.n ?? -1,
+    targetObjects: objects.rows[0]?.n ?? -1,
+    tables: tables.rows[0]?.n ?? -1,
+  };
+}
+export async function verifyFreshOperatorTarget(client: PoolClient) {
+  const inventory = await operatorTargetInventory(client);
+  if (inventory.targetRoles !== 0 || inventory.targetObjects !== 0)
+    throw new Error('operator_target_not_fresh');
 }
 
 export async function verifyOperatorRoles(client: PoolClient) {

@@ -18,6 +18,12 @@ Read this first at the start of every session. Update it at the end of every ses
 | Last updated | 2026-10-13 |
 
 
+## Operator execution failed closed; diagnosis in progress — 2026-10-13
+
+Temporary provision service `srv-db759agn74is739oqrn0` built/deployed exact `964f469e5d4b2d386c9ecb9e1a00a29c8fd464f8`. Dormant health200 and status404 verified before protected file activation; activation reused the existing build. Authenticated receipt then reported **failed/operator_failed**, no verified TLS/roles/migrations. This does not prove there were no partial writes. Render log-read API403 prevents driver diagnosis; no raw provider logs/credentials copied into evidence.
+
+Executor is now suspended; secret file removed, original role credentials plus temporary provisioner URL retained in unlinked operator-only protected group `evg-db759a7f3r2c73d8gm80` (zero serviceLinks). Unsafe API DATABASE_URL removed, all other settings preserved; worker still has no DB URL, both applications held. **No write retry, migration, runtime success or readiness claimed.** Added allowlisted failure categories and an explicit read-only inspection mode to diagnose before any recovery decision; unknown provider payloads stay redacted, inspection never means provisioning success. Whole-container lifetime now starts before operation. Existing script/migration bytes unchanged.
+
 ## Owner-accepted operator implementation — 2026-10-13
 
 Owner explicitly accepted the isolated operator plan ("accept it do it fast please") and confirmed **no payment method saved**. This authorizes scoped temporary Free execution and secure held-runtime configuration; no paid fallback, billing change, API/worker resume, PR8 merge, production or Phase8. ADR0015 is owner-accepted; **Claude independent review remains pending**, not claimed completed. New modular config/target, DB verification, phased execution/status and digest-pinned Docker modules reuse existing scripts/migrations/toolchain/dependency policies. Credentials are runtime-only protected files excluded from Docker context; continuity uses an unlinked operator-only group. App contract/business logic and seven migration bytes remain unchanged.

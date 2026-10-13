@@ -107,6 +107,16 @@ Provisioning checks a fresh target and absent app/migrator roles before the exis
 
 After authenticated successful phase2 evidence, write only the verified `blacklist_app` URL to API/worker; verify both remain suspended and all unrelated settings unchanged. Suspend/delete only temporary executors and their files; retain unlinked migrator storage for future authorized migration/recovery. Re-run held-runtime secret checks. Hosted auth/email/restart/restore/ingress checks, baseline coverage/audit failures, Claude review and separate application-activation approval remain open. Do not merge PR8, resume API/worker, change Vercel production, or begin Phase8.
 
+### Operator authorization matrix and failure diagnosis
+
+| Method/path | Authorization | Effect |
+| --- | --- | --- |
+| GET/HEAD `/healthz` | Public | Container liveness only; no SQL or readiness claim |
+| GET/HEAD `/status` | Independent constant-time status token | Allowlisted execution receipt, counts/booleans/static categories; no records or credentials |
+| Any other method/path | Deny404 | No upload, command, retry, SQL or application action |
+
+After a failure, suspend the executor and preserve its original credentials/journal before removing its protected file. If needed, retain its provisioner URL temporarily in the **unlinked operator-only** group; delete it after the provisioning investigation/execution completes. Never restore it to API/worker. Read-only investigation uses nonsecret `OPERATOR_INSPECT_ONLY=true`, validated strictly before any operation; mistyped values fail. Inspection calls only catalog reads through the same fixed-target verified-TLS connector, never provision/migrate scripts, and reports `failed/operator_inspection_only` rather than successful provisioning. A failed/inspected receipt cannot authorize runtime configuration or phase2. Error categories come from a fixed allowlist or recognized driver codes; arbitrary provider messages remain redacted. Log-read403 is an access limitation, not a database result. Review actual inspection evidence before any write recovery; no automatic retry, reset or password regeneration.
+
 ## Owner-added database URL recheck — 2026-10-13
 
 The owner only pasted a Neon connection string into the API service. It is present on API, absent on worker, and still refers to a privileged role/pooler with `sslmode=require` and an unsupported extra query option. Its normalized endpoint matches the intended Frankfurt staging project. Existing runtime validation rejects it; services remain suspended and initial deployments canceled. External health URLs return 503 HTML, not application health. Latest direct TCP probe fails with errno 101 before authentication. No URL/password is in documentation/evidence; no provider setting/database was changed during this check.

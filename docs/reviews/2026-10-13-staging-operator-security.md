@@ -22,3 +22,7 @@ Codex implementation review under owner-accepted ADR0015. Claude independent rev
 ## Validation
 
 Eight new operator tests passed; full PostgreSQL integration suite47passed; root498unit tests, format/lint/types and Next build passed. Production dependency audit0 vulnerabilities. Image/runtime/secret scanning and actual cloud execution evidence are recorded separately; no unexecuted hosted check is claimed here.
+
+## Failed-run diagnostic follow-up
+
+First authenticated cloud execution failed generically; no success or absence of partial writes is claimed. Executor suspended, protected file removed, original credentials retained in unlinked operator storage. Follow-up adds strictly validated read-only inspection, static error-category mapping and catalog-only counts; inspection reports failed/inspection-only and cannot authorize a migration/runtime write. Unknown provider payloads are redacted. Parsing a status token before source/permission validation permits authenticated failure reporting only: target/source/file/environment checks still precede all database work. The whole-container watchdog is scheduled before operations. Focused diagnostic/config/catalog tests10passed, expanded strict typecheck passes; final root/database/image checks continue.

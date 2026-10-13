@@ -23,6 +23,11 @@ const schema = z.discriminatedUnion('phase', [
 ]);
 
 export type StagingOperatorConfig = z.infer<typeof schema>;
+export function stagingOperatorMode(input: unknown): 'inspect' | 'execute' {
+  const result = z.enum(['true', 'false']).optional().safeParse(input);
+  if (!result.success) throw new Error('operator_configuration_invalid');
+  return result.data === 'true' ? 'inspect' : 'execute';
+}
 export function parseStagingOperatorConfig(input: unknown): StagingOperatorConfig {
   const result = schema.safeParse(input);
   if (!result.success) throw new Error('operator_configuration_invalid');

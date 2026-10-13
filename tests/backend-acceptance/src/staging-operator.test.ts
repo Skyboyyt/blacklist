@@ -2,7 +2,10 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { parseStagingOperatorConfig } from '../../../packages/config/src/staging-operator.ts';
+import {
+  parseStagingOperatorConfig,
+  stagingOperatorMode,
+} from '../../../packages/config/src/staging-operator.ts';
 import {
   operatorUrl,
   stagingTarget,
@@ -10,6 +13,7 @@ import {
 } from '../../../infrastructure/render/operator/target.ts';
 import {
   operatorStatusServer,
+  safeOperatorFailure,
   type OperatorReceipt,
 } from '../../../infrastructure/render/operator/status.ts';
 
@@ -29,6 +33,24 @@ function config() {
   };
 }
 describe('isolated staging operator boundaries', () => {
+  it('rejects a mistyped inspection flag before permitting any operation', () => {
+    expect(stagingOperatorMode('true')).toBe('inspect');
+    expect(stagingOperatorMode('false')).toBe('execute');
+    expect(stagingOperatorMode(undefined)).toBe('execute');
+    for (const value of ['TRUE', 'tru', true, 0])
+      expect(() => stagingOperatorMode(value)).toThrow('operator_configuration_invalid');
+  });
+  it('reports only allowlisted failure categories and redacts arbitrary provider payloads', () => {
+    expect(safeOperatorFailure(new Error('operator_source_mismatch'))).toBe('operator_source_mismatch');
+    expect(safeOperatorFailure(new Error('operator_secret_file_invalid'))).toBe(
+      'operator_secret_file_invalid',
+    );
+    expect(safeOperatorFailure(new Error(config().adminUrl))).toBe('operator_failed');
+    expect(safeOperatorFailure({ message: config().runtimePassword })).toBe('operator_failed');
+    expect(safeOperatorFailure(Object.assign(new Error(config().adminUrl), { code: '28P01' }))).toBe(
+      'operator_database_authentication_failed',
+    );
+  });
   it('accepts only exact direct staging target, verified TLS and operator role', () => {
     const settings = config();
     validateOperatorTarget(parseStagingOperatorConfig(settings), commit);
@@ -92,6 +114,8 @@ describe('isolated staging operator boundaries', () => {
       migrations: 0,
       tables: 0,
       queues: 0,
+      targetRoles: 0,
+      targetObjects: 0,
     };
     const server = operatorStatusServer(
       () => receipt,

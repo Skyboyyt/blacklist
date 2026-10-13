@@ -1,6 +1,7 @@
-import { readOperatorConfig } from './config.ts';
-import { executeOperatorPhase } from './phases.ts';
-import { operatorStatusServer, type OperatorReceipt } from './status.ts';
+import { readOperatorConfig, validateOperatorConfiguration } from './config.ts';
+import { stagingOperatorMode } from '../../../packages/config/src/staging-operator.ts';
+import { executeOperatorPhase, inspectOperatorTarget } from './phases.ts';
+import { operatorStatusServer, safeOperatorFailure, type OperatorReceipt } from './status.ts';
 
 let receipt: OperatorReceipt | undefined;
 let token: string | undefined;
@@ -19,6 +20,15 @@ process.on('SIGINT', () => {
   server.close();
   process.exit(0);
 });
+// Hard cap on container lifetime; controller suspends/removes it well before this cap.
+setTimeout(
+  () => {
+    server.close();
+    process.exit(0);
+  },
+  20 * 60 * 1000,
+).unref();
+
 // A cold dormant build proves source/image identity before protected runtime activation.
 if (process.env['OPERATOR_ENABLED'] === 'true') {
   try {
@@ -35,27 +45,34 @@ if (process.env['OPERATOR_ENABLED'] === 'true') {
       migrations: 0,
       tables: 0,
       queues: 0,
+      targetRoles: 0,
+      targetObjects: 0,
     };
-    const counts = await executeOperatorPhase(config);
-    receipt = {
-      ...receipt,
-      ...counts,
-      state: 'succeeded',
-      code: 'operator_verified',
-      tlsVerified: true,
-      rolesVerified: true,
-    };
-    process.stdout.write('operator_verified\n');
-  } catch {
-    if (receipt) receipt = { ...receipt, state: 'failed', code: 'operator_failed' };
+    await validateOperatorConfiguration(config);
+    if (stagingOperatorMode(process.env['OPERATOR_INSPECT_ONLY']) === 'inspect') {
+      const inventory = await inspectOperatorTarget(config);
+      receipt = {
+        ...receipt,
+        ...inventory,
+        state: 'failed',
+        code: 'operator_inspection_only',
+        tlsVerified: true,
+      };
+    } else {
+      const counts = await executeOperatorPhase(config);
+      receipt = {
+        ...receipt,
+        ...counts,
+        state: 'succeeded',
+        code: 'operator_verified',
+        tlsVerified: true,
+        rolesVerified: true,
+      };
+      process.stdout.write('operator_verified\n');
+    }
+  } catch (error) {
+    const code = safeOperatorFailure(error);
+    if (receipt) receipt = { ...receipt, state: 'failed', code };
     console.error('operator_failed');
   }
 }
-// Hard cap on container lifetime; controller suspends/removes it well before this cap.
-setTimeout(
-  () => {
-    server.close();
-    process.exit(0);
-  },
-  20 * 60 * 1000,
-).unref();

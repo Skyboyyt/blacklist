@@ -1,17 +1,68 @@
 import { timingSafeEqual } from 'node:crypto';
 import { createServer, type ServerResponse } from 'node:http';
 
+const failureCodes = [
+  'operator_source_mismatch',
+  'operator_environment_invalid',
+  'operator_secret_file_invalid',
+  'operator_target_invalid',
+  'runtime_database_configuration_invalid',
+  'operator_tls_not_verified',
+  'operator_server_tls_not_verified',
+  'operator_database_identity_invalid',
+  'operator_target_not_fresh',
+  'operator_roles_unsafe',
+  'operator_grants_unsafe',
+  'operator_runtime_owns_schema',
+  'operator_migration_hash_mismatch',
+  'operator_schema_invalid',
+  'operator_queues_invalid',
+  'operator_runtime_grants_unsafe',
+  'operator_runtime_permissions_missing',
+  'operator_negative_check_failed',
+  'operator_child_failed',
+  'operator_database_authentication_failed',
+  'operator_database_permission_denied',
+  'operator_database_object_missing',
+  'operator_database_unreachable',
+  'operator_certificate_verification_failed',
+  'operator_inspection_only',
+] as const;
+type FailureCode = (typeof failureCodes)[number] | 'operator_failed';
+const driverFailures: Record<string, FailureCode> = {
+  '28P01': 'operator_database_authentication_failed',
+  '42501': 'operator_database_permission_denied',
+  '42P01': 'operator_database_object_missing',
+  ECONNREFUSED: 'operator_database_unreachable',
+  ETIMEDOUT: 'operator_database_unreachable',
+  ENETUNREACH: 'operator_database_unreachable',
+  ERR_TLS_CERT_ALTNAME_INVALID: 'operator_certificate_verification_failed',
+  UNABLE_TO_VERIFY_LEAF_SIGNATURE: 'operator_certificate_verification_failed',
+  UNABLE_TO_GET_ISSUER_CERT_LOCALLY: 'operator_certificate_verification_failed',
+  CERT_HAS_EXPIRED: 'operator_certificate_verification_failed',
+};
+export function safeOperatorFailure(error: unknown): FailureCode {
+  if (error instanceof Error) {
+    const known = failureCodes.find((code) => error.message === code);
+    if (known) return known;
+    if ('code' in error && typeof error.code === 'string')
+      return driverFailures[error.code] ?? 'operator_failed';
+  }
+  return 'operator_failed';
+}
 export type OperatorReceipt = {
   runId: string;
   sourceCommit: string;
   phase: 'provision' | 'migrate';
   state: 'running' | 'succeeded' | 'failed';
-  code: 'operator_running' | 'operator_verified' | 'operator_failed';
+  code: 'operator_running' | 'operator_verified' | FailureCode;
   tlsVerified: boolean;
   rolesVerified: boolean;
   migrations: number;
   tables: number;
   queues: number;
+  targetRoles: number;
+  targetObjects: number;
 };
 export function validStatusToken(input: string | string[] | undefined, expected: string) {
   return (

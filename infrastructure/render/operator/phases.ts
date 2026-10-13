@@ -2,12 +2,32 @@ import { spawn } from 'node:child_process';
 import type { StagingOperatorConfig } from '../../../packages/config/src/staging-operator.ts';
 import {
   verifyFreshOperatorTarget,
+  operatorTargetInventory,
   verifyOperatorRoles,
   verifyOperatorMigrations,
   verifyOperatorRuntime,
   withVerifiedOperatorConnection,
 } from '../../../packages/db/src/staging-operator.ts';
 import { stagingTarget } from './target.ts';
+
+/** Failure investigation only: no scripts, DDL, DML or credential rotation. */
+export async function inspectOperatorTarget(config: StagingOperatorConfig) {
+  if (config.phase !== 'provision') throw new Error('operator_configuration_invalid');
+  return withVerifiedOperatorConnection(
+    config.adminUrl,
+    'blacklist_provisioner',
+    stagingTarget.database,
+    async (client) => {
+      const inventory = await operatorTargetInventory(client);
+      let rolesVerified = false;
+      if (inventory.targetRoles === 2) {
+        await verifyOperatorRoles(client);
+        rolesVerified = true;
+      }
+      return { ...inventory, rolesVerified };
+    },
+  );
+}
 
 /** No inherited secret environment, no child output forwarded, no automatic retries. */
 async function script(name: 'provision' | 'migrate', env: Record<string, string>) {

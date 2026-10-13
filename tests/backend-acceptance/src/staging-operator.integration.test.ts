@@ -5,6 +5,7 @@ import { migrate } from '../../../packages/db/src/migrate.ts';
 import { provisionCloudRoles } from '../../../packages/db/src/provision.ts';
 import {
   verifyFreshOperatorTarget,
+  operatorTargetInventory,
   verifyOperatorRoles,
   verifyOperatorMigrations,
   verifyOperatorRuntime,
@@ -55,6 +56,7 @@ describe('operator catalog rehearsal on disposable PostgreSQL18 (TLS production 
     const client = await admin.connect();
     try {
       await verifyFreshOperatorTarget(client);
+      expect(await operatorTargetInventory(client)).toEqual({ targetRoles: 0, targetObjects: 0, tables: 0 });
       await client.query('CREATE TABLE public.existing_record(id int)');
       await expect(verifyFreshOperatorTarget(client)).rejects.toThrow('operator_target_not_fresh');
       await client.query('DROP TABLE public.existing_record');
