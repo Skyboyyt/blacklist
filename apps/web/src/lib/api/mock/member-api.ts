@@ -173,7 +173,7 @@ export function createMockMemberApi(options: MockMemberOptions): MemberApi {
           },
         };
       case 'dns_txt':
-        if (domains !== null && !domains.includes(s.domain)) {
+        if (subjectKind !== 'project' || domains === null || !domains.includes(s.domain)) {
           return {
             ok: false,
             field: 'standing.domain',

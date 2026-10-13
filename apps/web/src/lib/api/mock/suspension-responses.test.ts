@@ -44,7 +44,10 @@ async function addressPage(address: string) {
 
 async function suspend(viewer: string, findingId: string) {
   as(viewer);
-  await staff.verifyStepUp('finding.suspend', findingId);
+  await staff.verifyStepUp('finding.suspend', findingId, [
+    findingId,
+    'Personal data was published by mistake.',
+  ]);
   return staff.suspendFinding(findingId, 'Personal data was published by mistake.');
 }
 
@@ -55,8 +58,9 @@ async function decide(viewer: string, id: string, decision: CaseDecision) {
     const c = ok(await staff.getCase(id));
     if (!c.assignedTo) ok(await staff.assign(id, version, { to: 'me' }));
   }
-  await staff.verifyStepUp(stepUpActionFor(decision.action), id);
-  return staff.decide(id, ok(await staff.getCase(id)).version, decision);
+  const latestVersion = ok(await staff.getCase(id)).version;
+  await staff.verifyStepUp(stepUpActionFor(decision.action), id, [id, latestVersion, decision]);
+  return staff.decide(id, latestVersion, decision);
 }
 
 describe('emergency suspension (moderation §8.3)', () => {

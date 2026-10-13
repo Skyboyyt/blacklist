@@ -9,21 +9,41 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 5 implemented, awaiting Codex review)** |
-| Current phase | **Phase 5 — Frontend Completion and Integration Validation: implemented on mocks, including the follow-up that closed the remaining gaps and built the administrator console; awaiting Codex review.** Phase 3 merged (PR Skyboyyt/blacklist#1); Phase 4 merged (PR Skyboyyt/blacklist#2); Phase 5 merged (PR Skyboyyt/blacklist#3); follow-up on `claude/amazing-goodall-drtbc9` |
-| Authorized phase | Phase 5 (explicit owner authorization, 2026-10-12). **Phase 6 and all backend work are NOT authorized.** |
+| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (six review findings repaired; frontend quality work remains)** |
+| Current phase | **Phase 6 review: six findings repaired by Codex; manual quality/cross-browser and other documented gaps remain.** Phase 3 merged (#1), Phase 4 merged (#2), Phase 5 merged (#3), administrator follow-up and band-only ranking merged (#4). No backend exists. |
+| Authorized phase | Phase 5 implementation (2026-10-12) and owner-requested complete frontend review (2026-10-13). This session authorizes no Phase 7/backend implementation. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Claude (primary engineer): project risk ranking (ADR 0012 accepted, band-only) |
-| Last updated | 2026-10-12 |
+| Last agent | Codex: repair pass for all six frontend review findings |
+| Last updated | 2026-10-13 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
 >
-> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the default branch is `chore/initial-repository`; the Phase 5 follow-up is on `claude/amazing-goodall-drtbc9` (restarted from the Phase 5 merge).
+> **No backend exists.** The web app runs on typed contracts and a mock adapter with fictional data (`NEXT_PUBLIC_API_MODE=mock`); non-mock builds exclude the mock and show "not connected". No database, migrations, CI, infrastructure, deployments or paid services. The public GitHub repository is [Skyboyyt/blacklist](https://github.com/Skyboyyt/blacklist); the default branch is `chore/initial-repository`; the Phase 5 follow-up and ranking merged in PR #4 at `87fc8b9`.
 
 ---
 
 ## Session log
+
+### Codex frontend repair pass (2026-10-13)
+
+- **Owner request:** fix the six findings; work is on `fix/frontend-review-findings` from PR #4's merge (`87fc8b9`). Default branch is unchanged.
+- **Completed:** actor/session/exact-parameter single-use grants; invalidation on staff security transitions; independent approval for severe replacements; retained participant history; suspension publication barrier; DNS standing eligibility; profile base-revision conflicts; minimal public records for newly reported Ethereum/Solana addresses without invented chain facts. UI callers bind the same confirmed arguments as the service consumes.
+- **Tests:** six original review regressions plus seven additional negative/positive scenarios in the normal suite. Existing tests now pass exact verified arguments. The self-approval test uses a fresh non-suspended finding rather than its old suspended fixture. No tests skipped or weakened.
+- **Actual validation:** `pnpm check` exit 0, including format/lint/typecheck, 77 contract + 367 web tests and production build. Focused final regression file: 13 passed. Mock build and exclusion scan exit 0: production contains no mock markers and neither browser bundle contains scanned server-only names. No browser E2E rerun: Playwright browser download remains unavailable.
+- **Files:** mock services/store and new `step-up.ts` / `finding-participants.ts`; affected staff/admin confirmation UI and service interfaces; regression and affected existing tests; frontend/integration docs; review report and this handoff. No dependency or migration changes.
+- **Next:** Claude review of the fix branch, then remaining Phase 6 manual accessibility/responsive/cross-browser and revision-editor/integration-documentation work. Phase 7/backend gates are unchanged.
+
+
+### Codex independent merged-frontend review (2026-10-13)
+
+- **Owner request:** review everything Claude has pushed so far; owner confirmed backend begins in Phase 7. This session implements no backend or feature work.
+- **Scope:** merged commit `87fc8b927ca369055988a5a1912b8151470fb49f` on `chore/initial-repository`, including PR #4 administrator follow-up and accepted band-only scoreboard. Earlier pause was respected; review resumed after the owner confirmed the merge and requested it.
+- **Verdict:** required fixes before frontend sign-off: three High and three Medium findings in [review](docs/reviews/2026-10-13-frontend-codex-review.md). Step-up actor/parameter binding; independent approval of severe replacements; suspension publication barrier; mismatched DNS standing; stale profile corrections; publication for previously unknown addresses.
+- **Actual validation:** frozen installation under Node 24.21.0 / pnpm 12.7.0; `pnpm check` exit 0 (format, lint, type checks, 77 contract + 354 web tests, production build); mock build and mock-exclusion scan exit 0. Six additional regression expectations fail on the reviewed commit, reproducing the six findings. Their source is preserved outside the baseline suite under `docs/reviews/reproductions/2026-10-13-frontend.test.ts.sample`.
+- **Browser limitation:** no independent E2E run. Playwright Chromium download was invalid/truncated and failed installation; Firefox/WebKit unavailable. Claude's reported 322 passes remain author-reported evidence.
+- **Changes:** this handoff, review report, reproduction sample only. No application fix, new dependency, migration, architecture change, commit, push, merge, deployment or posted GitHub comment.
+- **Recommended next step:** Claude responds to and fixes each finding within the approved design, adds the regressions to the normal suite, then Codex rechecks. Complete outstanding Phase 6 quality/manual accessibility/cross-browser and revision-editor requirements before frontend sign-off. Phase 7 must still begin with D1–D9 and S1–S17 acceptance gates.
 
 | # | Agent | Session | Outcome |
 |---|---|---|---|

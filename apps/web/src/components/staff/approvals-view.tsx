@@ -227,7 +227,14 @@ export function ApprovalsView() {
           actionDescription={`${pending.kind} ${pending.revision.findingId} revision ${pending.revision.revisionNumber}`}
           action={pending.kind === 'approve' ? 'finding.approve' : 'finding.reject'}
           targetId={pending.revision.findingId}
-          verify={async (action, target) => (await getModerationApi()).verifyStepUp(action, target)}
+          parameters={
+            pending.kind === 'approve'
+              ? [pending.revision.findingId, pending.revision.revisionNumber, pending.revision.contentHash]
+              : [pending.revision.findingId, pending.revision.revisionNumber, rationale.trim()]
+          }
+          verify={async (action, target, parameters) =>
+            (await getModerationApi()).verifyStepUp(action, target, parameters)
+          }
           onVerified={() => void submit()}
         />
       ) : null}

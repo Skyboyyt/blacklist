@@ -30,6 +30,7 @@ export function MembersAdmin() {
         : 'They can sign in and submit again.',
       tone: suspend ? 'danger' : 'default',
       reasonLabel: 'Internal reason (staff only)',
+      parameters: (reason) => [m.id, reason],
       stepUp: {
         action: suspend ? 'user.suspend' : 'user.restore',
         targetId: m.id,

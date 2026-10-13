@@ -44,6 +44,8 @@ import {
 } from './public-effects';
 import { currentPasskeyResult, currentScenario, currentViewerKey, type MockViewerKey } from './scenario';
 import { staffAssessmentFor } from './staff-scoring';
+import { consumeGrant as consumeBoundGrant, issueGrant } from './step-up';
+import { participantIds } from './finding-participants';
 import { createStore, nextId, type MockStore } from './store';
 
 export interface MockModerationOptions {
@@ -302,7 +304,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
    */
   const identity = () => {
     const who = IDENTITIES[currentViewerKey(options.cookies())];
-    if (!who) return null;
+    if (!who || currentScenario(options.cookies()) === 'session_expired') return null;
     const member = store.staff.find((m) => m.id === who.ref.id);
     return member?.status === 'active' && member.roles.includes(who.role) ? who : null;
   };
@@ -427,11 +429,12 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
     return { ok: true, c, me: who.ref, role: who.role };
   }
 
-  function consumeGrant(action: string, targetId: string): boolean {
-    const key = `${action}:${targetId}`;
-    const expires = store.grants.get(key);
-    store.grants.delete(key);
-    return expires !== undefined && expires > now().getTime();
+  function consumeGrant(action: string, targetId: string, parameters: readonly unknown[]): boolean {
+    const who = identity();
+    return (
+      who !== null &&
+      consumeBoundGrant(store, who.ref.id, options.cookies(), action, targetId, parameters, now().getTime())
+    );
   }
 
   function createRevision(
@@ -706,12 +709,22 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       return ok(view(c));
     },
 
-    async verifyStepUp(action, targetId): Promise<PasskeyResult> {
+    async verifyStepUp(action, targetId, parameters = []): Promise<PasskeyResult> {
       await wait();
-      if (!identity() || currentScenario(options.cookies()) === 'session_expired')
+      const who = identity();
+      if (!who || currentScenario(options.cookies()) === 'session_expired')
         return { kind: 'session_expired' };
       const kind = currentPasskeyResult(options.cookies());
-      if (kind === 'verified') store.grants.set(`${action}:${targetId}`, now().getTime() + STEP_UP_TTL_MS);
+      if (kind === 'verified')
+        issueGrant(
+          store,
+          who.ref.id,
+          options.cookies(),
+          action,
+          targetId,
+          parameters,
+          now().getTime() + STEP_UP_TTL_MS,
+        );
       return { kind };
     },
 
@@ -772,7 +785,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       }
       if (c.type === 'appeal_review') {
         const participants = [c.appealedDecision.author.id, c.appealedDecision.approver.id];
-        if (participants.includes(me.id)) {
+        if (participants.includes(me.id) || participantIds(store, c.appealedDecision.findingId).has(me.id)) {
           return err(
             'not_eligible',
             'You took part in the decision under appeal (author or approver), so you cannot review this appeal or its standing.',
@@ -794,7 +807,23 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           );
         }
       }
-      if (rule.stepUp && !consumeGrant(stepUpActionFor(d.action), caseId))
+      if (
+        d.action === 'accept_correction' &&
+        c.type === 'correction_request' &&
+        c.subject.kind === 'project'
+      ) {
+        const slug = c.subject.slug;
+        const profile = store.projects.find((p) => p.slug === slug);
+        if (!profile || profile.profileRevision !== c.currentRevision) {
+          return {
+            kind: 'error',
+            code: 'conflict',
+            currentVersion: profile?.profileRevision ?? c.currentRevision,
+            detail: 'The public profile changed. Review a fresh correction against its latest revision.',
+          };
+        }
+      }
+      if (rule.stepUp && !consumeGrant(stepUpActionFor(d.action), caseId, [caseId, expectedVersion, d]))
         return { kind: 'error', code: 'stepup_required' };
 
       const from = c.status;
@@ -881,11 +910,41 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (target.status !== 'proposed' && target.status !== 'pending_second_approval') {
         return err('invalid_transition', 'This revision is not waiting for approval.');
       }
-      if (target.severity === 'severe') {
+      const publicFinding = store.addresses.flatMap((a) => a.findings).find((f) => f.id === findingId);
+      const publicRevision = store.revisions.find(
+        (r) => r.findingId === findingId && r.status === 'published',
+      );
+      const replacesSevere =
+        publicRevision?.severity === 'severe' ||
+        (publicFinding !== undefined && store.findingParticipants.get(findingId)?.severity === 'severe');
+      if (
+        store.suspended.has(findingId) ||
+        publicFinding?.disputeState === 'suspended_pending_review' ||
+        [...store.cases.values()].some(
+          (c) =>
+            c.type === 'suspension_review' &&
+            c.status === 'open' &&
+            c.suspendedFinding.findingId === findingId,
+        )
+      ) {
+        return err(
+          'invalid_transition',
+          'Resolve the emergency suspension review before publishing a revision.',
+        );
+      }
+      if (target.severity === 'severe' || replacesSevere) {
         if (!hasPermission(who.role, 'finding:approve_severe'))
           return err('forbidden', 'Severe approval needs finding:approve_severe.');
         const authors = store.revisions.filter((r) => r.findingId === findingId).map((r) => r.author.id);
-        if (authors.includes(who.ref.id)) {
+        if (
+          authors.includes(who.ref.id) ||
+          (replacesSevere &&
+            [
+              publicRevision?.author.id,
+              store.findingParticipants.get(findingId)?.author.id,
+              store.findingParticipants.get(findingId)?.approver.id,
+            ].includes(who.ref.id))
+        ) {
           return err(
             'not_eligible',
             'Severe findings need an independent approver. You authored a revision of this finding.',
@@ -902,13 +961,17 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
           `Evidence ${missing.join(', ')} is not available yet, so nothing can be published.`,
         );
       }
-      if (!consumeGrant('finding.approve', findingId)) return { kind: 'error', code: 'stepup_required' };
+      if (!consumeGrant('finding.approve', findingId, [findingId, revisionNumber, contentHash]))
+        return { kind: 'error', code: 'stepup_required' };
       const previous = target.status;
       for (const r of store.revisions) {
         if (r.findingId !== findingId) continue;
         if (r === target) r.status = 'published';
         else if (r.status === 'published') r.status = 'superseded';
       }
+      const participants = participantIds(store, findingId);
+      participants.add(who.ref.id);
+      store.findingParticipantHistory.set(findingId, participants);
       store.findingParticipants.set(findingId, {
         author: target.author,
         approver: who.ref,
@@ -948,7 +1011,8 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       }
       if (rationale.trim().length < 10)
         return err('invalid_transition', 'A rejection needs a rationale of at least 10 characters.');
-      if (!consumeGrant('finding.reject', findingId)) return { kind: 'error', code: 'stepup_required' };
+      if (!consumeGrant('finding.reject', findingId, [findingId, revisionNumber, rationale.trim()]))
+        return { kind: 'error', code: 'stepup_required' };
       const previous = target.status;
       target.status = 'rejected';
       record({
@@ -1026,7 +1090,8 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (finding.disputeState === 'suspended_pending_review') {
         return err('invalid_transition', 'This finding is already suspended.');
       }
-      if (!consumeGrant('finding.suspend', findingId)) return { kind: 'error', code: 'stepup_required' };
+      if (!consumeGrant('finding.suspend', findingId, [findingId, reason.trim()]))
+        return { kind: 'error', code: 'stepup_required' };
       const original = structuredClone(finding);
       suspendFinding(store, findingId, at());
       const id = nextId(store, 'SUS');

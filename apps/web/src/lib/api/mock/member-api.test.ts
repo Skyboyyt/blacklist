@@ -45,8 +45,8 @@ const code = (result: MemberResult<unknown>) => (result.kind === 'error' ? resul
 
 async function staffDecide(viewer: string, id: string, decision: CaseDecision) {
   as(viewer);
-  await staff.verifyStepUp(stepUpActionFor(decision.action), id);
   const version = ok(await staff.getCase(id)).version;
+  await staff.verifyStepUp(stepUpActionFor(decision.action), id, [id, version, decision]);
   const result = await staff.decide(id, version, decision);
   as('member');
   return result;

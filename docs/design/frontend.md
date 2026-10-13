@@ -208,3 +208,7 @@ E2E_ALL_BROWSERS=1 pnpm test:e2e               # also auth/account journeys in F
 ```
 
 The demo banner's preview controls switch the fictional viewer, the account scenario and the simulated passkey result. Mock rules: re-authentication or current passwords starting with `wrong` fail; `limited@example.test` is rate-limited; `unavailable@example.test` is temporarily unavailable; the enrollment code is `DEMO2026AB`; token prefixes `expired`, `used`, `invalid`, `superseded`, `revoked` select those link states.
+
+## Codex review repairs (2026-10-13)
+
+The frontend now passes exact confirmed mutation arguments to mock step-up verification. Grants bind to the actor and demo session, expire after five minutes, are single-use and are invalidated on staff security transitions. Severe replacements require independent approval; unresolved suspension reviews block normal publication. New reported addresses get a minimal public record only when approved, with no invented chain facts. Stale profile corrections return a conflict and must be resubmitted against the latest profile. DNS standing is restricted to a project's official domains, never wallets/contracts/token addresses. These remain fictional mock behaviors; backend enforcement and acceptance gates are still Phase 7+.

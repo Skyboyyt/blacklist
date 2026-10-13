@@ -33,6 +33,6 @@ export function useAdminData<T>(read: (api: AdminApi) => Promise<ModerationResul
   return { load, reload };
 }
 
-export async function verifyAdminStepUp(action: string, targetId: string) {
-  return (await getAdminApi()).verifyStepUp(action, targetId);
+export async function verifyAdminStepUp(action: string, targetId: string, parameters?: readonly unknown[]) {
+  return (await getAdminApi()).verifyStepUp(action, targetId, parameters);
 }
