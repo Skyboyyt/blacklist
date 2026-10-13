@@ -1,0 +1,258 @@
+{
+  "recordedAt": "2026-10-13T13:33:16.866587+00:00",
+  "scope": "Owner-provided Render workspace; Free restricted staging preparation, no application activation",
+  "workspace": {
+    "ownerProvidedId": "tea-db6vhoij9qps73amsn50",
+    "ownerDetailsStatus": 403,
+    "ownerDetailsFailure": "Cloudflare HTML block",
+    "scopedServiceInventoryStatus": 200,
+    "creationAndServiceMetadataOwnershipVerified": true
+  },
+  "renderServices": [
+    {
+      "mode": "api",
+      "created": true,
+      "metadata": {
+        "id": "srv-db72r4d9fdbs73erf1s0",
+        "name": "blacklist-staging-api",
+        "ownerId": "tea-db6vhoij9qps73amsn50",
+        "type": "web_service",
+        "branch": "chore/render-staging-deployment",
+        "plan": "free",
+        "region": "frankfurt",
+        "url": "https://blacklist-staging-api.onrender.com",
+        "suspended": "suspended",
+        "autoDeployTrigger": "off"
+      },
+      "suspendStatus": 202,
+      "metadataStatus": 200,
+      "suspensionVerified": true,
+      "databaseCredentialsConfigured": false,
+      "operatorCredentialsConfigured": false,
+      "workerMailCredentialsConfigured": false,
+      "publicApplicationLaunched": false,
+      "newBaseCostUSDPerMonth": 0,
+      "secretValuesLoggedOrPersistedLocally": false
+    },
+    {
+      "mode": "worker",
+      "created": true,
+      "metadata": {
+        "id": "srv-db72r5ou01pc73c32l5g",
+        "name": "blacklist-staging-worker",
+        "ownerId": "tea-db6vhoij9qps73amsn50",
+        "type": "web_service",
+        "branch": "chore/render-staging-deployment",
+        "plan": "free",
+        "region": "frankfurt",
+        "url": "https://blacklist-staging-worker.onrender.com",
+        "suspended": "suspended",
+        "autoDeployTrigger": "off"
+      },
+      "suspendStatus": 202,
+      "metadataStatus": 200,
+      "suspensionVerified": true,
+      "databaseCredentialsConfigured": false,
+      "operatorCredentialsConfigured": false,
+      "workerMailCredentialsConfigured": true,
+      "publicApplicationLaunched": false,
+      "newBaseCostUSDPerMonth": 0,
+      "secretValuesLoggedOrPersistedLocally": false
+    }
+  ],
+  "protectedEnvironmentBoundaryChecks": [
+    {
+      "mode": "api",
+      "id": "srv-db72r4d9fdbs73erf1s0",
+      "operatorCredentialsAbsent": true,
+      "providerOperatorApiKeysAbsent": true,
+      "workerSignerOrGatewayAbsent": null,
+      "databaseURLConfigured": false,
+      "apiTierSecretNamesPresent": ["BETTER_AUTH_SECRET", "INTERNAL_API_TOKEN", "STAGING_ACCESS_TOKEN"]
+    },
+    {
+      "mode": "worker",
+      "id": "srv-db72r5ou01pc73c32l5g",
+      "operatorCredentialsAbsent": true,
+      "providerOperatorApiKeysAbsent": true,
+      "workerSignerOrGatewayAbsent": true,
+      "databaseURLConfigured": false,
+      "apiTierSecretNamesPresent": [],
+      "sendingOnlyMailKeyAndDefaultSenderConfigured": true
+    }
+  ],
+  "vercelPreviewSettings": {
+    "configured": true,
+    "projectId": "prj_pLJy3kpakJczycujT8lfWlE4fjlh",
+    "gitBranch": "chore/render-staging-deployment",
+    "keys": ["STAGING_ACCESS_TOKEN", "INTERNAL_API_TOKEN", "API_INTERNAL_URL", "DEPLOYMENT_ENV"],
+    "previewOnly": true,
+    "encrypted": true,
+    "productionUpdated": false,
+    "signerDatabaseOrMailSecretsProvidedToFrontend": false,
+    "secretValuesLoggedOrPersistedLocally": false,
+    "renderAPIURL": "https://blacklist-staging-api.onrender.com",
+    "backendCurrentlySuspended": true,
+    "redeployOrHostedAuthTestsRun": false
+  },
+  "sqlAndEmail": {
+    "neonProjectId": "curly-thunder-05276273",
+    "neonAppRolesOrMigrationsApplied": false,
+    "postgresConnectivityRecheck": {
+      "scope": "restarted environment, permitted IPv4 TCP-only probe, no DB login/query",
+      "connected": false,
+      "errorType": "ConnectionRefusedError",
+      "errno": 111
+    },
+    "resendDomainInventory": {
+      "latestStatus": 200,
+      "count": 0,
+      "intermediateDefaultUserAgentRequestStatus": 403,
+      "retryWithEstablishedClientUserAgentStatus": 200
+    },
+    "senderDomainOrPermittedMailboxProvided": true,
+    "providerEmailsSent": 1,
+    "newDatabaseDriverOrTLSFallbackUsed": false,
+    "verifiedSenderDomainProvided": false,
+    "resendTransportAndProtectedWorkerSetup": {
+      "recordedAt": "2026-10-13T13:39:02.732328+00:00",
+      "ownerPermittedTestMailboxProvided": true,
+      "recipientStoredInSourceOrEvidence": false,
+      "defaultSender": "onboarding@resend.dev",
+      "verifiedDomains": 0,
+      "keyId": "f308da04-736e-4ee9-8d57-a8d26233fe37",
+      "keyPermissionRequested": "sending_access",
+      "keyCreated": true,
+      "workerMailSettingsVerified": true,
+      "workerExistingEnvironmentPreserved": true,
+      "workerSuspendedVerified": true,
+      "keyStoredOnlyInProtectedWorkerSettings": true,
+      "emailAttempted": true,
+      "transportTest": {
+        "scope": "existing_resend_https_adapter_real_provider",
+        "outcome": "accepted_for_delivery",
+        "providerMessageId": "01a1357c-ee43-73a0-b823-a2bd4d6660c7",
+        "databaseAccessed": false,
+        "activationTokenIssued": false,
+        "mailboxReceiptVerified": false
+      },
+      "databaseAuthActivationFlowTested": false,
+      "trackingRetentionVerified": false,
+      "paidPlanOrBillingChanged": false,
+      "secretValuesLoggedOrPersistedLocally": false,
+      "providerTrackingReceipt": {
+        "status": 200,
+        "lastEvent": "delivered",
+        "messageIdMatches": true,
+        "mailboxReceiptVerified": false,
+        "rawPayloadStoredOrLogged": false
+      }
+    },
+    "initialProxyPlaceholderAttempt": {
+      "configurationPassed": false,
+      "invalidField": "RESEND_API_KEY",
+      "emailSent": false,
+      "validationWeakened": false
+    }
+  },
+  "readiness": {
+    "servicesProvisioned": true,
+    "servicesSuspendedAndUnavailable": true,
+    "apiOrWorkerRunning": false,
+    "deployedCommit": null,
+    "cloudHealthChecks": "Untested; no running application",
+    "authCookieOriginSSRMailFlows": "Untested",
+    "migrationsTlsPersistenceRestore": "Untested",
+    "productionReady": false,
+    "phase8AuthorizedOrStarted": false,
+    "baselineCoverageAuditBrowserClaudeReview": "Still open; no waiver"
+  },
+  "cost": {
+    "apiPlan": "free",
+    "workerPlan": "free",
+    "region": "frankfurt",
+    "newRenderBaseUSDPerMonth": 0,
+    "condition": "Free limits/instance-hours/egress apply; no paid plan/add-on/autoscaling selected",
+    "paidResourcesOrBillingChanges": 0
+  },
+  "source": {
+    "branch": "chore/render-staging-deployment",
+    "sourceHeadBeforeThisDocumentation": "11d7cdd5dd1429e29d2307ac24bea0cbb4c93575",
+    "pullRequest": "https://github.com/Skyboyyt/blacklist/pull/8",
+    "mainPreserved": "ece2e769fafc9a381ed1b540ae8b7e05fccdbab5",
+    "mergesOrForcePushes": 0,
+    "applicationCodeOrSQLChanged": false
+  },
+  "checksThisTurn": "Actual provider create/suspend/metadata/env-boundary/branch-scope checks; existing Resend adapter real transport accepted and provider-reported delivered; 11 deployment/worker/Resend unit checks pass; formatting and whitespace pass after JSON correction; five-file Gitleaks and exact protected-value/recipient absence checks pass. Full suite not rerun; baseline gaps remain.",
+  "nextStep": "Arrange an approved reachable native-PostgreSQL operator environment for existing role/migration commands and validation. Review foundation/ingress/free-worker gates with Claude before resuming services. Default-sender transport is proven only to the approved account mailbox; verify tracking/retention and an owned domain before other recipients.",
+  "dataHandling": "Only non-secret IDs, URLs, statuses and selected expected variable names. New CSPRNG signer/internal/staging secrets stored solely in Render; internal/staging shared only to encrypted branch-preview Vercel settings. No DB/admin/mail/signing secret to frontend; no actual secret value, connection string, cookie, token-bearing email or private record stored in source/evidence. Sending-only Resend key stored only in protected worker settings; approved recipient address omitted from all source/evidence. No token-bearing mail sent.",
+  "validationThisFollowUp": {
+    "deploymentWorkerResendUnitTests": {
+      "command": "pnpm --filter @blacklist/backend-acceptance exec vitest run render-deployment.test.ts worker-health.test.ts resend.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "pending": 0,
+      "exitCode": 0
+    },
+    "formatCheck": {
+      "command": "pnpm run format:check",
+      "initialResult": "failed: new JSON formatting",
+      "correction": "formatted only new evidence JSON",
+      "rerun": "passed"
+    },
+    "whitespaceCheck": "passed",
+    "changedFileGitleaks": {
+      "image": "zricethezav/gitleaks@sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9",
+      "files": 5,
+      "network": "none",
+      "redaction": "100%",
+      "findings": 0,
+      "exitCode": 0
+    },
+    "exactProtectedSecretsAndRecipientCheck": {
+      "protectedSecretValuesChecked": 4,
+      "secretMatches": 0,
+      "privateRecipientMatches": 0,
+      "filesChecked": 5,
+      "runtimeBoundaryChecks": [
+        {
+          "service": "srv-db72r4d9fdbs73erf1s0",
+          "operatorKeysAbsent": true,
+          "databaseURLAbsent": true
+        },
+        {
+          "service": "srv-db72r5ou01pc73c32l5g",
+          "operatorKeysAbsent": true,
+          "databaseURLAbsent": true
+        }
+      ],
+      "secretValuesLogged": false
+    },
+    "fullApplicationSuite": "Not rerun; application code, dependencies and SQL unchanged. Historical results/gaps retained in AI_HANDOFF.md.",
+    "cloudDatabaseHealthAuthAndRestore": "Untested; no migrated/running application"
+  },
+  "renderInitialDeploymentAttempts": [
+    {
+      "service": "srv-db72r4d9fdbs73erf1s0",
+      "apiStatus": 200,
+      "attempts": [
+        {
+          "id": "dep-db72r559fdbs73erf560",
+          "status": "canceled",
+          "commit": "11d7cdd5dd1429e29d2307ac24bea0cbb4c93575"
+        }
+      ]
+    },
+    {
+      "service": "srv-db72r5ou01pc73c32l5g",
+      "apiStatus": 200,
+      "attempts": [
+        {
+          "id": "dep-db72r60u01pc73c32m60",
+          "status": "canceled",
+          "commit": "11d7cdd5dd1429e29d2307ac24bea0cbb4c93575"
+        }
+      ]
+    }
+  ]
+}

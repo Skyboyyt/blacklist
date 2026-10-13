@@ -14,11 +14,38 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Post-Phase 7 restricted staging preparation/deployment on free Render + Neon + Resend, protected Vercel. Feature-branch commit/push/PR authorized. No automatic merge, paid resource, production/public launch, Vercel production change or Phase 8. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: all four provider bindings verified; Free Frankfurt Neon project created and Vercel preview restriction tested; Render/sender/native-PG blockers remain |
+| Last agent | Codex: owner workspace applied; two Free Render services created/suspended and encrypted Vercel branch-preview settings verified; real Resend transport accepted/delivered with sending-only worker key; native-PG/security blockers remain |
 | Last updated | 2026-10-13 |
 
 
+## Render workspace services and preview settings — 2026-10-13
+
+**Workspace ID supplied and applied:** owner provided `tea-db6vhoij9qps73amsn50`. Render owner lookup still returns Cloudflare 403, but workspace-scoped inventory works and service create/get responses verify the exact owner. Do not ask for the workspace ID or four provider API keys again.
+
+**Free Render resources created and immediately suspended:**
+
+| Resource | ID / reserved URL | Actual state |
+|---|---|---|
+| API | `srv-db72r4d9fdbs73erf1s0` / `https://blacklist-staging-api.onrender.com` | **Free / Frankfurt / suspended**, not a running API |
+| Separate worker | `srv-db72r5ou01pc73c32l5g` / `https://blacklist-staging-worker.onrender.com` | **Free / Frankfurt / suspended**, no email processing |
+
+Both target `chore/render-staging-deployment`, repository root, pinned Node 24.21.0, existing build/start wrappers and `/healthz`; `autoDeployTrigger=off`. New base Render service charge **$0 within Free limits**; no paid plan/storage/add-on/autoscaling/billing change. Render creates an initial deployment even with later auto-deploy disabled; it was immediately held with suspension, verified by GET metadata. Latest deployment inventory confirms both initial attempts at `11d7cdd` are **canceled**, not successful deployments. Neither service has DATABASE_URL, operator/migrator credentials or cloud-operator API keys. API has fresh independent CSPRNG signer/internal/staging values in protected Render settings; worker has none of those values. Missing DB configuration makes existing startup fail closed. No application health/availability or hosted SQL/auth success claimed.
+
+**Preview-only Vercel configuration prepared and verified:** encrypted `STAGING_ACCESS_TOKEN`, `INTERNAL_API_TOKEN`, `API_INTERNAL_URL=https://blacklist-staging-api.onrender.com` and `DEPLOYMENT_ENV=staging`, with **target `[preview]` and gitBranch `chore/render-staging-deployment`** only. Verified all four types/scopes through the API. Private gateway/internal values transferred in memory from the owned Render protected settings; no values printed or persisted in local files/source. Frontend receives no signer, DB/operator URL or Resend key. Production variables/branch/settings were not changed. A future preview build picks up the build-time rewrite; this is configuration preparation, not working logged-in SSR/cookie/authentication.
+
+**Remaining blockers verified:** fresh Frankfurt Neon project `curly-thunder-05276273` still has no application roles/migrations. Recheck after workspace restart again gives IPv4 **connection refusal, errno 111**, before any DB login/query. Need an approved native-PG operator environment for existing `provision.mjs`/`migrate.mjs`, then grants/TLS/schema/audit/queue/persistence/restore checks; no alternate driver, privileged runtime URL or TLS relaxation. Resend latest domain read succeeds/empty; an intermediate default-user-agent request got 403, and the established client header succeeded. Owner supplied the permitted Resend account mailbox privately. The existing HTTPS adapter accepted one synthetic transport email from `onboarding@resend.dev`; authenticated Resend receipt lookup reports **delivered**. This does not prove human receipt or account activation. A fresh key requested with `sending_access` is stored solely in worker protected settings with `EMAIL_FROM`; worker remains suspended. No recipient, key value, token/link or mail body is stored in source/evidence. Zero verified domains means the default sender is limited to the account mailbox; a verified owned domain is still required for other testers. Tracking/retention policy remains unverified. The first attempt failed configuration before sending because the proxy placeholder is unsuitable for runtime key validation; no validation was weakened. Foundation coverage/audit/browser, independent Claude review, ADR0013/O-6 and trusted ingress/cookie/SSR/free-worker gates remain open; no waiver.
+
+**Checks actually run:** provider create/suspend and GET ownership/Free/region/state/branch settings; protected env-boundary negatives (no operator/API keys on runtime; no signer/internal/staging on worker); Vercel encrypted exact-branch/preview-only verification; TCP probe; Resend sending-key creation/protected worker-setting verification; existing-adapter real transport acceptance and provider delivery receipt. The first proxy-key configuration attempt failed without a send; retry used the fresh valid sending key. No application logic/dependency/SQL changed, so prior application results are retained, not rerun/relabelled. New source changes are sanitized evidence, workspace/runbook/security-review/handoff/configuration metadata only. Exact results: `docs/evidence/2026-10-13-render-workspace-setup.json`.
+
+**Follow-up validation:** deployment/worker/Resend units **11 passed, 0 failed/pending**. Formatting initially flagged the new JSON; formatting it and rerunning `pnpm run format:check` passed, as did `git diff --check`. Pinned network-isolated Gitleaks on all five changed files reports **0 leaks / exit 0**. In-memory exact checks found none of the four fresh protected secrets or approved recipient address in changed source; runtime operator absence and worker authority separation reverified. Full application/coverage/audit/browser suites were not rerun, and prior failures remain open. Saved onboarding startup instructions now reflect held resources, real mail proof and remaining native-PG blocker; draft saving is not publication.
+
+**Next step:** arrange approved reachable PostgreSQL operator access; apply unchanged roles/migrations and validate. After required review/security checks, supply DML-only DB URLs and verified proxy configuration; verify mail tracking/retention and use the default sender only for the authorized account mailbox; resume API/worker manually at the intended reviewed commit, rebuild only the protected preview and run hosted synthetic workflows. Keep source feature branch/PR; no automatic merge, real-user import, production launch or Phase 8.
+
+---
+
 ## Corrected access and Free Neon staging — 2026-10-13
+
+Historical checkpoint: subsequent workspace, preview-setting and email results are recorded above; earlier missing-input/no-service statements here describe that checkpoint.
 
 **Current result: partially provisioned, not a complete live staging app.** Owner reported correcting/rotating the four credentials. All four exact-name bindings are saved and present; no misnamed entries remain. Supported read-only requests succeed for Render, Neon, Vercel and Resend. Do not ask for the four API keys again or print arbitrary secret metadata. The previous credential incident/rejected-request entry below is historical, superseded for configuration/access; rotation is accepted as owner-reported, not independently proven by API metadata.
 
