@@ -353,5 +353,23 @@
     "installScript": "preserved",
     "bindingsAndNetwork": "preserved",
     "publication": "requires user publication; not claimed"
+  },
+  "publication": {
+    "implementationCommit": "9d418f0dab6b182518ae070175abfc3d0fc83891",
+    "pushedBranch": "chore/render-staging-deployment",
+    "prHeadReadbackMatches": true,
+    "prState": "open/draft/unmerged",
+    "base": "main",
+    "mainUnchanged": true,
+    "preservationStashRetained": true,
+    "commitSecurityStatus": {
+      "created": false,
+      "httpStatus": 403,
+      "reason": "Resource not accessible by integration",
+      "automaticApprovalReviewRejection": false,
+      "broaderCredentialsRequested": false
+    },
+    "failureEvidenceVisibleInPr": true,
+    "ciOrBranchProtectionEnforcementClaim": false
   }
 }
