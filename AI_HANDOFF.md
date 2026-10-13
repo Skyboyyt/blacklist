@@ -14,9 +14,19 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Post-Phase 7 restricted staging preparation/deployment on free Render + Neon + Resend, protected Vercel. Feature-branch commit/push/PR authorized. No automatic merge, paid resource, production/public launch, Vercel production change or Phase 8. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: native/proxy PostgreSQL reachability rechecked; documented supported local Codex execution option; cloud SQL/settings remain blocked, services suspended |
+| Last agent | Codex: prepared ADR0015 for a Render-only operator alternative; Claude/owner decision and quota validation pending; no operator code/resources or cloud SQL changes, services held |
 | Last updated | 2026-10-13 |
 
+
+## Alternative operator execution proposal — 2026-10-13
+
+Owner requested a route that avoids PC commands/local Codex. **Prepared for review, not implemented:** [ADR0015](docs/adr/0015-staging-database-operator-execution.md) proposes short-lived Free Render Docker operator phases using existing provision/migrate scripts, direct verified Neon TLS, separate admin then migrator/runtime containers, protected runtime secret files excluded from Docker context/ARG/image and private operator-only credential retention. Controller can use existing Render access; API/worker stay suspended, no privileged credential on them, no new GitHub secret storage. Source-only GitHub, existing schema/toolchain/identity boundaries remain intended requirements. New privileged compute/storage is a boundary change: AGENTS§6/ADR process requires Claude review and owner acceptance **before code or activation**. No runner code, Dockerfile, workflow, resource, secret or billing/default-branch mutation was made.
+
+**Actual research/checks:** GitHub repo public; workflow/run inventory200/count0; Actions permission and repository-secret admin403/integration access denied; environment inventory200/count2. Admin metadata on the repo does not prove those capabilities or workflow-dispatch write permission. No workflow registered on current default branch, which matches Vercel's production branch; do not merge/change defaults/production to enable dispatch without approval. Official public GitHub runner pricing is free for standard runners; larger runners are charged. Official Render Free/Docker/secret docs read200: Free 750 instance-hours shared, build/bandwidth supplementary charges possible with payment method, actual remaining budgets unverified. Docker service env values become build arguments, and secret files enter context unless explicitly excluded. Proposal therefore requires runtime-only files, no credential ARG/build mounts, image/context/history/provenance checks and zero-charge assurance. Render-to-Neon native connectivity/operator lifecycle is **untested**. The prior cloud transport refusal and current runtime misconfiguration remain blockers; no migration/TLS/grant success or readiness claimed.
+
+**Next step:** Claude reviews the concrete ADR and owner decides/approves scoped operator activations if accepted. Then implement/test isolation/preflight/lifecycle/verification against disposable local PG before provisioning anything, verify Free usage/billing controls and execute only the empty staging target. Baseline coverage/audit/browser/recovery/ingress checks and no-resume/merge/Phase8 restrictions persist. Formatting/whitespace checks pass; pinned network-isolated four-file Gitleaks reports zero leaks/exit0. Source app/SQL/dependencies unchanged; prior 11 tests retained, not rerun for this proposal.
+
+---
 
 ## Owner requested agent execution — 2026-10-13
 

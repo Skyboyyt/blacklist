@@ -91,6 +91,10 @@ There are **zero verified domains**. The default sender is restricted to the Res
 
 For the owner-operated Windows fallback, follow [Neon staging setup from Windows](neon-windows-setup.md): pinned tools, masked passwords, empty-target preflight, separate provisioning/migration/runtime windows, catalog/hash/TLS verification and save-only settings for both held Render services. These steps are prepared, not remotely executed.
 
+## Proposed browser-only operator alternative
+
+The owner requested another route without Windows terminal setup. [ADR0015](../adr/0015-staging-database-operator-execution.md) proposes two serial temporary Free Docker operator executions on Render, using the existing scripts and protected runtime-only secret files, retaining source-only GitHub handling. API/worker remain suspended. This additional privileged boundary requires Claude review and owner acceptance/activation approval; **no runner is implemented or created**. Base plan is $0, but actual quota/spend assurance is unverified and required before creation. GitHub Actions is a secondary option: public standard runners are free, but Actions/secret administration is403 here, there is no registered workflow and a default-branch/secret-boundary decision is required. Individual Neon editor commands cannot replace complete migration/queue/hash execution.
+
 ## Owner-added database URL recheck — 2026-10-13
 
 The owner only pasted a Neon connection string into the API service. It is present on API, absent on worker, and still refers to a privileged role/pooler with `sslmode=require` and an unsupported extra query option. Its normalized endpoint matches the intended Frankfurt staging project. Existing runtime validation rejects it; services remain suspended and initial deployments canceled. External health URLs return 503 HTML, not application health. Latest direct TCP probe fails with errno 101 before authentication. No URL/password is in documentation/evidence; no provider setting/database was changed during this check.
