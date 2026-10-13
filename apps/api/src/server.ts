@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import type { ApiConfig } from '@blacklist/config';
 import type { IdentityContext } from '@blacklist/domain';
 import { installSecurity } from './plugins/security.ts';
+import { installStagingAccess } from './plugins/staging-access.ts';
 import { installErrors } from './plugins/errors.ts';
 import { authRoutes } from './routes/auth.ts';
 import { accountRoutes } from './routes/account.ts';
@@ -28,13 +29,15 @@ export function createServer(ctx: IdentityContext, config: ApiConfig, logging = 
       : false,
   });
   installErrors(app);
+  installStagingAccess(app, config);
   installSecurity(app, ctx, config);
   authRoutes(app, ctx);
   accountRoutes(app, ctx);
   staffRoutes(app, ctx);
-  app.get('/healthz', { config: { security: { auth: 'public', mutation: false } } }, async () => ({
-    status: 'ok',
-  }));
+  app.get('/healthz', { config: { security: { auth: 'public', mutation: false } } }, async () => {
+    await ctx.runtime.checkConnection();
+    return { status: 'ok' };
+  });
   app.addHook('onResponse', async (req, reply) => {
     req.log.info(
       { requestId: req.id, method: req.method, route: req.routeOptions.url, status: reply.statusCode },

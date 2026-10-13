@@ -13,7 +13,18 @@ const fields = {
     'TRUSTED_PROXY_CIDRS',
     'BREAK_GLASS_ENABLED',
   ],
-  worker: [...common, 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_SECURE', 'EMAIL_FROM'],
+  worker: [
+    ...common,
+    'WORKER_HEALTH_PORT',
+    'EMAIL_PROVIDER',
+    'RESEND_API_KEY',
+    'SMTP_HOST',
+    'SMTP_PORT',
+    'SMTP_USER',
+    'SMTP_PASSWORD',
+    'SMTP_SECURE',
+    'EMAIL_FROM',
+  ],
 };
 if (!Object.hasOwn(fields, mode ?? '')) throw new Error('Choose api or worker');
 const values = parseEnv(await readFile(new URL('../.env', import.meta.url), 'utf8'));

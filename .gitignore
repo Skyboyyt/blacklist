@@ -12,6 +12,8 @@
 secrets/
 *.secret
 *.secrets
+blacklist-staging-operator.json
+.operator-public-ca
 
 # ---- Keys, certificates and credentials ----
 *.pem

@@ -45,3 +45,4 @@ No ADR status authorizes starting a phase. Phase authorization is always a separ
 | [0010](0010-project-submission-and-verification-status.md) | Project submissions, update proposals and verification status | **Part A Accepted** (2026-10-12); Part B Proposed |
 | [0011](0011-additional-evm-networks.md) | Additional EVM networks (Base, Arbitrum, BNB Chain, Polygon) | **Proposed** |
 | [0012](0012-public-project-scoreboard.md) | Public project scoreboard | **Accepted (band-only variant)** |
+| [0015](0015-staging-database-operator-execution.md) | Render-only staging database operator execution | **Accepted by owner; Claude independent review pending** |

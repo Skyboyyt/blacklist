@@ -1,0 +1,35 @@
+{
+  "imageId": "sha256:e25167fa1e6274abed24097b787583c3b198f30d68f8871151c437bb3920dbb2",
+  "baseDigest": "sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20",
+  "imageBytesScanned": 1889966592,
+  "secretFileSentinelExcludedFromAllLayers": true,
+  "historyChecked": true,
+  "runtimeUID": 1000,
+  "dormantHealth": 200,
+  "unauthenticatedStatus": 404,
+  "tlsVerificationDisabled": false,
+  "localPublicProxyCAUsed": true,
+  "date": "2026-10-13",
+  "rootCheck": {
+    "passed": true,
+    "unitTests": 498,
+    "format": true,
+    "lint": true,
+    "types": true,
+    "nextBuild": true
+  },
+  "databaseIntegration": {
+    "passed": 47,
+    "failed": 0
+  },
+  "newOperatorTests": {
+    "passed": 8,
+    "failed": 0
+  },
+  "productionDependencyAudit": {
+    "vulnerabilities": 0
+  },
+  "cloudDatabaseChecks": "not yet executed",
+  "claudeReview": "pending",
+  "credentialsInEvidence": false
+}

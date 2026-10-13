@@ -1,0 +1,123 @@
+{
+  "recordedAt": "2026-10-13T13:51:36.986060+00:00",
+  "scope": "Owner reported connecting Neon to Render; configuration and fail-closed verification only",
+  "ownerReportedAction": "Only added connection string; did not run repository role-provisioning/migrations",
+  "render": [
+    {
+      "mode": "api",
+      "id": "srv-db72r4d9fdbs73erf1s0",
+      "metadataStatus": 200,
+      "suspended": "suspended",
+      "branch": "chore/render-staging-deployment",
+      "plan": "free",
+      "region": "frankfurt",
+      "url": "https://blacklist-staging-api.onrender.com",
+      "environmentReadStatus": 200,
+      "databaseURLPresent": true,
+      "databaseURLSafety": {
+        "postgresProtocol": true,
+        "matchesIntendedStagingEndpoint": false,
+        "isPooler": true,
+        "sslModeVerifyFull": false,
+        "expectedStagingDatabase": true,
+        "usesRuntimeRole": false,
+        "usesOperatorRole": true
+      },
+      "operatorCredentialNamesPresent": [],
+      "trustedProxyConfigured": false,
+      "deployInspectionStatus": 200,
+      "deployments": [
+        {
+          "id": "dep-db72r559fdbs73erf560",
+          "status": "canceled",
+          "commit": "11d7cdd5dd1429e29d2307ac24bea0cbb4c93575"
+        }
+      ]
+    },
+    {
+      "mode": "worker",
+      "id": "srv-db72r5ou01pc73c32l5g",
+      "metadataStatus": 200,
+      "suspended": "suspended",
+      "branch": "chore/render-staging-deployment",
+      "plan": "free",
+      "region": "frankfurt",
+      "url": "https://blacklist-staging-worker.onrender.com",
+      "environmentReadStatus": 200,
+      "databaseURLPresent": false,
+      "operatorCredentialNamesPresent": [],
+      "trustedProxyConfigured": false,
+      "deployInspectionStatus": 200,
+      "deployments": [
+        {
+          "id": "dep-db72r60u01pc73c32m60",
+          "status": "canceled",
+          "commit": "11d7cdd5dd1429e29d2307ac24bea0cbb4c93575"
+        }
+      ]
+    }
+  ],
+  "configuredURLAndNativeReachabilityChecks": {
+    "sameIntendedStagingEndpointAfterRemovingPoolerMarker": true,
+    "tlsModeIsRequire": true,
+    "certificateVerificationPolicySatisfied": false,
+    "driverQueryOverridesAbsent": false,
+    "existingRuntimeURLGuardTest": {
+      "guardRejected": true,
+      "code": "runtime_database_configuration_invalid"
+    },
+    "nativeDirectEndpointProbe": {
+      "scope": "TCP only, no database authentication or SQL",
+      "connected": false,
+      "errorType": "OSError",
+      "errno": 101
+    },
+    "connectionStringOrPasswordLogged": false,
+    "runtimeSettingsChanged": false,
+    "databaseQueriedOrChanged": false
+  },
+  "healthProbes": [
+    {
+      "mode": "api",
+      "status": 503,
+      "contentType": "text/html; charset=utf-8",
+      "applicationHealthProven": false
+    },
+    {
+      "mode": "worker",
+      "status": 503,
+      "contentType": "text/html; charset=utf-8",
+      "applicationHealthProven": false
+    }
+  ],
+  "unitChecks": {
+    "command": "pnpm --filter @blacklist/backend-acceptance exec vitest run render-deployment.test.ts worker-health.test.ts resend.test.ts",
+    "passed": 11,
+    "failed": 0,
+    "pending": 0,
+    "success": true
+  },
+  "databaseAuthenticationQueriesMigrations": "Not run; native connectivity blocked",
+  "databaseRecordsReadOrChanged": false,
+  "providerSettingsModified": false,
+  "sourceApplicationSQLOrDependenciesChanged": false,
+  "fullSuiteCoverageAuditBrowser": "Not rerun; prior failures remain unresolved",
+  "privateCredentialsOrRecordsStoredInEvidence": false,
+  "stagingAvailable": false,
+  "productionReady": false,
+  "phase8AuthorizedOrStarted": false,
+  "nextStep": "Use a reachable approved native-PostgreSQL operator machine for the existing provision.mjs and migrate.mjs; validate least-privilege roles, unchanged migrations, TLS/grants/persistence/restore; only then configure direct verify-full blacklist_app URL separately on API and worker and complete reviews/hosted tests.",
+  "publicationChecks": {
+    "formatCheck": "passed",
+    "whitespaceCheck": "passed",
+    "secretScan": {
+      "filesChecked": 4,
+      "actualDatabaseURLAndPasswordMatches": 0,
+      "scannerExitCode": 0,
+      "secretValuesLogged": false
+    },
+    "scanner": "Gitleaks pinned sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9, network none, 100% redaction",
+    "onboardingStartSkillSaved": true,
+    "environmentDraftPublished": false
+  }
+}

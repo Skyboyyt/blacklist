@@ -10,7 +10,7 @@
     "test:integration": "vitest run .integration.test.ts",
     "schema:generate": "drizzle-kit generate --config drizzle.config.ts",
     "test:runtime": "vitest run runtime.integration.test.ts",
-    "test:coverage": "vitest run runtime.integration.test.ts runtime-security.test.ts application-migrations.integration.test.ts delivery-locking.integration.test.ts --coverage"
+    "test:coverage": "vitest run runtime.integration.test.ts runtime-security.test.ts application-migrations.integration.test.ts delivery-locking.integration.test.ts render-deployment.test.ts render-deployment.integration.test.ts resend.test.ts worker-health.test.ts --coverage"
   },
   "devDependencies": {
     "@blacklist/api": "workspace:*",

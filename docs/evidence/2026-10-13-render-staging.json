@@ -1,0 +1,856 @@
+{
+  "date": "2026-10-13",
+  "recordedAt": "2026-10-13T11:14:19.189744+00:00",
+  "scope": "Post-Phase 7 restricted staging preparation; local evidence only. No cloud resources or Phase 8.",
+  "git": {
+    "repository": "Skyboyyt/blacklist",
+    "branch": "chore/render-staging-deployment",
+    "baseMain": "ece2e769fafc9a381ed1b540ae8b7e05fccdbab5",
+    "phase7Implementation": "baafe57220b5b42c4e457d92bbae43cf468ff5fd",
+    "phase6Integrated": "4b16cdb6324e1f5d3b979bd8d5e82ef36ca168ba",
+    "githubDefault": "chore/initial-repository",
+    "mainPublication": "Owner-authorized direct push, not a PR merge",
+    "publication": {
+      "status": "Pushed feature branch; open draft PR, not merged",
+      "implementationCommit": "acd4ea62e958c070eeca039cb27aff5823669790",
+      "pullRequest": "https://github.com/Skyboyyt/blacklist/pull/8",
+      "base": "main",
+      "mainUnchanged": "ece2e769fafc9a381ed1b540ae8b7e05fccdbab5",
+      "followup": "Documentation-only publication receipt"
+    },
+    "preservationStashRetained": true,
+    "openIssuesAtInspection": 0
+  },
+  "providerSelection": {
+    "Render": "Free API and separate optional Free web-hosted status-only worker, Frankfurt",
+    "Neon": "Free PostgreSQL 18, aws-eu-central-1, direct sslmode=verify-full",
+    "Resend": "HTTPS behind existing mail interface; sender/account unverified",
+    "Vercel": "Existing frontend; staging Authentication required, exact URL unknown",
+    "transportApproval": "Owner explicitly accepted authenticated public Neon TLS for restricted staging only",
+    "paidOrProductionApproval": false
+  },
+  "deployment": {
+    "status": "Blocked",
+    "resourcesCreated": 0,
+    "deployedCommit": null,
+    "stagingUrl": null,
+    "providerHealth": "Untested",
+    "providerDatabaseConnectivity": "Untested",
+    "providerEmailDelivery": "Untested",
+    "providerRestore": "Untested",
+    "missingProtectedBindings": ["RENDER_API_KEY", "NEON_API_KEY", "VERCEL_TOKEN", "RESEND_API_KEY"],
+    "accountQuotasAndIngress": "Unverified",
+    "freeWorkerLimit": "Sleeps after 15 idle minutes; manual test-window wake-up, no automated keepalive or continuous-job guarantee"
+  },
+  "checks": {
+    "root": {
+      "command": "pnpm check",
+      "status": "passed",
+      "exitCode": 0,
+      "format": true,
+      "lint": true,
+      "types": true,
+      "productionNextBuild": true,
+      "tests": {
+        "contracts": 79,
+        "web": 391,
+        "backendUnits": 24,
+        "total": 494
+      }
+    },
+    "renderBuild": {
+      "command": "NODE_ENV=production node infrastructure/render/build.mjs worker",
+      "status": "passed",
+      "exitCode": 0,
+      "frozenInstall": true,
+      "backendPackagesBuilt": 5,
+      "Node": "24.21.0",
+      "pnpm": "12.7.0",
+      "dependencyPolicyChanges": "none"
+    },
+    "backend": {
+      "command": "pnpm --filter @blacklist/backend-acceptance exec vitest run --reporter=json --outputFile=/tmp/blacklist-render-neon-backend-final.json",
+      "status": "passed",
+      "exitCode": 0,
+      "passed": 67,
+      "failed": 0,
+      "pending": 0,
+      "files": 15,
+      "assertions": [
+        {
+          "file": "tests/backend-acceptance/src/application-migrations.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "application migration and restore safety backfills populated pre-change rows and retires pending approvals without inventing authority",
+              "status": "passed",
+              "durationMs": 5608.375756
+            },
+            {
+              "name": "application migration and restore safety applies the exact application SQL, restores ownership/grants and detects applied checksum drift",
+              "status": "passed",
+              "durationMs": 4850.252495000001
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/auth.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "S17 configuration forbids the bearer plugin",
+              "status": "passed",
+              "durationMs": 2.4883630000000494
+            },
+            {
+              "name": "S17 configuration forbids the jwt plugin",
+              "status": "passed",
+              "durationMs": 0.2943879999999126
+            },
+            {
+              "name": "S17 configuration forbids the passkey plugin",
+              "status": "passed",
+              "durationMs": 0.12972899999999754
+            },
+            {
+              "name": "S17 configuration forbids the token-conversion plugin",
+              "status": "passed",
+              "durationMs": 0.13798299999996289
+            },
+            {
+              "name": "headless configuration rejects cached cookies, library rate limiting and account linking",
+              "status": "passed",
+              "durationMs": 0.2916850000000295
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/database.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "D1: generated SQL has reviewed identity/audit types, CHECKs, partial uniques and composite FKs",
+              "status": "passed",
+              "durationMs": 6.2716019999998025
+            },
+            {
+              "name": "D2/D9: append function works; grants and triggers deny application tampering",
+              "status": "passed",
+              "durationMs": 57.593182999999954
+            },
+            {
+              "name": "D3: transaction rollback and nontransactional CONCURRENTLY path",
+              "status": "passed",
+              "durationMs": 11.183068999999705
+            },
+            {
+              "name": "D4: subtype, owner and current-assessment composite foreign keys reject mismatches with typed SQLSTATE",
+              "status": "passed",
+              "durationMs": 26.843541999999616
+            },
+            {
+              "name": "D6: same pg client enqueues through a Drizzle transaction; rollback leaves no job",
+              "status": "passed",
+              "durationMs": 15.574115999999776
+            },
+            {
+              "name": "D7: migrator-owned pg-boss starts and fetches jobs as a DML-only runtime login",
+              "status": "passed",
+              "durationMs": 35.26728600000024
+            },
+            {
+              "name": "D5: forward fixture restore rehearsal preserves data and audit hash chain",
+              "status": "passed",
+              "durationMs": 600.0102960000004
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/delivery-locking.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "application token delivery lock ordering does not issue reset authority to an old mailbox after a concurrent email transition",
+              "status": "passed",
+              "durationMs": 5654.541822
+            },
+            {
+              "name": "application token delivery lock ordering finalization waits for account transition without holding a token lock",
+              "status": "passed",
+              "durationMs": 4728.989337
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/delivery.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "S13: concurrent issuers serialize generations; only the accepted latest link can be active",
+              "status": "passed",
+              "durationMs": 118.84514899999976
+            },
+            {
+              "name": "S13: tokens remain pending before provider acceptance; stale requests and cleanup fail closed",
+              "status": "passed",
+              "durationMs": 100.23775800000021
+            },
+            {
+              "name": "S14: real pg-boss failure and retry produce new generations, latest-only acceptance, no token in jobs/logs",
+              "status": "passed",
+              "durationMs": 6722.084322
+            },
+            {
+              "name": "S14: permanent failure completes without retry; acceptance followed by crash is not redeemable",
+              "status": "passed",
+              "durationMs": 612.5934830000006
+            },
+            {
+              "name": "S14: exhausted real jobs reach a DLQ containing identifiers and sanitized errors only",
+              "status": "passed",
+              "durationMs": 6666.664721000001
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/identity.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "D8/S6: Better Auth Drizzle adapter user/account writes rollback with registration state and audit",
+              "status": "passed",
+              "durationMs": 107.76787599999989
+            },
+            {
+              "name": "S4/S5/S11 baseline: signed login creates policy/activity data; missing policy and stale version fail",
+              "status": "passed",
+              "durationMs": 53.40420499999982
+            },
+            {
+              "name": "S3: normal registration, sign-in and sign-out leave auth_verifications empty",
+              "status": "passed",
+              "durationMs": 0.8602920000002996
+            },
+            {
+              "name": "S1/S2: only declared Blacklist routes; exact host-cookie stored and sent by a real browser",
+              "status": "passed",
+              "durationMs": 646.4355619999997
+            },
+            {
+              "name": "S7: successful Better Auth login replaces an outdated Argon2id PHC hash",
+              "status": "passed",
+              "durationMs": 31.580716000000393
+            },
+            {
+              "name": "S9: library flows work with HTTP/HTTPS/fetch denied and sockets limited to the test PostgreSQL port",
+              "status": "passed",
+              "durationMs": 31.896834000000126
+            },
+            {
+              "name": "S10: actual auth model SQL is migrator-owned and runtime cannot perform DDL",
+              "status": "passed",
+              "durationMs": 12.169841999999335
+            },
+            {
+              "name": "S12: unknown-email vs wrong-password median timing differs by <=20ms and ratio <=1.5",
+              "status": "passed",
+              "durationMs": 467.30217100000027
+            },
+            {
+              "name": "S17: E-1 attack variants fail; legitimate cookies work; rotation plus revoke-all invalidates them",
+              "status": "passed",
+              "durationMs": 63.68959900000027
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/password.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "S8: NFKC, Unicode code-point and byte boundaries reject without truncation",
+              "status": "passed",
+              "durationMs": 2.891278
+            },
+            {
+              "name": "S7 primitive: Argon2id verifies normalized passwords and detects stale parameters",
+              "status": "passed",
+              "durationMs": 33.56652599999998
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/render-deployment.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18) provisions with a non-superuser owner, preserves credentials and applies seven existing migrations",
+              "status": "passed",
+              "durationMs": 274.49063300000034
+            },
+            {
+              "name": "managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18) keeps authentication, exact Origin and internal-route policy mandatory behind the staging gate",
+              "status": "passed",
+              "durationMs": 115.50325100000009
+            },
+            {
+              "name": "managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18) reports a database health failure safely instead of returning fake readiness",
+              "status": "passed",
+              "durationMs": 10.743772000000718
+            },
+            {
+              "name": "managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18) retains synthetic private state after application runtime restart",
+              "status": "passed",
+              "durationMs": 23.676134000000275
+            },
+            {
+              "name": "managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18) rejects preexisting unsafe roles instead of repairing them silently",
+              "status": "passed",
+              "durationMs": 10.584350999999515
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/render-deployment.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "Render deployment security boundaries maps the Render port and withholds operator credentials and unrelated environment",
+              "status": "passed",
+              "durationMs": 3.3874199999999917
+            },
+            {
+              "name": "Render deployment security boundaries rejects wrong role, unverifiable TLS, invalid port and production activation",
+              "status": "passed",
+              "durationMs": 1.7238010000000088
+            },
+            {
+              "name": "Render deployment security boundaries requires an independent staging secret while retaining HTTPS and exact RP configuration",
+              "status": "passed",
+              "durationMs": 3.8420710000000042
+            },
+            {
+              "name": "Render deployment security boundaries denies direct/forged API access; only safe liveness probes bypass the staging gate",
+              "status": "passed",
+              "durationMs": 50.05847400000002
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/resend.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "Resend HTTPS security mail acceptance (controlled provider responses) requires a real validated provider receipt, a fixed TLS endpoint and redirect rejection",
+              "status": "passed",
+              "durationMs": 12.964349999999996
+            },
+            {
+              "name": "Resend HTTPS security mail acceptance (controlled provider responses) never activates a token from an empty, invalid, extra-field or oversized success body",
+              "status": "passed",
+              "durationMs": 3.6996189999999842
+            },
+            {
+              "name": "Resend HTTPS security mail acceptance (controlled provider responses) retries rate limits/outages and permanently rejects other HTTP errors without reflecting private bodies",
+              "status": "passed",
+              "durationMs": 3.828628000000009
+            },
+            {
+              "name": "Resend HTTPS security mail acceptance (controlled provider responses) treats network failures and invalid configuration as failures, retaining SMTP requirements",
+              "status": "passed",
+              "durationMs": 2.0046020000000055
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/reset.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "S16: crash after every reset boundary leaves credential, tokens, sessions, version, cooling, audit and notice unchanged",
+              "status": "passed",
+              "durationMs": 307.96327699999983
+            },
+            {
+              "name": "S16: simultaneous redemption succeeds once; sign-in racing reset never keeps an old-version session",
+              "status": "passed",
+              "durationMs": 131.51455499999975
+            },
+            {
+              "name": "S16: reset vs email_change serializes on security version with exactly one transition",
+              "status": "passed",
+              "durationMs": 38.377089000000524
+            },
+            {
+              "name": "S16: reset vs recovery serializes on security version with exactly one transition",
+              "status": "passed",
+              "durationMs": 37.35480000000007
+            },
+            {
+              "name": "S16: reset vs suspension serializes on security version with exactly one transition",
+              "status": "passed",
+              "durationMs": 37.445198999999775
+            },
+            {
+              "name": "S16 negatives: expired, wrong-purpose, stale-version and unassured staff reset never replace credentials",
+              "status": "passed",
+              "durationMs": 161.27125200000046
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "runtime security/configuration boundaries rejects malformed configuration without exporting secret values; RP and TLS boundaries fail closed",
+              "status": "passed",
+              "durationMs": 7.148190999999997
+            },
+            {
+              "name": "runtime security/configuration boundaries normalizes IPv6 /64 and mapped IPv4 buckets without admitting arbitrary prefixes",
+              "status": "passed",
+              "durationMs": 4.014184999999998
+            },
+            {
+              "name": "runtime security/configuration boundaries defaults to deny for unknown permissions, members with forged roles and unassured/deficient staff",
+              "status": "passed",
+              "durationMs": 0.3986579999999549
+            },
+            {
+              "name": "runtime security/configuration boundaries rejects controls, overlength input, reserved/confusable handles and never truncates credentials",
+              "status": "passed",
+              "durationMs": 1.9873380000000225
+            },
+            {
+              "name": "runtime security/configuration boundaries uses the bundled breach blocklist on outage and honors positive range responses",
+              "status": "passed",
+              "durationMs": 2.3586259999999584
+            },
+            {
+              "name": "runtime security/configuration boundaries verifies Argon2id after NFKC and rejects a different password with real bounded hashing",
+              "status": "passed",
+              "durationMs": 32.65171499999997
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/runtime.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "Phase 7 application foundation (not disposable gate schema) cleans an expired enrollment flow even when its last challenge has a later expiry",
+              "status": "passed",
+              "durationMs": 29.85977499999899
+            },
+            {
+              "name": "Phase 7 application foundation (not disposable gate schema) runs reviewed migrations twice and protects runtime DDL, TEMP, audit and staff role boundaries",
+              "status": "passed",
+              "durationMs": 65.5921300000009
+            },
+            {
+              "name": "Phase 7 application foundation (not disposable gate schema) rejects every invalid mutation origin, raw token surface and undeclared route",
+              "status": "passed",
+              "durationMs": 36.91754000000037
+            },
+            {
+              "name": "Phase 7 application foundation (not disposable gate schema) completes email-first registration via real queued SMTP delivery and rejects replay",
+              "status": "passed",
+              "durationMs": 1067.1170780000011
+            },
+            {
+              "name": "Phase 7 application foundation (not disposable gate schema) enforces split-secret invitation delivery, five attempts, no partial account and no bootstrap reuse",
+              "status": "passed",
+              "durationMs": 5399.316505000001
+            },
+            {
+              "name": "Phase 7 application foundation (not disposable gate schema) activates staff only after two verified keys; binds assurance, independent approvals, offboarding and recovery barriers",
+              "status": "passed",
+              "durationMs": 12885.632144
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/webauthn.integration.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "S16 staff path: real UV assertion; reset/challenge rollback together; wrong origin, token, expiry and replay fail",
+              "status": "passed",
+              "durationMs": 6664.4607479999995
+            }
+          ]
+        },
+        {
+          "file": "tests/backend-acceptance/src/worker-health.test.ts",
+          "status": "passed",
+          "tests": [
+            {
+              "name": "separate free-web worker health boundary probes the actual supplied database check and exposes no private data or mutation route",
+              "status": "passed",
+              "durationMs": 36.36812899999998
+            },
+            {
+              "name": "separate free-web worker health boundary reports database outage as sanitized 503 and closes cleanly",
+              "status": "passed",
+              "durationMs": 4.755435000000006
+            },
+            {
+              "name": "separate free-web worker health boundary fails port conflicts safely and never passes API/signer/operator credentials to a web worker",
+              "status": "passed",
+              "durationMs": 2.2579530000000148
+            }
+          ]
+        }
+      ]
+    },
+    "coverage": {
+      "command": "pnpm --filter @blacklist/backend-acceptance run test:coverage --coverage.reportsDirectory=/tmp/blacklist-render-neon-coverage",
+      "status": "failed",
+      "exitCode": 1,
+      "assertionsPassed": 32,
+      "filesPassed": 8,
+      "globalBranches": {
+        "total": 1359,
+        "covered": 804,
+        "skipped": 0,
+        "pct": 59.16
+      },
+      "requiredGlobalPercent": 75,
+      "moduleBranchesPercent": {
+        "identity": 58.82,
+        "access": 77.27,
+        "audit": 80,
+        "staff": 48.65,
+        "db": 62.5,
+        "api": 71.69,
+        "worker": 68.96
+      },
+      "requiredSecurityPercent": 90,
+      "requiredOtherPercent": 75,
+      "policiesWeakened": false
+    },
+    "audit": {
+      "command": "pnpm audit --json",
+      "status": "failed",
+      "exitCode": 1,
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 1,
+        "critical": 0
+      },
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "dependency": "braces; development tooling",
+      "publishedFix": "none reported",
+      "suppression": "none"
+    },
+    "productionAudit": {
+      "command": "pnpm audit --prod --json",
+      "status": "passed",
+      "exitCode": 0,
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      }
+    },
+    "drizzle": {
+      "command": "pnpm --filter @blacklist/db exec drizzle-kit generate --config drizzle.config.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "schemaChanges": 0
+    },
+    "mockExclusion": {
+      "command": "pnpm --filter @blacklist/web run check:mock-exclusion",
+      "status": "passed",
+      "exitCode": 0,
+      "checksPassed": 4
+    },
+    "renderSchema": {
+      "status": "passed",
+      "schema": "https://render.com/schema/render.yaml.json",
+      "templates": [
+        {
+          "file": "infrastructure/render/blueprint.staging.yaml",
+          "passed": true,
+          "errorCount": 0
+        },
+        {
+          "file": "infrastructure/render/blueprint.staging-free.yaml",
+          "passed": true,
+          "errorCount": 0
+        },
+        {
+          "file": "infrastructure/render/blueprint.staging-neon-free.yaml",
+          "passed": true,
+          "errorCount": 0
+        }
+      ],
+      "scope": "Configuration syntax only; not account capabilities or deployment"
+    },
+    "nativeNextApiPreflight": {
+      "scope": "local HTTP/native Node/Next preflight only; not Render, Vercel Authentication or Resend delivery",
+      "outcomes": [
+        {
+          "name": "api-health",
+          "expected": 200,
+          "status": 200,
+          "pass": true
+        },
+        {
+          "name": "web-login",
+          "expected": 200,
+          "status": 200,
+          "pass": true
+        },
+        {
+          "name": "direct-api-gate",
+          "expected": 404,
+          "status": 404,
+          "pass": true
+        },
+        {
+          "name": "proxy-still-requires-session",
+          "expected": 401,
+          "status": 401,
+          "pass": true
+        },
+        {
+          "name": "proxy-valid-origin-invalid-input",
+          "expected": 400,
+          "status": 400,
+          "pass": true
+        },
+        {
+          "name": "proxy-foreign-origin",
+          "expected": 403,
+          "status": 403,
+          "pass": true
+        }
+      ],
+      "responseSecretLeaks": 0,
+      "buildFiles": 1069,
+      "buildSecretLeaks": 0,
+      "browserServerOnlyNames": 0,
+      "mockMarkers": 0
+    },
+    "nativeWorkerSmoke": {
+      "scope": "native local worker with existing PostgreSQL and SMTP; not hosted Render or Resend proof",
+      "outcomes": [
+        {
+          "name": "native-worker-DB-backed-health",
+          "pass": true
+        },
+        {
+          "name": "HEAD /healthz",
+          "expected": 200,
+          "status": 200,
+          "pass": true
+        },
+        {
+          "name": "POST /healthz",
+          "expected": 404,
+          "status": 404,
+          "pass": true
+        },
+        {
+          "name": "GET /api/v1/auth/login",
+          "expected": 404,
+          "status": 404,
+          "pass": true
+        }
+      ],
+      "shutdown": {
+        "code": 0,
+        "signal": null
+      },
+      "logSecretLeaks": 0
+    },
+    "fullFrontendBrowser": {
+      "status": "not rerun in this infrastructure task",
+      "priorPhase7Result": {
+        "passed": 416,
+        "timeouts": 2,
+        "skipped": 82
+      },
+      "focusedTimeoutReruns": "Both passed unchanged; does not make full run pass"
+    },
+    "providerStagingSmoke": "Not run; blocked on credentials, actual project/origin/protection/routing/sender and security checks",
+    "finalFormatAndLint": {
+      "status": "passed",
+      "commands": ["pnpm format:check", "pnpm lint"],
+      "exitCodes": [0, 0],
+      "formattingNote": "Initial explicit file formatter could not infer .env.example; corrected with --ignore-unknown, then repository format check passed"
+    }
+  },
+  "gates": {
+    "D1-D9": "Passed required isolated criteria in current complete backend run; exact requirements/mapping retained in docs/phase7-acceptance.md",
+    "S1-S17": "Passed required isolated criteria in current complete backend run; no assertion or timing threshold weakened",
+    "applicationCoverage": "Failed; isolated proofs do not override coverage or production gates"
+  },
+  "migrations": {
+    "applicationTables": 27,
+    "newSQLMigrations": 0,
+    "existingSQLFilesChanged": 0,
+    "reviewedFiles": [
+      {
+        "path": "packages/db/migrations/0001_security_boundaries.sql",
+        "sha256": "eccc90e793edf9a2bec8241b1527dc46d4e5990cb43567611c0426f6fe088642"
+      },
+      {
+        "path": "packages/db/migrations/0002_identity_guards.sql",
+        "sha256": "197cd3b5cee18ed91ba6e12712740a96d0f7bd535b47d3e197ca11fdb60178c1"
+      },
+      {
+        "path": "packages/db/migrations/generated/0000_fixed_alex_wilder.sql",
+        "sha256": "775f41df461cb2702685ae670216b272173ec14365999bd7f08b7bac3dcdaf29"
+      },
+      {
+        "path": "packages/db/migrations/generated/0001_rich_tomorrow_man.sql",
+        "sha256": "f0e67d86f1c92eb764ef7cd541b3eef6eb39a36b3f5d30e3a986d2014edbe39d"
+      },
+      {
+        "path": "packages/db/migrations/generated/0002_material_thunderbird.sql",
+        "sha256": "8746fa0feb13db7fbca15952a1f0a96bb8ef207267471243e69a9ff35aa19cce"
+      },
+      {
+        "path": "packages/db/migrations/generated/0003_absurd_miek.sql",
+        "sha256": "54aa4549df9cc82ac2d4a5b61eb1dd3c4283fe16e233fcefce8d7f6713ca9c28"
+      },
+      {
+        "path": "packages/db/migrations/generated/0004_harsh_molten_man.sql",
+        "sha256": "e46d1bcd6639a185009d2ddda6cad46a04b5933398e58e0db7987890a8d96eca"
+      }
+    ],
+    "localChecks": "Fresh and repeat apply, populated upgrades, checksum tamper rejection, logical dump/restore with ownership/ACL/audit hashes, non-superuser provisioning, DML-only negatives, restart persistence",
+    "managedProviderChecks": "Untested; local rehearsal does not prove Neon restoration"
+  },
+  "secrets": {
+    "scanner": "Gitleaks 8.30.0",
+    "image": "zricethezav/gitleaks@sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9",
+    "network": "none",
+    "redaction": "100%",
+    "scans": [
+      {
+        "kind": "tree",
+        "scannerExitCode": 1,
+        "rawFindings": 3,
+        "classifiedFindings": [
+          {
+            "file": "docs/reviews/2026-10-12-phase-2-codex-review.md",
+            "line": 45,
+            "rule": "generic-api-key",
+            "classification": "Prose about authentication/security boundaries; no credential value"
+          },
+          {
+            "file": "docs/phase7-acceptance.md",
+            "line": 52,
+            "rule": "generic-api-key",
+            "classification": "Prose about authentication/security boundaries; no credential value"
+          },
+          {
+            "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+            "line": 18,
+            "rule": "generic-api-key",
+            "classification": "Explicit fictional configuration placeholder; not a credential"
+          }
+        ],
+        "actualCredentials": 0,
+        "rulesDisabled": false
+      },
+      {
+        "kind": "history before infrastructure feature commit; all refs",
+        "scannerExitCode": 1,
+        "rawFindings": 4,
+        "classifiedFindings": [
+          {
+            "file": "docs/phase7-acceptance.md",
+            "line": 52,
+            "rule": "generic-api-key",
+            "classification": "Prose about authentication/security boundaries; no credential value",
+            "commit": "baafe57220b5b42c4e457d92bbae43cf468ff5fd"
+          },
+          {
+            "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+            "line": 18,
+            "rule": "generic-api-key",
+            "classification": "Explicit fictional configuration placeholder; not a credential",
+            "commit": "baafe57220b5b42c4e457d92bbae43cf468ff5fd"
+          },
+          {
+            "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+            "line": 18,
+            "rule": "generic-api-key",
+            "classification": "Explicit fictional configuration placeholder; not a credential",
+            "commit": "b1800e89491e1eeec4a80c252d3c8a80c83a52a1"
+          },
+          {
+            "file": "docs/reviews/2026-10-12-phase-2-codex-review.md",
+            "line": 42,
+            "rule": "generic-api-key",
+            "classification": "Prose about authentication/security boundaries; no credential value",
+            "commit": "9704983a416d8bb436dd6ba8c273f56af20768f6"
+          }
+        ],
+        "actualCredentials": 0,
+        "rulesDisabled": false
+      },
+      {
+        "kind": "exact staged blobs before publication",
+        "files": 635,
+        "scannerExitCode": 1,
+        "rawFindings": 3,
+        "classifiedFindings": [
+          {
+            "file": "docs/reviews/2026-10-12-phase-2-codex-review.md",
+            "line": 45,
+            "rule": "generic-api-key",
+            "classification": "Prose about authentication/security boundaries; no credential value"
+          },
+          {
+            "file": "docs/phase7-acceptance.md",
+            "line": 52,
+            "rule": "generic-api-key",
+            "classification": "Prose about authentication/security boundaries; no credential value"
+          },
+          {
+            "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+            "line": 18,
+            "rule": "generic-api-key",
+            "classification": "Explicit fictional configuration placeholder; not a credential"
+          }
+        ],
+        "actualCredentials": 0,
+        "rulesDisabled": false
+      }
+    ],
+    "realCredentialsFound": 0,
+    "rotation": "No actual exposed credential identified; no rotation claimed",
+    "exactLocalSecretByteScan": {
+      "secretValuesChecked": 8,
+      "filesChecked": 4342,
+      "matchedFiles": [],
+      "localEnvironmentIgnored": true,
+      "localEnvironmentMode": "600"
+    }
+  },
+  "costs": {
+    "selectedBaseUSDPerMonth": 0,
+    "condition": "Confirmed Free organizations/accounts and within quotas; actual accounts uninspected",
+    "paidResourcesCreated": 0,
+    "freeLimits": "Render shared instance-hours/sleep/egress, Neon 100 CU-hours/project, 1GB/project, 5GB project egress and limited six-hour history; Resend daily/monthly quotas and retention; existing Vercel seats/usage unverified",
+    "paidComparisonNotAuthorizedUSDPerMonth": 23
+  },
+  "reviewAndReadiness": {
+    "implementationSelfReview": "docs/reviews/2026-10-13-render-staging-security.md",
+    "independentClaudeReview": "Pending",
+    "ADR0013AndO6": "Open; current paths remain fail closed",
+    "productionReadiness": "Blocked",
+    "Phase8": "Not begun or authorized"
+  },
+  "evidenceHandling": "Sanitized names, outcomes, counts and hashes only; no cookies, bearer links, mail bodies, provider payloads or secret values."
+}

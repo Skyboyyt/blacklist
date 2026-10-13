@@ -38,6 +38,13 @@ const shared = z.object({
   WEBAUTHN_RP_NAME: z.string().min(1).default('Blacklist'),
 });
 const apiSchema = shared.extend({
+  DEPLOYMENT_ENV: z.enum(['local', 'staging', 'production']).default('local'),
+  STAGING_ACCESS_TOKEN: z
+    .string()
+    .min(32)
+    .max(128)
+    .regex(/^[A-Za-z0-9_-]+$/u)
+    .optional(),
   API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).default('127.0.0.1'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4107),
   INTERNAL_API_TOKEN: z.string().min(32),
@@ -58,8 +65,16 @@ const apiSchema = shared.extend({
     }),
 });
 const workerSchema = shared.omit({ BETTER_AUTH_SECRET: true }).extend({
-  SMTP_HOST: z.string().min(1),
-  SMTP_PORT: z.coerce.number().int().min(1).max(65535),
+  WORKER_HEALTH_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  EMAIL_PROVIDER: z.enum(['smtp', 'resend']).default('smtp'),
+  RESEND_API_KEY: z
+    .string()
+    .min(16)
+    .max(512)
+    .regex(/^[A-Za-z0-9_-]+$/u)
+    .optional(),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
   SMTP_SECURE: z.enum(['true', 'false']).default('true'),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
@@ -80,6 +95,13 @@ function parse<S extends z.ZodType>(
 }
 export const readApiConfig = (env = process.env) => {
   const config = parse(apiSchema, env);
+  if (
+    config.DEPLOYMENT_ENV === 'staging' &&
+    (!config.STAGING_ACCESS_TOKEN ||
+      config.STAGING_ACCESS_TOKEN === config.BETTER_AUTH_SECRET ||
+      config.STAGING_ACCESS_TOKEN === config.INTERNAL_API_TOKEN)
+  )
+    throw new Error('STAGING_ACCESS_TOKEN requires an independent staging secret');
   if (config.NODE_ENV === 'production' && new URL(config.APP_ORIGIN).protocol !== 'https:')
     throw new Error('APP_ORIGIN requires HTTPS in production');
   if (new URL(config.APP_ORIGIN).hostname !== config.WEBAUTHN_RP_ID)
@@ -88,8 +110,14 @@ export const readApiConfig = (env = process.env) => {
 };
 export const readWorkerConfig = (env = process.env) => {
   const config = parse(workerSchema, env);
-  if (config.NODE_ENV === 'production' && config.SMTP_SECURE !== 'true')
+  if (config.EMAIL_PROVIDER === 'resend' && !config.RESEND_API_KEY)
+    throw new Error('RESEND_API_KEY required for Resend');
+  if (config.EMAIL_PROVIDER === 'smtp' && (!config.SMTP_HOST || !config.SMTP_PORT))
+    throw new Error('SMTP_HOST and SMTP_PORT required for SMTP');
+  if (config.EMAIL_PROVIDER === 'smtp' && config.NODE_ENV === 'production' && config.SMTP_SECURE !== 'true')
     throw new Error('SMTP_SECURE required in production');
+  if (config.NODE_ENV === 'production' && new URL(config.APP_ORIGIN).protocol !== 'https:')
+    throw new Error('APP_ORIGIN requires HTTPS in production');
   return config;
 };
 export type ApiConfig = ReturnType<typeof readApiConfig>;
