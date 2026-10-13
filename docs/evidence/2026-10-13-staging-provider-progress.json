@@ -1,0 +1,224 @@
+{
+  "recordedAt": "2026-10-13T12:38:01.872570+00:00",
+  "status": "Partially provisioned; complete staging deployment blocked",
+  "scope": "Post-Phase 7 free restricted staging; no production or Phase 8",
+  "credentialConfiguration": {
+    "expectedNames": ["RENDER_API_KEY", "NEON_API_KEY", "VERCEL_TOKEN", "RESEND_API_KEY"],
+    "savedBindings": 4,
+    "expectedRuntimeBindingsPresent": 4,
+    "misnamedEntriesRemaining": 0,
+    "ownerReportedCorrectionAndRotation": true,
+    "rawSecretValuesOrArbitraryNamesLogged": false,
+    "readOnlyAccessVerified": {
+      "Render": {
+        "path": "/v1/services?limit=100",
+        "status": 200,
+        "resources": 0,
+        "unauthenticatedControlStatus": 401
+      },
+      "Neon": {
+        "path": "/api/v2/projects?org_id=selected-organization",
+        "status": 200,
+        "organizationPlan": "free"
+      },
+      "Vercel": {
+        "path": "/v9/projects",
+        "status": 200,
+        "matchedProject": "blacklist-web"
+      },
+      "Resend": {
+        "path": "/domains",
+        "status": 200,
+        "configuredSendingDomains": 0
+      }
+    }
+  },
+  "neonCreation": {
+    "created": true,
+    "httpStatus": 201,
+    "project": {
+      "id": "curly-thunder-05276273",
+      "name": "blacklist-staging",
+      "region_id": "aws-eu-central-1",
+      "pg_version": 18,
+      "org_id": "org-super-snow-51380080",
+      "history_retention_seconds": 21600
+    },
+    "verifiedOrganizationPlan": "free",
+    "baseResourceCostUSD": 0,
+    "originalUSProjectModified": false,
+    "applicationMigrationsApplied": false,
+    "databaseConnectionTested": false,
+    "apiDeployed": false,
+    "secretsLoggedOrPersisted": false,
+    "selectedProfileMatches": true
+  },
+  "neonEndpoints": {
+    "endpointId": "ep-twilight-bar-b9lxt63r",
+    "branchId": "br-wispy-unit-b95vz858",
+    "branchName": "staging",
+    "computeMinCU": 0.25,
+    "computeMaxCU": 0.25,
+    "suspendTimeoutMetadataSeconds": 0,
+    "actualIdleSuspensionTested": false,
+    "storageMetadataBytes": 0,
+    "historyRetentionSeconds": 21600,
+    "initialCreationAttempts": {
+      "status": 412,
+      "diagnosedField": "suspend_timeout_seconds",
+      "correction": "Omitted override; provider-managed Free behavior retained",
+      "finalStatus": 201
+    },
+    "existingUSProjectTouched": false,
+    "operatorRoleAndDatabaseNamesRequested": {
+      "operatorRole": "blacklist_provisioner",
+      "database": "blacklist_staging"
+    },
+    "applicationSchemaApplied": false,
+    "runtimeSQLRoleProvisioned": false,
+    "authenticatedTLSQueryTested": false,
+    "restorationTested": false
+  },
+  "postgresConnectivity": {
+    "ordinaryWorkspaceProbe": "DNS resolution failed",
+    "additionalPermittedIPv4Probe": {
+      "connected": false,
+      "errorCode": 111,
+      "errorType": "ConnectionRefusedError"
+    },
+    "interpretation": "Metadata access is not SQL access; provider outage/root cause not proven. No DB authentication/query executed. Requires approved direct-PG operator environment; no TLS downgrade or alternate HTTP driver."
+  },
+  "render": {
+    "serviceListStatus": 200,
+    "existingServices": 0,
+    "ownerDiscoveryStatus": 403,
+    "ownerDiscoveryResponse": "Cloudflare HTML challenge/block",
+    "ownerIdKnown": false,
+    "apiServiceCreated": false,
+    "workerServiceCreated": false,
+    "deployedCommit": null,
+    "healthCheck": "Untested; no deployed API",
+    "trustedIngress": "Untested"
+  },
+  "vercel": {
+    "projectId": "prj_pLJy3kpakJczycujT8lfWlE4fjlh",
+    "projectName": "blacklist-web",
+    "nodeVersion": "24.x",
+    "rootDirectory": "apps/web",
+    "productionBranchPreserved": "chore/initial-repository",
+    "protectionSetting": "all_except_custom_domains",
+    "stableBranchOrigin": "https://blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app",
+    "inspectedImmutablePreview": "https://blacklist-f0wh8qdpv-skyboy.vercel.app",
+    "inspectedPreviewCommit": "fab817eb99542adab1293905116d48b6c94e5442",
+    "signedOutProtectionChecks": [
+      {
+        "target": "immutable preview /login",
+        "status": 302,
+        "redirectHost": "vercel.com",
+        "credentialsSupplied": false,
+        "authenticationPageDetected": true
+      },
+      {
+        "target": "stable branch alias /login",
+        "status": 302,
+        "redirectHost": "vercel.com",
+        "credentialsSupplied": false,
+        "authenticationPageDetected": true
+      }
+    ],
+    "previewEnvCount": 0,
+    "mockModeDeclared": false,
+    "loggedInTesterAccess": "Untested",
+    "backendCookieOriginSSRFlows": "Untested",
+    "productionSettingsModified": false,
+    "blueprintUpdatedToActualStableOrigin": true
+  },
+  "resend": {
+    "domainListStatus": 200,
+    "configuredDomains": 0,
+    "senderVerified": false,
+    "ownerControlledTestMailboxKnown": false,
+    "providerEmailSent": false,
+    "actualAcceptanceActivationReset": "Untested",
+    "trackingAndRetention": "Unverified"
+  },
+  "newCosts": {
+    "providerOrganizationPlanVerified": "Neon Free",
+    "newStagingProjectBaseUSDPerMonth": 0,
+    "paidResourceOrBillingChange": false,
+    "renderServicesCreated": 0,
+    "limits": "Free compute/storage/egress/history and existing Vercel account usage still apply; actual usage not a cost guarantee"
+  },
+  "checksThisSession": {
+    "deploymentSecurityUnits": {
+      "passed": 11,
+      "failed": 0,
+      "pending": 0,
+      "command": "pnpm --filter @blacklist/backend-acceptance exec vitest run render-deployment.test.ts worker-health.test.ts resend.test.ts",
+      "exitCode": 0
+    },
+    "renderOfficialSchema": [
+      {
+        "file": "infrastructure/render/blueprint.staging-free.yaml",
+        "passed": true,
+        "errors": 0
+      },
+      {
+        "file": "infrastructure/render/blueprint.staging-neon-free.yaml",
+        "passed": true,
+        "errors": 0
+      },
+      {
+        "file": "infrastructure/render/blueprint.staging.yaml",
+        "passed": true,
+        "errors": 0
+      }
+    ],
+    "localRestore": {
+      "composeUpExitCode": 0,
+      "localRoleProvisioningExitCode": 0,
+      "localMigrationExitCode": 0,
+      "originalVolumesPreserved": true,
+      "APIHealthStatus": 200,
+      "anonymousPrivateRouteStatus": 401,
+      "foreignOriginStatus": 403,
+      "apiAndWorkerRestartedViaWhitelists": true,
+      "syntheticMailSmoke": {
+        "scope": "restored local API/worker/PostgreSQL/Mailpit; not hosted staging or Resend",
+        "registrationStatus": 202,
+        "expected": 202,
+        "syntheticLocalSMTPMessageObserved": true,
+        "mailBodiesOrTokensLogged": false
+      }
+    },
+    "fullApplicationSuites": "Not rerun; no application logic changed. Prior 494 root/67 backend passes retained as previous evidence, not newly claimed. Prior coverage, full audit and browser gaps remain open."
+  },
+  "remainingRequiredInputs": [
+    "Existing Render workspace ID, not an API key",
+    "Owned Resend sender domain, or account mailbox for restricted initial default-sender test",
+    "Approved machine/release runner with PostgreSQL TCP access for existing provision/migrate scripts"
+  ],
+  "architectureAndSecurity": {
+    "newDependenciesOrDatabaseDriver": false,
+    "SQLFilesModified": false,
+    "mockProductionAuthorityAdded": false,
+    "credentialValuesStoredInGitHubOrFrontend": false,
+    "TLSVerificationDisabled": false,
+    "autoKeepaliveAdded": false,
+    "independentClaudeReview": "Pending",
+    "coverageAndFullAudit": "Failing in prior maintained runs; no waiver",
+    "ADR0013O6": "Unresolved, current paths fail closed",
+    "phase8": "Not started or authorized"
+  },
+  "networkDraft": {
+    "savedRequiredHosts": [
+      "blacklist-f0wh8qdpv-skyboy.vercel.app",
+      "blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app",
+      "api-docs.render.com"
+    ],
+    "draftSaveDoesNotProvePublication": true,
+    "previewHTTPAccessNowTested": true,
+    "apiDocsStillUnavailable": true
+  },
+  "dataHandling": "Provider status, public deployment URLs and non-secret resource IDs only; no credentials, connection strings, mail bodies, cookie values, private user records or raw provider errors."
+}

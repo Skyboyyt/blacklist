@@ -24,9 +24,9 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: APP_ORIGIN
-        sync: false
+        value: https://blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app
       - key: WEBAUTHN_RP_ID
-        sync: false
+        value: blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app
       - key: WEBAUTHN_RP_NAME
         value: Blacklist Staging
       - key: BETTER_AUTH_SECRET
@@ -58,9 +58,9 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: APP_ORIGIN
-        sync: false
+        value: https://blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app
       - key: WEBAUTHN_RP_ID
-        sync: false
+        value: blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app
       - key: EMAIL_PROVIDER
         value: resend
       - key: RESEND_API_KEY
