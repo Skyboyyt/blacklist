@@ -1,0 +1,238 @@
+{
+  "date": "2026-10-13",
+  "status": "public foundation website and backend services live; signed-in SSR remains blocked",
+  "ownerAuthorization": {
+    "instruction": "remove restriction and merged everything to go live no long talk",
+    "scope": "merge current PR and activate existing Free foundation deployment, remove visitor hosting gate",
+    "testsOrIdentityChecksDisabled": false,
+    "phase8Started": false
+  },
+  "github": {
+    "pr8Merged": true,
+    "mergeCommit": "ef3844755ca95e58ba65880b7521165910c36143",
+    "frontendParentCommit": "34447fe703b51bc615ac34fa90c4bd9ce8dde148",
+    "mergedAndFrontendTree": "da13ee40f77cfca7981b719ab25a06608ee3917c",
+    "identicalTreesVerified": true
+  },
+  "render": {
+    "sourceCommit": "ef3844755ca95e58ba65880b7521165910c36143",
+    "services": {
+      "api": {
+        "id": "srv-db72r4d9fdbs73erf1s0",
+        "deployment": {
+          "id": "dep-db7771bbc2fs73e1satg",
+          "status": "live",
+          "commit": "ef3844755ca95e58ba65880b7521165910c36143",
+          "trigger": "api"
+        },
+        "branch": "main",
+        "plan": "free",
+        "region": "frankfurt",
+        "suspended": "not_suspended"
+      },
+      "worker": {
+        "id": "srv-db72r5ou01pc73c32l5g",
+        "deployment": {
+          "id": "dep-db7771ss728c73fc6s7g",
+          "status": "live",
+          "commit": "ef3844755ca95e58ba65880b7521165910c36143",
+          "trigger": "api"
+        },
+        "branch": "main",
+        "plan": "free",
+        "region": "frankfurt",
+        "suspended": "not_suspended"
+      }
+    },
+    "paidPlanOrProductionDatabaseChanged": false
+  },
+  "vercel": {
+    "alias": "https://blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app",
+    "deploymentId": "dpl_AvkcZVJY5yGAgz9ESRbW6ZGusmaW",
+    "readyState": "READY",
+    "sourceCommit": "34447fe703b51bc615ac34fa90c4bd9ce8dde148",
+    "projectId": "prj_pLJy3kpakJczycujT8lfWlE4fjlh",
+    "target": null,
+    "sourceBranch": "chore/render-staging-deployment"
+  },
+  "visitorProtectionChange": {
+    "project": "blacklist-web",
+    "previousAuthenticationProtection": {
+      "deploymentType": "all_except_custom_domains"
+    },
+    "authenticationProtection": null,
+    "visitorRestrictionRemoved": true,
+    "applicationAuthorizationChanged": false,
+    "databaseOrFrontendEnvironmentChanged": false
+  },
+  "initialHealthAndPublicPageChecks": [
+    {
+      "check": "site",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "applicationHealth": null
+    },
+    {
+      "check": "login",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "applicationHealth": null
+    },
+    {
+      "check": "apiHealth",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "applicationHealth": true
+    },
+    {
+      "check": "workerHealth",
+      "status": 200,
+      "contentType": "application/json",
+      "applicationHealth": true
+    }
+  ],
+  "hostedSecuritySmoke": {
+    "passed": 10,
+    "failed": 1,
+    "results": [
+      {
+        "check": "directPrivateDenied",
+        "status": 404,
+        "expected": 404,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "unauthenticatedPrivateDenied",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "anonymousStaffDenied",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "viewerAllowlist",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8",
+        "anonymousAllowlistedViewer": true
+      },
+      {
+        "check": "foreignOriginDenied",
+        "status": 403,
+        "expected": 403,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/problem+json; charset=utf-8"
+      },
+      {
+        "check": "invalidInputDenied",
+        "status": 400,
+        "expected": 400,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/problem+json; charset=utf-8"
+      },
+      {
+        "check": "headlessHandlerAbsent",
+        "status": 404,
+        "expected": 404,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "frontendViewerProxy",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8",
+        "anonymousAllowlistedViewer": true
+      },
+      {
+        "check": "frontendPrivateProxyDenied",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "frontendForgedGatewayOverwritten",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "internalSsrViewer",
+        "status": 404,
+        "expected": 200,
+        "passed": false,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      }
+    ],
+    "initialAdminProbeCorrectedToActualOverviewRoute": true,
+    "credentialsInResponses": false,
+    "emailSentOrAccountSeeded": false
+  },
+  "retainedControls": [
+    "DML-only SQL-created blacklist_app",
+    "direct verified Neon endpoint TLS",
+    "same-origin frontend proxy and exact-Origin JSON checks",
+    "Secure HttpOnly SameSite host-only signed sessions",
+    "API staging server-to-server ingress token",
+    "internal token and trusted-peer check",
+    "role/resource/staff assurance/version checks",
+    "revision/independence/appeal/reversal/privacy/provenance/risk invariants"
+  ],
+  "remainingBlockers": [
+    "internal SSR viewer404 because TRUSTED_PROXY_CIDRS is unset; signed-in dashboard unavailable",
+    "required coverage59.38%/75% and security-module floors fail",
+    "full development audit1high unpatched braces advisory; production audit0",
+    "Resend default sender restricted to account mailbox; zero verified domains",
+    "full hosted auth/activation/reset/restart/restore/retention testing and independent review remain open"
+  ],
+  "limits": {
+    "paidResourcesActivated": false,
+    "billingChanged": false,
+    "productionDatabaseChanged": false,
+    "migrationOrApplicationSourceChanged": false,
+    "newCloudSqlExecuted": false,
+    "credentialsExposed": false,
+    "productionReadinessClaimed": false,
+    "phase8Authorized": false,
+    "renderFreeColdStartsAndWorkerSleep": true,
+    "renderLogsInspection": "403; not verified"
+  },
+  "priorValidation": "docs/evidence/2026-10-13-staging-finalization.json",
+  "documentationValidation": {
+    "formatCheck": "passed",
+    "diffCheck": "passed",
+    "pinnedNetworkDisabledRedactedGitleaks": {
+      "files": 7,
+      "findings": 0,
+      "exitCode": 0
+    },
+    "fullUnitIntegrationBuildSuites": "not rerun; no application/migration/dependency source changed; previous results explicitly retained"
+  },
+  "onboarding": {
+    "startSkill": "updated and saved",
+    "installScriptBindingsNetwork": "preserved",
+    "environmentPublication": "not performed"
+  }
+}

@@ -48,3 +48,7 @@ No service, database, billing change or production Vercel setting has been creat
 ## Owner decision
 
 Owner confirmed Neon PostgreSQL and authenticated public TLS for restricted staging. This is an explicit staging transport choice, not a blanket TLS exception or production approval. No paid service, public/production launch, automatic merge, silent keepalive or Phase 8 is authorized.
+
+## Subsequent owner hosting instruction — 2026-10-13
+
+After the disclosed failed coverage/full audit and ingress/review gaps, the owner explicitly requested merging the infrastructure work, removing restrictions and going live. PR8 was merged and the existing Free API/worker activated; project-level Vercel visitor SSO protection removed. This changes visitor hosting access only: identity protocol, API/internal credentials, trusted-peer checks, role/resource checks and verified DB TLS remain unchanged. No paid resource, production DB/credential change, new backend phase or readiness claim. Site/API/worker health passes; signed-in SSR remains fail-closed on missing trusted ingress. This records the owner's rollout instruction, not an independent Claude review or security-gate pass; latest evidence/handoff govern operations.
