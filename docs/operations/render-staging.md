@@ -89,6 +89,24 @@ The existing `resendMailer` HTTPS adapter, using Node 24.21.0 `--use-env-proxy`,
 
 There are **zero verified domains**. The default sender is restricted to the Resend account mailbox, so additional testers require an owned verified sender domain. Tracking/link-rewriting/retention settings and full DB-backed activation remain unverified. No paid plan or billing change occurred. Sanitized evidence: `docs/evidence/2026-10-13-render-workspace-setup.json`.
 
+## Owner-added database URL recheck — 2026-10-13
+
+The owner only pasted a Neon connection string into the API service. It is present on API, absent on worker, and still refers to a privileged role/pooler with `sslmode=require` and an unsupported extra query option. Its normalized endpoint matches the intended Frankfurt staging project. Existing runtime validation rejects it; services remain suspended and initial deployments canceled. External health URLs return 503 HTML, not application health. Latest direct TCP probe fails with errno 101 before authentication. No URL/password is in documentation/evidence; no provider setting/database was changed during this check.
+
+Adding a connection string does not provision roles or application tables. From a separate approved operator machine with Node 24.21.0, pnpm 12.7.0 and native TCP/5432 access, follow steps 3–4 under **Intended deployment order** below. The exact operator-only variables are `DATABASE_ADMIN_URL`, `BLACKLIST_RUNTIME_PASSWORD`, `BLACKLIST_MIGRATOR_PASSWORD`; the later migration-only session uses `DATABASE_MIGRATION_URL`. Supply values via private environment settings/files outside the checkout, never chat/source/logs or runtime services. The two existing commands are:
+
+```bash
+node infrastructure/render/provision.mjs
+```
+
+Then, after ending the privileged session, use the separate migrator environment:
+
+```bash
+node infrastructure/render/migrate.mjs
+```
+
+Repeat migration once and validate grants/checksums/TLS/audit/queues/persistence/recovery. **These commands were not executed against Neon in this recheck.** Only after validation configure both runtime URLs with SQL-created `blacklist_app`, its separate password, direct staging host and exactly `sslmode=verify-full`; replacing just the host/TLS on the privileged URL is insufficient. The current environment cannot complete that operator step. Keep held services and existing guard checks until deployment/security reviews and hosted validation pass. Evidence: `docs/evidence/2026-10-13-neon-render-connection-recheck.json`.
+
 ## Safe environment inventory
 
 Use Render/Vercel secret stores. Generate fresh staging CSPRNG credentials independent of local and production. The repository `.env.example` contains placeholders only. None of the following secret **values** belong in a PR, GitHub variable, log, browser bundle or backup of the credential store.
