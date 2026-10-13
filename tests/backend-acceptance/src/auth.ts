@@ -32,7 +32,7 @@ export function authOptions(
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
-      minPasswordLength: 15,
+      minPasswordLength: 8,
       maxPasswordLength: 512,
       password: { hash: hashPassword, verify: verifyPassword },
     },

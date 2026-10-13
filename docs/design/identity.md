@@ -10,6 +10,8 @@
 
 This document is the **single normative source** for account, session, password, security-email, staff-lifecycle and request-origin rules. Other documents summarize it and link here instead of restating the rules differently.
 
+Owner update2026-10-13: [ADR0016](../adr/0016-owner-password-minimum-and-canonical-foundation-url.md) supersedes the old15character minimum with8; the other credential/token/session/staff safeguards remain. [ADR0017](../adr/0017-request-triggered-free-mail-worker-wake.md) authorizes one bounded asynchronous health wake after accepted registration/reset requests, never mail/token issuance in the API. Claude independent review pending.
+
 **Revision 3** (Codex re-review V2-01, V2-02, owner E-1 decision):
 
 - Password-reset tokens and their delivery are now **Blacklist-owned**. Better Auth 1.7.6 swallows reset-email callback errors, and its reset completion is not one transaction.
@@ -65,7 +67,7 @@ Blacklist uses **Better Auth** as a **headless library** for generic credential 
 | Rule | Value |
 |---|---|
 | Normalization | Unicode **NFKC** before length checks, breach checks, hashing and every verification |
-| Minimum length | **15 Unicode code points** after normalization (members and staff) |
+| Minimum length | **8 Unicode code points** (owner update, ADR0016) after normalization (members and staff) |
 | Maximum length | **128 code points and 512 UTF-8 bytes** after normalization. Longer input is **rejected with an explicit error, never truncated** |
 | Allowed characters | All printable Unicode including spaces (passphrases); control characters rejected |
 | Composition rules | None |
@@ -74,7 +76,7 @@ Blacklist uses **Better Auth** as a **headless library** for generic credential 
 | Paste, autofill, password managers | Supported (`autocomplete="new-password"` / `"current-password"`, paste never blocked, show/hide toggle) |
 | Hashing | Argon2id (`@node-rs/argon2`), PHC string, OWASP baseline `m=19 MiB, t=2, p=1` raised while p95 ≤ ~250 ms; bounded hashing concurrency; rehash on login when parameters are outdated. No input truncation; the 512-byte cap bounds cost |
 
-Better Auth is configured with `minPasswordLength: 15` and `maxPasswordLength: 512` (UTF-16 units). Blacklist's stricter code-point/byte validation always runs first.
+Better Auth is configured with `minPasswordLength: 8` and `maxPasswordLength: 512` (UTF-16 units). Blacklist's stricter code-point/byte validation always runs first.
 
 ---
 
@@ -556,7 +558,7 @@ This is the **only** CSRF/origin policy. Other documents link here.
 
 ```
 database: Drizzle adapter on Blacklist's pg pool; models mapped to auth_users, auth_sessions, auth_accounts, auth_verifications
-emailAndPassword: enabled, disableSignUp: true, minPasswordLength: 15, maxPasswordLength: 512,
+emailAndPassword: enabled, disableSignUp: true, minPasswordLength: 8, maxPasswordLength: 512,
                   password: { hash/verify: Blacklist Argon2id }
                   (no sendResetPassword: Better Auth reset endpoints are never called)
 emailVerification: not configured        user.changeEmail.enabled: false        user.deleteUser.enabled: false

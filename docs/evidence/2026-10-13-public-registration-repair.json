@@ -1,0 +1,455 @@
+{
+  "date": "2026-10-13",
+  "branch": "fix/public-registration-and-reset",
+  "status": "deployed to canonical public foundation; hosted checks and actual owner reset delivery passed; owner redemption/login pending",
+  "authorization": {
+    "canonicalPublicDomain": "blacklist-web-eta.vercel.app",
+    "passwordMinimum8": "explicit owner instruction",
+    "requestTriggeredWorkerWake": "explicit owner acceptance of ADR0017",
+    "independentClaudeReview": "pending"
+  },
+  "changes": [
+    "8normalized Unicode code-point minimum across UI/contracts/backend/headless/test fixtures; maximum/bytes/hash/breach/staff guards unchanged",
+    "expanded fallback blocklist and clear policy/breach form feedback",
+    "optional safe canonical document redirect, API/mutations excluded",
+    "90second auth browser wait;20seconds for other requests",
+    "optional staging API-only accepted202mail-request health wake, HTTPS/owned target/no secrets/no redirects/single flight/90second abort/no retry/no schedule"
+  ],
+  "tests": {
+    "pnpmCheck": {
+      "status": "passed",
+      "unit": 522,
+      "formatLintTypesNextBuild": "passed"
+    },
+    "backendIntegration": {
+      "status": "passed",
+      "passed": 52,
+      "failed": 0,
+      "realPgSmtpBrowser": "includes8character registration/reset,7rejection, expiry/replay, old-cookie/new-password checks and real queued SMTP with staged accepted-only wake"
+    },
+    "backendBuild": "passed",
+    "mockBuildAndExclusion": {
+      "status": "passed",
+      "checks": 4
+    },
+    "browser": {
+      "status": "passed",
+      "passed": 72,
+      "failed": 0,
+      "scope": "Chromium154 desktop/mobile auth/account/recovery; existing assertions/timeouts,2workers"
+    },
+    "productionAudit": {
+      "status": "passed",
+      "vulnerabilities": 0
+    },
+    "initialFailures": "3contract+2backend before implementation;2 old too-short fixtures updated to7; reset outcome typing fixed; nonexistent integration config corrected; no weakening of assertions/thresholds",
+    "secretScan": {
+      "status": "passed",
+      "changedFiles": 47,
+      "matches": 0,
+      "pinnedNetworkIsolatedRedacted": true,
+      "initialMatch": "known fictional existing fixture; replaced with CSPRNG fixture values, no suppression/no actual credential discovery"
+    },
+    "fixtureFollowup": "8runtime unit tests/typecheck/lint passed after changing static fictional token fixture to CSPRNG",
+    "stagedSecretScan": {
+      "status": "passed",
+      "files": 48,
+      "matches": 0
+    }
+  },
+  "securityGates": {
+    "priorCoverage": "historical59.38%, superseded by current61.19%",
+    "fullDevelopmentAudit": {
+      "status": "failed",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 1,
+        "critical": 0
+      },
+      "dependencyOrAuditPolicyChanged": false
+    },
+    "independentReviewRecoveryLaunch": "open",
+    "currentCoverage": {
+      "status": "failed",
+      "branches": 61.19,
+      "globalFloor": 75,
+      "assertionsPassed": 51,
+      "assertionsFailed": 0,
+      "newWakePluginBranches": 81.25,
+      "ingressPluginBranches": 91.48,
+      "remainingPackageFailures": [
+        "identity58.82/90",
+        "access77.27/90",
+        "audit80/90",
+        "staff48.65/75",
+        "db62.5/75",
+        "worker68.96/75"
+      ],
+      "thresholdsAndExclusionsUnchanged": true,
+      "newSecurityUnitFilesIncluded": true
+    }
+  },
+  "cloud": {
+    "sourceCommit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+    "canonicalWebUrl": "https://blacklist-web-eta.vercel.app",
+    "existingStagingInfrastructureOnly": true,
+    "productionDatabaseOrBillingChanged": false,
+    "secretValuesOrRecipientInRecord": false,
+    "renderDeployments": [
+      {
+        "service": "api",
+        "id": "dep-db7bdb2j9qps73bprjn0",
+        "sourceCommit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+        "status": "live"
+      },
+      {
+        "service": "worker",
+        "id": "dep-db7bdb8473hc73co3rig",
+        "sourceCommit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+        "status": "live"
+      }
+    ],
+    "vercelEnvironmentKeys": [
+      {
+        "key": "API_INTERNAL_URL",
+        "target": "production",
+        "type": "encrypted"
+      },
+      {
+        "key": "INTERNAL_API_TOKEN",
+        "target": "production",
+        "type": "encrypted"
+      },
+      {
+        "key": "DEPLOYMENT_ENV",
+        "target": "production",
+        "type": "encrypted"
+      },
+      {
+        "key": "STAGING_ACCESS_TOKEN",
+        "target": "production",
+        "type": "encrypted"
+      },
+      {
+        "key": "CANONICAL_APP_ORIGIN",
+        "target": "production",
+        "type": "encrypted"
+      }
+    ],
+    "newKeys": 5,
+    "webDatabaseSignerMailOrWorkerKey": false,
+    "applicationDeploymentEnv": "staging",
+    "service": "worker",
+    "id": "dpl_BY3Y72aGYUP7At1niBLCoa9fag4R",
+    "statuses": [
+      {
+        "service": "api",
+        "status": "update_in_progress"
+      },
+      {
+        "service": "worker",
+        "status": "update_in_progress"
+      }
+    ],
+    "bothLive": true,
+    "apiAndWorkerHealth": true,
+    "exactPeerInternalViewer": true,
+    "vercelDeploymentId": "dpl_BY3Y72aGYUP7At1niBLCoa9fag4R",
+    "state": "BUILDING",
+    "vercelState": "READY",
+    "initialReceiptWriterFailure": "loop variable shadowed receipt path after canonical requests passed; corrected and read-only verification resumed, no deploy repeated",
+    "apiViewerAnonymous": true,
+    "authPagesHealthy": true,
+    "legacyRedirect": true,
+    "successful": true,
+    "credentialOrPrivateRecordValuesLogged": false,
+    "redirectLocationContainsFragment": false,
+    "initialLegacyCheckFailure": "first immediate edge check before alias propagation did not match; subsequent alias deployment readback and3GET redirects verified"
+  },
+  "migrationDependencyDatabaseRoleChanged": false,
+  "tokenTtlVerificationSessionsStaffAssuranceOrModerationRiskWeakened": false,
+  "credentialRecipientRawTokenOrPrivatePeerInEvidence": false,
+  "sourceCommit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+  "cloudChecks": {
+    "publicSmoke": [
+      {
+        "check": "directPrivateDenied",
+        "status": 404,
+        "expected": 404,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "unauthenticatedPrivateDenied",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "anonymousStaffDenied",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "viewerAllowlist",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8",
+        "anonymousAllowlistedViewer": true
+      },
+      {
+        "check": "foreignOriginDenied",
+        "status": 403,
+        "expected": 403,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/problem+json; charset=utf-8"
+      },
+      {
+        "check": "invalidInputDenied",
+        "status": 400,
+        "expected": 400,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/problem+json; charset=utf-8"
+      },
+      {
+        "check": "headlessHandlerAbsent",
+        "status": 404,
+        "expected": 404,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "frontendViewerProxy",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8",
+        "anonymousAllowlistedViewer": true
+      },
+      {
+        "check": "frontendPrivateProxyDenied",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "frontendForgedGatewayOverwritten",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      },
+      {
+        "check": "internalSsrViewer",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "privateCredentialsInResponse": false,
+        "contentType": "application/json; charset=utf-8"
+      }
+    ],
+    "securityAndHealth": {
+      "sourceCommit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+      "apiBranch": "fix/public-registration-and-reset",
+      "checks": [
+        {
+          "check": "internalMissingKey",
+          "status": 404,
+          "expected": 404,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "internalWrongKey",
+          "status": 404,
+          "expected": 404,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "internalMissingGateway",
+          "status": 404,
+          "expected": 404,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "internalPublicAuthorityDenied",
+          "status": 401,
+          "expected": 401,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "internalExactPeerAfterCleanup",
+          "status": 200,
+          "expected": 200,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "frontendDashboard",
+          "status": 200,
+          "expected": 200,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "apiHealth",
+          "status": 200,
+          "expected": 200,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "workerHealth",
+          "status": 200,
+          "expected": 200,
+          "passed": true,
+          "receiptPresent": false,
+          "credentialValuesInResponse": false
+        },
+        {
+          "check": "internalNonGetDeniedPOST",
+          "status": 404,
+          "expected": 404,
+          "passed": true
+        },
+        {
+          "check": "internalNonGetDeniedPUT",
+          "status": 404,
+          "expected": 404,
+          "passed": true
+        },
+        {
+          "check": "internalNonGetDeniedDELETE",
+          "status": 404,
+          "expected": 404,
+          "passed": true
+        }
+      ],
+      "checksPassed": 11,
+      "checksFailed": 0,
+      "diagnosticSettingsAbsent": true,
+      "exactPrivatePeerCount": 1,
+      "workerSecretsSeparated": true,
+      "workerDirectRuntimeRoleVerifiedTls": true,
+      "frontendSecretsSeparated": true,
+      "senderDomainCount": 0,
+      "visitorRestrictionRemoved": true,
+      "privateValuesInEvidence": false
+    },
+    "passwordBoundaries": [
+      {
+        "route": "/auth/register/complete",
+        "passwordCodePoints": 7,
+        "status": 400,
+        "code": "invalid_request",
+        "expectedCode": "invalid_request",
+        "passed": true,
+        "accountPasswordSessionOrTokenCreated": false
+      },
+      {
+        "route": "/auth/register/complete",
+        "passwordCodePoints": 8,
+        "status": 400,
+        "code": "token_invalid",
+        "expectedCode": "token_invalid",
+        "passed": true,
+        "accountPasswordSessionOrTokenCreated": false
+      },
+      {
+        "route": "/auth/password/reset",
+        "passwordCodePoints": 7,
+        "status": 400,
+        "code": "invalid_request",
+        "expectedCode": "invalid_request",
+        "passed": true,
+        "accountPasswordSessionOrTokenCreated": false
+      },
+      {
+        "route": "/auth/password/reset",
+        "passwordCodePoints": 8,
+        "status": 400,
+        "code": "token_invalid",
+        "expectedCode": "token_invalid",
+        "passed": true,
+        "accountPasswordSessionOrTokenCreated": false
+      }
+    ],
+    "legacyAuthRedirectsPassed": 3,
+    "ownerValidTokenLoginReset": "pending user private verification/password"
+  },
+  "publication": {
+    "pullRequest": 11,
+    "url": "https://github.com/Skyboyyt/blacklist/pull/11",
+    "base": "main",
+    "sourcePushedAndDeployed": true,
+    "subsequentEvidenceAndMergeReadback": "recorded in PR11 after execution",
+    "liveSourceMatchesApplicationTree": "exact source038ed7f; subsequent evidence commit and authorized merge recorded on PR11"
+  },
+  "cloudOwnerRegistrationMail": {
+    "recordedAt": "2026-10-13T23:01:53.720134+00:00",
+    "canonicalOrigin": "https://blacklist-web-eta.vercel.app",
+    "requestSent": true,
+    "recipientTokenPasswordSessionOrMailBodyInRecord": false,
+    "workerManuallyWokenByThisEmailTest": false,
+    "accountCompletedByAgent": false,
+    "registrationTokenTtlMinutes": 30,
+    "paymentProductionDataOrServicesChanged": false,
+    "httpStatus": 202,
+    "registrationAccepted": true,
+    "providerMessageObserved": true,
+    "activationEmail": false,
+    "existingAccountNotice": true,
+    "providerLastEvent": "delivered",
+    "providerMetadataOnly": true,
+    "providerReportedDelivered": true,
+    "ownerInboxReceiptConfirmed": false,
+    "ownerTokenRedemptionLoginAndResetNotTested": true,
+    "explanation": "normal worker delivered existing-account notice, not a new activation token; preserve account and request normal reset separately"
+  },
+  "cloudOwnerResetMail": {
+    "recordedAt": "2026-10-13T23:03:35.435201+00:00",
+    "canonicalOrigin": "https://blacklist-web-eta.vercel.app",
+    "requestSent": true,
+    "recipientTokenPasswordSessionOrMailBodyInRecord": false,
+    "workerManuallyWokenByThisEmailTest": false,
+    "passwordChangedByAgent": false,
+    "paymentProductionDataOrServicesChanged": false,
+    "httpStatus": 202,
+    "resetRequestAccepted": true,
+    "providerMessageObserved": true,
+    "resetEmailObserved": true,
+    "providerLastEvent": "delivered",
+    "providerMetadataOnly": true,
+    "providerReportedDelivered": true,
+    "ownerInboxReceiptConfirmed": false,
+    "ownerResetTokenRedemptionAndLoginNotTested": true
+  },
+  "mailMetadataPrivacy": "provider metadata only, no message bodies/raw tokens/passwords/recipient in evidence"
+}

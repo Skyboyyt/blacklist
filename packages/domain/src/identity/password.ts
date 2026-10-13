@@ -13,7 +13,7 @@ export function normalizePassword(input: string) {
   const normalized = input.normalize('NFKC');
   const length = [...normalized].length;
   if (
-    length < 15 ||
+    length < 8 ||
     length > 128 ||
     Buffer.byteLength(normalized, 'utf8') > 512 ||
     /[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]/u.test(normalized)

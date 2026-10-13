@@ -2,7 +2,8 @@ import { expect, test } from 'vitest';
 import { hashPassword, needsRehash, normalizePassword, verifyPassword } from './password.js';
 
 test('S8: NFKC, Unicode code-point and byte boundaries reject without truncation', () => {
-  expect(() => normalizePassword('a'.repeat(14))).toThrow('password_policy_rejected');
+  expect(() => normalizePassword('a'.repeat(7))).toThrow('password_policy_rejected');
+  expect(normalizePassword('a'.repeat(8))).toHaveLength(8);
   expect(normalizePassword('a'.repeat(15))).toHaveLength(15);
   expect(normalizePassword('a'.repeat(128))).toHaveLength(128);
   expect(() => normalizePassword('a'.repeat(129))).toThrow('password_policy_rejected');

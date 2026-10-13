@@ -25,6 +25,8 @@ function authError(error: unknown): LoginOutcome {
 function tokenError(error: unknown): TokenFlowOutcome {
   if (error instanceof ApiFailure && error.code === 'token_invalid')
     return { kind: 'token_problem', status: 'invalid' };
+  if (error instanceof ApiFailure && ['password_policy_rejected', 'password_breached'].includes(error.code))
+    return { kind: 'password_rejected', reason: error.code === 'password_breached' ? 'breached' : 'policy' };
   if (error instanceof ApiFailure && error.code === 'handle_unavailable')
     return { kind: 'handle_unavailable' };
   if (error instanceof ApiFailure && error.code === 'rate_limited')

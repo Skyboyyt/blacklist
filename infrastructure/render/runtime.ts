@@ -11,6 +11,7 @@ const fields: Record<Service, string[]> = {
     'STAGING_ACCESS_TOKEN',
     'STAGING_INGRESS_DIAGNOSTIC_KEY',
     'STAGING_INGRESS_DIAGNOSTIC_UNTIL',
+    'MAIL_WORKER_HEALTH_URL',
   ],
   worker: [
     ...common,

@@ -13,17 +13,17 @@ import {
 } from './auth.ts';
 
 describe('password length rules (identity §3)', () => {
-  it('requires at least 15 code points', () => {
-    expect(checkPasswordLength('a'.repeat(14))).toBe('too_short');
-    expect(checkPasswordLength('a'.repeat(15))).toBeNull();
+  it('requires at least 8 code points', () => {
+    expect(checkPasswordLength('a'.repeat(7))).toBe('too_short');
+    expect(checkPasswordLength('a'.repeat(8))).toBeNull();
   });
 
   it('counts code points, not UTF-16 units', () => {
     const emoji = '🔐'; // 1 code point, 2 UTF-16 units, 4 bytes
     expect(emoji.length).toBe(2);
-    expect(codePointLength(emoji.repeat(15))).toBe(15);
-    expect(checkPasswordLength(emoji.repeat(14))).toBe('too_short');
-    expect(checkPasswordLength(emoji.repeat(15))).toBeNull();
+    expect(codePointLength(emoji.repeat(8))).toBe(8);
+    expect(checkPasswordLength(emoji.repeat(7))).toBe('too_short');
+    expect(checkPasswordLength(emoji.repeat(8))).toBeNull();
   });
 
   it('rejects more than 128 code points instead of truncating', () => {
@@ -52,7 +52,7 @@ describe('password length rules (identity §3)', () => {
   it('exposes the rule through the schema with a readable message', () => {
     const result = newPasswordSchema.safeParse('short');
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.message).toMatch(/at least 15/);
+    expect(result.error?.issues[0]?.message).toMatch(/at least 8/);
   });
 });
 

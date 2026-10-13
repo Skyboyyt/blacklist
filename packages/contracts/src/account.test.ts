@@ -155,7 +155,7 @@ describe('password change', () => {
   it('applies the new-password policy and confirmation', () => {
     expect(passwordChangeFormSchema.safeParse(valid).success).toBe(true);
     expect(
-      passwordChangeFormSchema.safeParse({ ...valid, newPassword: 'too short', confirmPassword: 'too short' })
+      passwordChangeFormSchema.safeParse({ ...valid, newPassword: 'short77', confirmPassword: 'short77' })
         .success,
     ).toBe(false);
     expect(
@@ -204,7 +204,7 @@ describe('staff enrollment password (identity §10.5 step 2)', () => {
     expect(enrollmentPasswordRequestSchema.safeParse({ password: 'a long staff passphrase' }).success).toBe(
       true,
     );
-    expect(enrollmentPasswordRequestSchema.safeParse({ password: 'too short' }).success).toBe(false);
+    expect(enrollmentPasswordRequestSchema.safeParse({ password: 'short77' }).success).toBe(false);
     expect(
       enrollmentPasswordRequestSchema.safeParse({
         password: 'a long staff passphrase',

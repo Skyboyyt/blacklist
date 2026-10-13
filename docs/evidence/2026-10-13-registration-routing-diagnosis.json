@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-13",
+  "status": "confirmed default-domain routing mismatch; owner failure stage/URL pending",
+  "aliasChecks": [
+    {
+      "site": "https://blacklist-web-eta.vercel.app",
+      "path": "/register",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "anonymousViewerDto": null
+    },
+    {
+      "site": "https://blacklist-web-eta.vercel.app",
+      "path": "/api/v1/viewer",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8",
+      "anonymousViewerDto": null
+    },
+    {
+      "site": "https://blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app",
+      "path": "/register",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "anonymousViewerDto": null
+    },
+    {
+      "site": "https://blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app",
+      "path": "/api/v1/viewer",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "anonymousViewerDto": true
+    }
+  ],
+  "vercelRouting": {
+    "project": "blacklist-web",
+    "productionBranch": "chore/initial-repository",
+    "domains": [
+      {
+        "name": "blacklist-web-eta.vercel.app",
+        "gitBranch": null,
+        "verified": true
+      }
+    ],
+    "relevantEnvironmentBindings": [
+      {
+        "key": "STAGING_ACCESS_TOKEN",
+        "target": ["preview"],
+        "gitBranch": "chore/render-staging-deployment",
+        "type": "encrypted"
+      },
+      {
+        "key": "INTERNAL_API_TOKEN",
+        "target": ["preview"],
+        "gitBranch": "chore/render-staging-deployment",
+        "type": "encrypted"
+      },
+      {
+        "key": "API_INTERNAL_URL",
+        "target": ["preview"],
+        "gitBranch": "chore/render-staging-deployment",
+        "type": "encrypted"
+      },
+      {
+        "key": "DEPLOYMENT_ENV",
+        "target": ["preview"],
+        "gitBranch": "chore/render-staging-deployment",
+        "type": "encrypted"
+      }
+    ],
+    "settingsChanged": false,
+    "secretValuesLogged": false
+  },
+  "completionNegative": {
+    "check": "hostedCompletionRejectsSyntheticInvalidToken",
+    "status": 400,
+    "code": "token_invalid",
+    "passed": true,
+    "accountCreated": false,
+    "passwordOrTokenLogged": false
+  },
+  "hostedSmoke": "11passed; current security checks unchanged",
+  "browserStatus": "explicit proxy and native Chromium attempts both failed ERR_CERT_AUTHORITY_INVALID before page load; no TLS bypass",
+  "appOrCloudConfigurationChanged": false,
+  "credentialRecipientOrActivationTokenValuesInEvidence": false,
+  "validOwnerTokenRedemptionOrLogin": "not tested; no owner credentials requested",
+  "browserCheck": {
+    "scope": "actual hosted browser with synthetic invalid token; no account/mail/session created",
+    "secretValuesLogged": false,
+    "checks": [],
+    "failureCategory": "Error",
+    "failureStep": 0,
+    "failureHints": ["ERR_CERT_AUTHORITY_INVALID"]
+  }
+}

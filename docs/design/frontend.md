@@ -111,7 +111,7 @@ Normative source: [identity design](identity.md). Everything below is presentati
 
 Reusable patterns: `ConfirmDialog` (consequences, cancel, pending, error; no typed phrases), `ReauthDialog`, `StepUpDialog` (bound to one action and target), `PasskeyPrompt` + `usePasskeyCeremony`, `SecurityBanner` (session ended, re-auth, cooling, change pending, recovery pending, staff verification), `CoolingPeriodNotice`, `SecurityActivity`, typed account errors with plain-language copy (`lib/auth/account-error-copy.ts`). Member MFA is post-V1 and is not shown as available.
 
-Passwords: 15+ code points after NFKC, up to 128 and 512 bytes, no composition rules or expiry, paste and password managers supported. New-password fields show a live length count (not a strength meter) and a Caps Lock hint. Component state keeps at most a character count; passwords, tokens, codes and challenges never touch `localStorage`/`sessionStorage`.
+Passwords: 8+ code points after NFKC, up to 128 and 512 bytes, no composition rules or expiry, paste and password managers supported. New-password fields show a live length count (not a strength meter) and a Caps Lock hint. Component state keeps at most a character count; passwords, tokens, codes and challenges never touch `localStorage`/`sessionStorage`.
 
 ## 7b. Project research UX (Phase 3, mock)
 
