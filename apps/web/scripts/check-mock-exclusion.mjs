@@ -39,6 +39,8 @@ const SERVER_ONLY_NAMES = [
   'DATABASE_URL',
   'STAGING_ACCESS_TOKEN',
   'RESEND_API_KEY',
+  'STAGING_INGRESS_DIAGNOSTIC_KEY',
+  'STAGING_INGRESS_DIAGNOSTIC_UNTIL',
 ];
 const TEXT = /\.(js|mjs|cjs|html|json|rsc|body|txt|map)$/;
 

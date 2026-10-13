@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-13",
+  "status": "ingress measurement prepared; hosted repair not yet verified",
+  "branch": "fix/render-ssr-and-email",
+  "implementation": "expiring triple-credential private-peer response header on existing safe routes, no automatic trust or authorization change",
+  "tests": {
+    "pnpmCheck": "passed,506unit/format/lint/types/Next build",
+    "backendIntegration": {
+      "passed": 50,
+      "failed": 0
+    },
+    "backendBuild": "passed",
+    "focused": {
+      "passed": 13,
+      "overlapsBroaderSuites": true
+    },
+    "initialFailures": "undefined injection header and optional route URL type corrected; rerun passed"
+  },
+  "controls": {
+    "defaultDisabled": true,
+    "maximumTtlMinutes": 30,
+    "fixedDeadlineAcrossRestarts": true,
+    "requiresDiagnosticInternalAndStagingKeys": true,
+    "privateSocketDisclosureOnly": true,
+    "normalDtoAndAuthorizationUnchanged": true,
+    "noNewHttpEndpoint": true,
+    "noAutomaticTrustLearning": true,
+    "noWorkerOrBuildDiagnosticCredential": true
+  },
+  "cloudMeasurement": "pending",
+  "senderDomainsVerified": 0,
+  "emailBlocker": "owner domain and DNS control required; asked asynchronously, no domain invented",
+  "priorCoverageAndFullDevelopmentAuditFailures": "retained, not waived",
+  "appIdentityOrMigrationOrDependencyPolicyChanged": false,
+  "credentialOrPrivateUserValuesInEvidence": false
+}

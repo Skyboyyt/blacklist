@@ -48,6 +48,11 @@ const apiSchema = shared.extend({
   API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).default('127.0.0.1'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4107),
   INTERNAL_API_TOKEN: z.string().min(32),
+  STAGING_INGRESS_DIAGNOSTIC_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{32,128}$/u)
+    .optional(),
+  STAGING_INGRESS_DIAGNOSTIC_UNTIL: z.iso.datetime().optional(),
   TRUSTED_PROXY_CIDRS: z
     .string()
     .default('')
@@ -95,6 +100,16 @@ function parse<S extends z.ZodType>(
 }
 export const readApiConfig = (env = process.env) => {
   const config = parse(apiSchema, env);
+  if (
+    Boolean(config.STAGING_INGRESS_DIAGNOSTIC_KEY) !== Boolean(config.STAGING_INGRESS_DIAGNOSTIC_UNTIL) ||
+    (config.STAGING_INGRESS_DIAGNOSTIC_KEY &&
+      (config.DEPLOYMENT_ENV !== 'staging' ||
+        [config.BETTER_AUTH_SECRET, config.INTERNAL_API_TOKEN, config.STAGING_ACCESS_TOKEN].includes(
+          config.STAGING_INGRESS_DIAGNOSTIC_KEY,
+        ) ||
+        Date.parse(config.STAGING_INGRESS_DIAGNOSTIC_UNTIL ?? '') > Date.now() + 30 * 60_000))
+  )
+    throw new Error('STAGING_INGRESS_DIAGNOSTIC configuration invalid');
   if (
     config.DEPLOYMENT_ENV === 'staging' &&
     (!config.STAGING_ACCESS_TOKEN ||

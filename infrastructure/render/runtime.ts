@@ -3,7 +3,15 @@ import { verifiedDatabaseUrl } from './database-url.ts';
 type Service = 'api' | 'worker';
 const common = ['DATABASE_URL', 'APP_ORIGIN', 'WEBAUTHN_RP_ID', 'WEBAUTHN_RP_NAME', 'NODE_EXTRA_CA_CERTS'];
 const fields: Record<Service, string[]> = {
-  api: [...common, 'BETTER_AUTH_SECRET', 'INTERNAL_API_TOKEN', 'TRUSTED_PROXY_CIDRS', 'STAGING_ACCESS_TOKEN'],
+  api: [
+    ...common,
+    'BETTER_AUTH_SECRET',
+    'INTERNAL_API_TOKEN',
+    'TRUSTED_PROXY_CIDRS',
+    'STAGING_ACCESS_TOKEN',
+    'STAGING_INGRESS_DIAGNOSTIC_KEY',
+    'STAGING_INGRESS_DIAGNOSTIC_UNTIL',
+  ],
   worker: [
     ...common,
     'EMAIL_PROVIDER',

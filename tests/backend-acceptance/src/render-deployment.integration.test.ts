@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { createIdentity, type IdentityContext } from '@blacklist/domain';
 import { createServer } from '@blacklist/api';
 import { readApiConfig } from '@blacklist/config';
@@ -14,7 +15,7 @@ const runtimePassword = randomBytes(32).toString('base64url');
 const migratorPassword = randomBytes(32).toString('base64url');
 const stagingToken = randomBytes(32).toString('base64url');
 const origin = 'https://staging.example.test';
-const config = () =>
+const config = (extra: Record<string, string | undefined> = {}) =>
   readApiConfig({
     NODE_ENV: 'production',
     DEPLOYMENT_ENV: 'staging',
@@ -25,6 +26,7 @@ const config = () =>
     INTERNAL_API_TOKEN: randomBytes(32).toString('base64url'),
     STAGING_ACCESS_TOKEN: stagingToken,
     TRUSTED_PROXY_CIDRS: '127.0.0.1/32',
+    ...extra,
   });
 beforeAll(async () => {
   h = await startDatabase();
@@ -197,6 +199,72 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
       expect(authorized.statusCode).toBe(200);
       expect(authorized.json()).toEqual({ kind: 'anonymous' });
       expect(observedPrefix).toBe('ip4:198.51.100.7');
+    } finally {
+      await app.close();
+    }
+  });
+  it('measures a private peer with expiring operator credentials without bypassing route authorization', async () => {
+    if (!ctx) throw new Error('fixture_runtime_missing');
+    const settings = config({
+      STAGING_INGRESS_DIAGNOSTIC_KEY: randomBytes(32).toString('hex'),
+      STAGING_INGRESS_DIAGNOSTIC_UNTIL: new Date(Date.now() + 10 * 60_000).toISOString(),
+    });
+    const app = createServer(ctx, settings, false);
+    const headers = {
+      'x-blacklist-staging-access': stagingToken,
+      'x-bl-internal-token': settings.INTERNAL_API_TOKEN,
+      'x-bl-ingress-diagnostic': settings.STAGING_INGRESS_DIAGNOSTIC_KEY,
+    };
+    const peer = '10.111.7.1';
+    try {
+      const blocked = await app.inject({ url: '/api/internal/v1/viewer', remoteAddress: peer, headers });
+      expect(blocked.statusCode).toBe(404);
+      expect(blocked.headers).not.toHaveProperty('x-bl-ingress-receipt');
+      const r = await app.inject({ url: '/api/v1/viewer', remoteAddress: peer, headers });
+      expect(r.json()).toEqual({ kind: 'anonymous' });
+      const encoded = r.headers['x-bl-ingress-receipt'];
+      if (typeof encoded !== 'string') throw new Error('test_receipt_missing');
+      const measured = z
+        .strictObject({
+          peer: z.ipv4(),
+          forwardedIsSingleIp: z.boolean(),
+          forwardedContainsProbe: z.boolean(),
+          probeAcceptedAsClientIp: z.boolean(),
+          internalPeers: z.array(z.ipv4()).max(8),
+          internalAccepted: z.number().int().nonnegative(),
+          internalDenied: z.number().int().nonnegative(),
+        })
+        .parse(JSON.parse(Buffer.from(encoded, 'base64url').toString()));
+      expect(measured.peer).toBe(peer);
+      expect(measured.internalPeers).toEqual([peer]);
+      expect(measured.internalAccepted).toBe(0);
+      expect(measured.internalDenied).toBe(1);
+      expect(settings.TRUSTED_PROXY_CIDRS).toBe('127.0.0.1/32');
+      const privateRequest = await app.inject({ url: '/api/v1/me/security', remoteAddress: peer, headers });
+      expect(privateRequest.statusCode).toBe(401);
+      expect(privateRequest.headers).not.toHaveProperty('x-bl-ingress-receipt');
+      const configured = createServer(
+        ctx,
+        { ...settings, TRUSTED_PROXY_CIDRS: `${measured.peer}/32` },
+        false,
+      );
+      try {
+        const authorized = await configured.inject({
+          url: '/api/internal/v1/viewer',
+          remoteAddress: peer,
+          headers,
+        });
+        expect(authorized.statusCode).toBe(200);
+        expect(authorized.json()).toEqual({ kind: 'anonymous' });
+        const stillPrivate = await configured.inject({
+          url: '/api/v1/me/security',
+          remoteAddress: peer,
+          headers,
+        });
+        expect(stillPrivate.statusCode).toBe(401);
+      } finally {
+        await configured.close();
+      }
     } finally {
       await app.close();
     }

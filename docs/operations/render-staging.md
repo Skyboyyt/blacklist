@@ -4,6 +4,12 @@ Status: **public foundation site, API and worker live; signed-in SSR/dashboard b
 
 ## Owner-authorized public activation — 2026-10-13
 
+### Narrow ingress repair
+
+Owner requested repair of signed-in SSR. Use [reviewed measurement controls](../reviews/2026-10-13-render-ingress-measurement.md), retaining the existing internal-token and trusted-peer checks. Temporary API-only `STAGING_INGRESS_DIAGNOSTIC_KEY` / `STAGING_INGRESS_DIAGNOSTIC_UNTIL` enable a private metadata header on existing health/viewer GET/HEAD routes only with three valid server credentials, private socket address and a fixed maximum30minute deadline. Do not provide these settings to the worker, frontend or build subprocesses. Never log/copy live peer addresses or keys into source evidence; retain only sanitized counts/hashes.
+
+Measure the actual Render peer and forwarding sanitization through direct and same-origin Vercel requests. Configure only measured exact `/32`/`/128` peers in protected `TRUSTED_PROXY_CIDRS`, verify SSR and spoofing negatives, then remove both diagnostic settings and redeploy. No automatic learning, broad subnet or cookie/authorization exception. Unknown changed peers fail closed and require reviewed remeasurement. Resend activation for other recipients separately requires an owned verified sender domain and DNS control.
+
 [Actual rollout evidence](../evidence/2026-10-13-public-foundation-activation.json): PR8 merged, both Render deployments live at the exact merge, homepage/login/API health/worker health200, ten hosted public/negative API checks passed. Internal SSR viewer still returns404 with correct server credentials because trusted peers are unset; signed-in dashboard remains unavailable. Never fix this by bypassing the peer/internal-token checks or guessing broad CIDRs. No email/account seed or migration rerun. Coverage/full development audit and other hosted/recovery/review gaps remain unresolved; the owner's instruction authorized the rollout, not passing-test claims. Vercel project-level SSO removal affects matching project deployments; production branch/env/domain settings were not changed. No production database or billing change. Free cold starts, worker idle sleep and restricted Resend default sender still apply.
 
 ## Finalization after owner review
