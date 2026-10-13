@@ -1,0 +1,176 @@
+{
+  "recordedAt": "2026-10-13T14:15:13.314062+00:00",
+  "scope": "Windows operator instructions and secure Neon/Render configuration preparation; no cloud SQL/provider mutations",
+  "guide": "docs/operations/neon-windows-setup.md",
+  "existingEntryPoints": ["infrastructure/render/provision.mjs", "infrastructure/render/migrate.mjs"],
+  "reviewedOperations": {
+    "roleFlags": "LOGIN, NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOINHERIT, NOBYPASSRLS; reject membership/unsafe existing roles",
+    "existingPasswords": "preserved; no silent reset",
+    "publicPrivilegeRevocations": "CREATE/TEMP on selected database and CREATE on public; dedicated empty staging target required",
+    "populatedRowChanges": [
+      "generated0001 constraint replacement / old_email backfill / NOT NULL",
+      "generated0004 retire pending staff role requests / security_version backfill / NOT NULL"
+    ],
+    "destructiveDatabaseTableResetDropOrTruncate": false,
+    "testAccountSeed": false,
+    "transactionPolicy": "Provisioning transaction; migrations per-file unless opt-out, none of current7 opt out; complete run not atomic"
+  },
+  "migrationManifest": [
+    {
+      "name": "0000_fixed_alex_wilder.sql",
+      "sha256": "775f41df461cb2702685ae670216b272173ec14365999bd7f08b7bac3dcdaf29",
+      "transactionOptOut": false
+    },
+    {
+      "name": "0001_rich_tomorrow_man.sql",
+      "sha256": "f0e67d86f1c92eb764ef7cd541b3eef6eb39a36b3f5d30e3a986d2014edbe39d",
+      "transactionOptOut": false
+    },
+    {
+      "name": "0002_material_thunderbird.sql",
+      "sha256": "8746fa0feb13db7fbca15952a1f0a96bb8ef207267471243e69a9ff35aa19cce",
+      "transactionOptOut": false
+    },
+    {
+      "name": "0003_absurd_miek.sql",
+      "sha256": "54aa4549df9cc82ac2d4a5b61eb1dd3c4283fe16e233fcefce8d7f6713ca9c28",
+      "transactionOptOut": false
+    },
+    {
+      "name": "0004_harsh_molten_man.sql",
+      "sha256": "e46d1bcd6639a185009d2ddda6cad46a04b5933398e58e0db7987890a8d96eca",
+      "transactionOptOut": false
+    },
+    {
+      "name": "0001_security_boundaries.sql",
+      "sha256": "eccc90e793edf9a2bec8241b1527dc46d4e5990cb43567611c0426f6fe088642",
+      "transactionOptOut": false
+    },
+    {
+      "name": "0002_identity_guards.sql",
+      "sha256": "197cd3b5cee18ed91ba6e12712740a96d0f7bd535b47d3e197ca11fdb60178c1",
+      "transactionOptOut": false
+    }
+  ],
+  "tests": {
+    "command": "pnpm --filter @blacklist/backend-acceptance exec vitest run render-deployment.test.ts render-deployment.integration.test.ts application-migrations.integration.test.ts",
+    "passed": 11,
+    "failed": 0,
+    "pending": 0,
+    "success": true,
+    "scope": "Local disposable PG18 only; not Neon"
+  },
+  "snippetValidation": {
+    "nodeSnippets": [
+      {
+        "block": 1,
+        "syntaxPassed": true
+      },
+      {
+        "block": 2,
+        "syntaxPassed": true
+      },
+      {
+        "block": 3,
+        "syntaxPassed": true
+      },
+      {
+        "block": 4,
+        "syntaxPassed": true
+      }
+    ],
+    "powerShellOrWindowsCommandsExecuted": false
+  },
+  "providerVerification": {
+    "render": [
+      {
+        "mode": "api",
+        "id": "srv-db72r4d9fdbs73erf1s0",
+        "suspended": "suspended",
+        "region": "frankfurt",
+        "plan": "free",
+        "branch": "chore/render-staging-deployment",
+        "databaseURLPresent": true,
+        "databaseURLPolicy": {
+          "matchesExpectedDirectEndpoint": false,
+          "pooler": true,
+          "roleIsProvisioner": true,
+          "roleIsRuntime": false,
+          "verifyFull": false,
+          "exactTLSQueryOnly": false,
+          "databaseMatches": true
+        },
+        "operatorCredentialVariableNamesAbsent": true,
+        "deployments": [
+          {
+            "status": "canceled",
+            "commit": "11d7cdd5dd1429e29d2307ac24bea0cbb4c93575"
+          }
+        ]
+      },
+      {
+        "mode": "worker",
+        "id": "srv-db72r5ou01pc73c32l5g",
+        "suspended": "suspended",
+        "region": "frankfurt",
+        "plan": "free",
+        "branch": "chore/render-staging-deployment",
+        "databaseURLPresent": false,
+        "operatorCredentialVariableNamesAbsent": true,
+        "deployments": [
+          {
+            "status": "canceled",
+            "commit": "11d7cdd5dd1429e29d2307ac24bea0cbb4c93575"
+          }
+        ]
+      }
+    ],
+    "nativeTCPProbe": {
+      "databaseAuthenticatedOrQueried": false,
+      "connected": false,
+      "errorType": "OSError",
+      "errno": 101
+    },
+    "providerSettingsModified": false
+  },
+  "executionAndReadiness": {
+    "powerShellWindowsProcedure": "Prepared/reviewed; not executed on Windows",
+    "sqlCreatedRuntimeRoleOnNeon": "Pending owner PC execution; unverified",
+    "cloudMigrationsAndHashChecks": "Pending owner PC execution; unverified",
+    "verifiedCloudTLSAndGrants": "Untested",
+    "bothRenderRuntimeURLs": "Prepared only; API current URL fails policy, worker URL absent",
+    "cloudServicesResumed": false,
+    "providerSettingsChanged": false,
+    "productionDatabaseAccessOrChanges": false,
+    "applicationSqlDependenciesPoliciesChanged": false,
+    "privateRecordsOrCredentialValuesInEvidence": false,
+    "phase8Started": false,
+    "productionReady": false,
+    "fullRootCoverageAuditBrowser": "Not rerun; baseline failures remain"
+  },
+  "nextStep": "Owner executes exact Windows procedure from repository root on reachable PC; return generic outcomes only. Correct runtime settings save-only after verification; no resume or PR merge without approval.",
+  "publicationChecks": {
+    "formatCheck": "passed",
+    "whitespaceCheck": "passed",
+    "secretScan": {
+      "filesChecked": 5,
+      "actualPrivateValuesChecked": 5,
+      "exactSecretMatches": 0,
+      "gitleaksExitCode": 0,
+      "valuesLogged": false
+    },
+    "scannerImage": "zricethezav/gitleaks@sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9",
+    "scannerNetwork": "none",
+    "scannerRedaction": "100%",
+    "startupDraftUpdated": true,
+    "startupDraftPublished": false
+  },
+  "windowsLineEndingChecks": {
+    "existingGitAttributes": "text=auto, eol=lf; unchanged",
+    "cloneUsesRepoLocalAutoCrlfFalse": true,
+    "reviewedManifestAndActualFilesMatch": 7,
+    "actualWorkingBytesMatchGitBlobs": true,
+    "crlfConvertedInMemoryCopyRejectedByManifest": true,
+    "windowsPowerShellHashCommandExecuted": false
+  }
+}

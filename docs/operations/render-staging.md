@@ -89,6 +89,8 @@ The existing `resendMailer` HTTPS adapter, using Node 24.21.0 `--use-env-proxy`,
 
 There are **zero verified domains**. The default sender is restricted to the Resend account mailbox, so additional testers require an owned verified sender domain. Tracking/link-rewriting/retention settings and full DB-backed activation remain unverified. No paid plan or billing change occurred. Sanitized evidence: `docs/evidence/2026-10-13-render-workspace-setup.json`.
 
+For the owner-operated Windows fallback, follow [Neon staging setup from Windows](neon-windows-setup.md): pinned tools, masked passwords, empty-target preflight, separate provisioning/migration/runtime windows, catalog/hash/TLS verification and save-only settings for both held Render services. These steps are prepared, not remotely executed.
+
 ## Owner-added database URL recheck — 2026-10-13
 
 The owner only pasted a Neon connection string into the API service. It is present on API, absent on worker, and still refers to a privileged role/pooler with `sslmode=require` and an unsupported extra query option. Its normalized endpoint matches the intended Frankfurt staging project. Existing runtime validation rejects it; services remain suspended and initial deployments canceled. External health URLs return 503 HTML, not application health. Latest direct TCP probe fails with errno 101 before authentication. No URL/password is in documentation/evidence; no provider setting/database was changed during this check.
