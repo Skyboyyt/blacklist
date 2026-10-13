@@ -1,0 +1,45 @@
+import { randomUUID } from 'node:crypto';
+import Fastify from 'fastify';
+import type { ApiConfig } from '@blacklist/config';
+import type { IdentityContext } from '@blacklist/domain';
+import { installSecurity } from './plugins/security.ts';
+import { installErrors } from './plugins/errors.ts';
+import { authRoutes } from './routes/auth.ts';
+import { accountRoutes } from './routes/account.ts';
+import { staffRoutes } from './routes/staff.ts';
+export function createServer(ctx: IdentityContext, config: ApiConfig, logging = true) {
+  const app = Fastify({
+    bodyLimit: 65536,
+    requestTimeout: 30000,
+    connectionTimeout: 10000,
+    trustProxy: false,
+    genReqId: () => randomUUID(),
+    disableRequestLogging: true,
+    logger: logging
+      ? {
+          level: 'info',
+          serializers: {
+            req: () => ({}),
+            res: () => ({}),
+            err: () => ({ type: 'Error', message: 'internal_error', stack: '' }),
+          },
+          redact: ['req.headers', 'req.body', 'req.query', 'res.headers'],
+        }
+      : false,
+  });
+  installErrors(app);
+  installSecurity(app, ctx, config);
+  authRoutes(app, ctx);
+  accountRoutes(app, ctx);
+  staffRoutes(app, ctx);
+  app.get('/healthz', { config: { security: { auth: 'public', mutation: false } } }, async () => ({
+    status: 'ok',
+  }));
+  app.addHook('onResponse', async (req, reply) => {
+    req.log.info(
+      { requestId: req.id, method: req.method, route: req.routeOptions.url, status: reply.statusCode },
+      'request_completed',
+    );
+  });
+  return app;
+}

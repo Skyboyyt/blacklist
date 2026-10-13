@@ -3,6 +3,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { notConnectedResearchApi } from './not-connected';
 import type { ResearchApi } from './types';
+import { getLiveViewer } from './live/server-viewer';
 
 /** Mock-only preview cookies (viewer and scenario). They confer no authority. */
 const MOCK_VIEWER_COOKIE = 'bl_mock_viewer';
@@ -21,7 +22,7 @@ export async function getResearchApi(): Promise<ResearchApi> {
       sessionId: jar.get(MOCK_SESSION_COOKIE)?.value,
     });
   }
-  return notConnectedResearchApi;
+  return { ...notConnectedResearchApi, getViewer: getLiveViewer };
 }
 
 export interface DemoExample {

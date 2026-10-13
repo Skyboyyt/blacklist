@@ -1,0 +1,329 @@
+{
+  "recordedAt": "2026-10-13T06:10:12.899Z",
+  "scope": "Phase 7 acceptance spikes plus runtime/application tests on PR #7 integration",
+  "branch": "feat/phase7-backend-foundation",
+  "head": "4b16cdb6324e1f5d3b979bd8d5e82ef36ca168ba",
+  "tools": {
+    "node": "24.21.0",
+    "pnpm": "12.7.0",
+    "typescript": "6.0.3",
+    "postgres": "18",
+    "chromium": "154",
+    "mailpit": "1.27.8"
+  },
+  "startTime": "2026-10-13T06:05:04.791Z",
+  "success": true,
+  "total": 47,
+  "passed": 47,
+  "failed": 0,
+  "pending": 0,
+  "files": [
+    {
+      "file": "tests/backend-acceptance/src/auth.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:07:04.776Z",
+      "durationMs": 2.8203125,
+      "tests": [
+        {
+          "name": "S17 configuration forbids the bearer plugin",
+          "status": "passed",
+          "durationMs": 1.833509999999933
+        },
+        {
+          "name": "S17 configuration forbids the jwt plugin",
+          "status": "passed",
+          "durationMs": 0.1921190000000479
+        },
+        {
+          "name": "S17 configuration forbids the passkey plugin",
+          "status": "passed",
+          "durationMs": 0.18334100000004128
+        },
+        {
+          "name": "S17 configuration forbids the token-conversion plugin",
+          "status": "passed",
+          "durationMs": 0.2460680000000366
+        },
+        {
+          "name": "headless configuration rejects cached cookies, library rate limiting and account linking",
+          "status": "passed",
+          "durationMs": 0.8204240000000027
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/database.integration.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:06:39.911Z",
+      "durationMs": 1065.6962890625,
+      "tests": [
+        {
+          "name": "D1: generated SQL has reviewed identity/audit types, CHECKs, partial uniques and composite FKs",
+          "status": "passed",
+          "durationMs": 9.477334999999584
+        },
+        {
+          "name": "D2/D9: append function works; grants and triggers deny application tampering",
+          "status": "passed",
+          "durationMs": 80.06184699999903
+        },
+        {
+          "name": "D3: transaction rollback and nontransactional CONCURRENTLY path",
+          "status": "passed",
+          "durationMs": 13.296093999999357
+        },
+        {
+          "name": "D4: subtype, owner and current-assessment composite foreign keys reject mismatches with typed SQLSTATE",
+          "status": "passed",
+          "durationMs": 48.74417999999969
+        },
+        {
+          "name": "D6: same pg client enqueues through a Drizzle transaction; rollback leaves no job",
+          "status": "passed",
+          "durationMs": 25.639415999999983
+        },
+        {
+          "name": "D7: migrator-owned pg-boss starts and fetches jobs as a DML-only runtime login",
+          "status": "passed",
+          "durationMs": 48.06687099999908
+        },
+        {
+          "name": "D5: forward fixture restore rehearsal preserves data and audit hash chain",
+          "status": "passed",
+          "durationMs": 840.6963829999986
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/delivery.integration.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:05:50.964Z",
+      "durationMs": 14079.67822265625,
+      "tests": [
+        {
+          "name": "S13: concurrent issuers serialize generations; only the accepted latest link can be active",
+          "status": "passed",
+          "durationMs": 278.8285539999997
+        },
+        {
+          "name": "S13: tokens remain pending before provider acceptance; stale requests and cleanup fail closed",
+          "status": "passed",
+          "durationMs": 328.609641
+        },
+        {
+          "name": "S14: real pg-boss failure and retry produce new generations, latest-only acceptance, no token in jobs/logs",
+          "status": "passed",
+          "durationMs": 5712.945893
+        },
+        {
+          "name": "S14: permanent failure completes without retry; acceptance followed by crash is not redeemable",
+          "status": "passed",
+          "durationMs": 977.4944820000001
+        },
+        {
+          "name": "S14: exhausted real jobs reach a DLQ containing identifiers and sanitized errors only",
+          "status": "passed",
+          "durationMs": 6781.678171
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/identity.integration.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:06:21.518Z",
+      "durationMs": 4065.39697265625,
+      "tests": [
+        {
+          "name": "D8/S6: Better Auth Drizzle adapter user/account writes rollback with registration state and audit",
+          "status": "passed",
+          "durationMs": 413.65035499999976
+        },
+        {
+          "name": "S4/S5/S11 baseline: signed login creates policy/activity data; missing policy and stale version fail",
+          "status": "passed",
+          "durationMs": 336.5412150000011
+        },
+        {
+          "name": "S3: normal registration, sign-in and sign-out leave auth_verifications empty",
+          "status": "passed",
+          "durationMs": 1.9020519999976386
+        },
+        {
+          "name": "S1/S2: only declared Blacklist routes; exact host-cookie stored and sent by a real browser",
+          "status": "passed",
+          "durationMs": 1728.097722999999
+        },
+        {
+          "name": "S7: successful Better Auth login replaces an outdated Argon2id PHC hash",
+          "status": "passed",
+          "durationMs": 61.13479400000142
+        },
+        {
+          "name": "S9: library flows work with HTTP/HTTPS/fetch denied and sockets limited to the test PostgreSQL port",
+          "status": "passed",
+          "durationMs": 173.15876699999717
+        },
+        {
+          "name": "S10: actual auth model SQL is migrator-owned and runtime cannot perform DDL",
+          "status": "passed",
+          "durationMs": 40.069533999998384
+        },
+        {
+          "name": "S12: unknown-email vs wrong-password median timing differs by <=20ms and ratio <=1.5",
+          "status": "passed",
+          "durationMs": 1240.858279
+        },
+        {
+          "name": "S17: E-1 attack variants fail; legitimate cookies work; rotation plus revoke-all invalidates them",
+          "status": "passed",
+          "durationMs": 68.39708099999916
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/password.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:07:04.033Z",
+      "durationMs": 35.47509765625,
+      "tests": [
+        {
+          "name": "S8: NFKC, Unicode code-point and byte boundaries reject without truncation",
+          "status": "passed",
+          "durationMs": 3.2828659999999985
+        },
+        {
+          "name": "S7 primitive: Argon2id verifies normalized passwords and detects stale parameters",
+          "status": "passed",
+          "durationMs": 32.475077999999996
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/reset.integration.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:07:01.355Z",
+      "durationMs": 942.830322265625,
+      "tests": [
+        {
+          "name": "S16: crash after every reset boundary leaves credential, tokens, sessions, version, cooling, audit and notice unchanged",
+          "status": "passed",
+          "durationMs": 412.6890000000003
+        },
+        {
+          "name": "S16: simultaneous redemption succeeds once; sign-in racing reset never keeps an old-version session",
+          "status": "passed",
+          "durationMs": 132.78518299999996
+        },
+        {
+          "name": "S16: reset vs email_change serializes on security version with exactly one transition",
+          "status": "passed",
+          "durationMs": 54.02404600000045
+        },
+        {
+          "name": "S16: reset vs recovery serializes on security version with exactly one transition",
+          "status": "passed",
+          "durationMs": 57.97853000000032
+        },
+        {
+          "name": "S16: reset vs suspension serializes on security version with exactly one transition",
+          "status": "passed",
+          "durationMs": 58.9501650000002
+        },
+        {
+          "name": "S16 negatives: expired, wrong-purpose, stale-version and unassured staff reset never replace credentials",
+          "status": "passed",
+          "durationMs": 225.83040900000015
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:07:03.855Z",
+      "durationMs": 60.55322265625,
+      "tests": [
+        {
+          "name": "runtime security/configuration boundaries rejects malformed configuration without exporting secret values; RP and TLS boundaries fail closed",
+          "status": "passed",
+          "durationMs": 7.412053000000014
+        },
+        {
+          "name": "runtime security/configuration boundaries normalizes IPv6 /64 and mapped IPv4 buckets without admitting arbitrary prefixes",
+          "status": "passed",
+          "durationMs": 3.991457000000082
+        },
+        {
+          "name": "runtime security/configuration boundaries defaults to deny for unknown permissions, members with forged roles and unassured/deficient staff",
+          "status": "passed",
+          "durationMs": 0.36204499999985273
+        },
+        {
+          "name": "runtime security/configuration boundaries rejects controls, overlength input, reserved/confusable handles and never truncates credentials",
+          "status": "passed",
+          "durationMs": 1.907741999999871
+        },
+        {
+          "name": "runtime security/configuration boundaries uses the bundled breach blocklist on outage and honors positive range responses",
+          "status": "passed",
+          "durationMs": 2.378494000000046
+        },
+        {
+          "name": "runtime security/configuration boundaries verifies Argon2id after NFKC and rejects a different password with real bounded hashing",
+          "status": "passed",
+          "durationMs": 44.553212999999914
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/runtime.integration.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:05:18.164Z",
+      "durationMs": 24296.22021484375,
+      "tests": [
+        {
+          "name": "Phase 7 application foundation (not disposable gate schema) cleans an expired enrollment flow even when its last challenge has a later expiry",
+          "status": "passed",
+          "durationMs": 37.447000000000116
+        },
+        {
+          "name": "Phase 7 application foundation (not disposable gate schema) runs reviewed migrations twice and protects runtime DDL, TEMP, audit and staff role boundaries",
+          "status": "passed",
+          "durationMs": 103.1851370000004
+        },
+        {
+          "name": "Phase 7 application foundation (not disposable gate schema) rejects every invalid mutation origin, raw token surface and undeclared route",
+          "status": "passed",
+          "durationMs": 67.65920899999946
+        },
+        {
+          "name": "Phase 7 application foundation (not disposable gate schema) completes email-first registration via real queued SMTP delivery and rejects replay",
+          "status": "passed",
+          "durationMs": 2299.611938
+        },
+        {
+          "name": "Phase 7 application foundation (not disposable gate schema) enforces split-secret invitation delivery, five attempts, no partial account and no bootstrap reuse",
+          "status": "passed",
+          "durationMs": 5447.426638999999
+        },
+        {
+          "name": "Phase 7 application foundation (not disposable gate schema) activates staff only after two verified keys; binds assurance, independent approvals, offboarding and recovery barriers",
+          "status": "passed",
+          "durationMs": 16338.220105000004
+        }
+      ]
+    },
+    {
+      "file": "tests/backend-acceptance/src/webauthn.integration.test.ts",
+      "status": "passed",
+      "startTime": "2026-10-13T06:06:44.059Z",
+      "durationMs": 8709.23486328125,
+      "tests": [
+        {
+          "name": "S16 staff path: real UV assertion; reset/challenge rollback together; wrong origin, token, expiry and replay fail",
+          "status": "passed",
+          "durationMs": 8709.234907000002
+        }
+      ]
+    }
+  ]
+}

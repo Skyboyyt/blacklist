@@ -1,0 +1,228 @@
+{
+  "scope": "Isolated Phase 7 acceptance spikes, not production readiness",
+  "repository": "Skyboyyt/blacklist",
+  "baseCommit": "93356a16ee8f2031813dfd60d01778f8f0707486",
+  "branch": "feat/phase7-backend-foundation",
+  "startedAt": "2026-10-13T03:14:26.439Z",
+  "runner": "Vitest 5.0.2",
+  "node": "24.21.0",
+  "pnpm": "12.7.0",
+  "postgresImage": "postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+  "browser": "Chromium 154; Playwright 1.63.0",
+  "passed": 35,
+  "failed": 0,
+  "pending": 0,
+  "success": true,
+  "tests": [
+    {
+      "file": "src/auth.test.ts",
+      "name": "S17 configuration forbids the bearer plugin",
+      "status": "passed",
+      "durationMs": 1.775733999999943
+    },
+    {
+      "file": "src/auth.test.ts",
+      "name": "S17 configuration forbids the jwt plugin",
+      "status": "passed",
+      "durationMs": 0.1826970000000756
+    },
+    {
+      "file": "src/auth.test.ts",
+      "name": "S17 configuration forbids the passkey plugin",
+      "status": "passed",
+      "durationMs": 0.15300200000001496
+    },
+    {
+      "file": "src/auth.test.ts",
+      "name": "S17 configuration forbids the token-conversion plugin",
+      "status": "passed",
+      "durationMs": 0.21863199999995686
+    },
+    {
+      "file": "src/auth.test.ts",
+      "name": "headless configuration rejects cached cookies, library rate limiting and account linking",
+      "status": "passed",
+      "durationMs": 0.43801699999994526
+    },
+    {
+      "file": "src/database.integration.test.ts",
+      "name": "D1: generated SQL has reviewed identity/audit types, CHECKs, partial uniques and composite FKs",
+      "status": "passed",
+      "durationMs": 5.1488689999996495
+    },
+    {
+      "file": "src/database.integration.test.ts",
+      "name": "D2/D9: append function works; grants and triggers deny application tampering",
+      "status": "passed",
+      "durationMs": 53.28374299999996
+    },
+    {
+      "file": "src/database.integration.test.ts",
+      "name": "D3: transaction rollback and nontransactional CONCURRENTLY path",
+      "status": "passed",
+      "durationMs": 8.911063999999897
+    },
+    {
+      "file": "src/database.integration.test.ts",
+      "name": "D4: subtype, owner and current-assessment composite foreign keys reject mismatches with typed SQLSTATE",
+      "status": "passed",
+      "durationMs": 25.147321999999804
+    },
+    {
+      "file": "src/database.integration.test.ts",
+      "name": "D6: same pg client enqueues through a Drizzle transaction; rollback leaves no job",
+      "status": "passed",
+      "durationMs": 14.67425700000058
+    },
+    {
+      "file": "src/database.integration.test.ts",
+      "name": "D7: migrator-owned pg-boss starts and fetches jobs as a DML-only runtime login",
+      "status": "passed",
+      "durationMs": 35.745842000000266
+    },
+    {
+      "file": "src/database.integration.test.ts",
+      "name": "D5: forward fixture restore rehearsal preserves data and audit hash chain",
+      "status": "passed",
+      "durationMs": 605.1434170000002
+    },
+    {
+      "file": "src/delivery.integration.test.ts",
+      "name": "S13: concurrent issuers serialize generations; only the accepted latest link can be active",
+      "status": "passed",
+      "durationMs": 121.59589300000061
+    },
+    {
+      "file": "src/delivery.integration.test.ts",
+      "name": "S13: tokens remain pending before provider acceptance; stale requests and cleanup fail closed",
+      "status": "passed",
+      "durationMs": 100.32357800000045
+    },
+    {
+      "file": "src/delivery.integration.test.ts",
+      "name": "S14: real pg-boss failure and retry produce new generations, latest-only acceptance, no token in jobs/logs",
+      "status": "passed",
+      "durationMs": 5109.560111999999
+    },
+    {
+      "file": "src/delivery.integration.test.ts",
+      "name": "S14: permanent failure completes without retry; acceptance followed by crash is not redeemable",
+      "status": "passed",
+      "durationMs": 620.4035699999986
+    },
+    {
+      "file": "src/delivery.integration.test.ts",
+      "name": "S14: exhausted real jobs reach a DLQ containing identifiers and sanitized errors only",
+      "status": "passed",
+      "durationMs": 6659.1281119999985
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "D8/S6: Better Auth Drizzle adapter user/account writes rollback with registration state and audit",
+      "status": "passed",
+      "durationMs": 96.44827299999997
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S4/S5/S11 baseline: signed login creates policy/activity data; missing policy and stale version fail",
+      "status": "passed",
+      "durationMs": 54.8762829999996
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S3: normal registration, sign-in and sign-out leave auth_verifications empty",
+      "status": "passed",
+      "durationMs": 1.148113000000194
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S1/S2: only declared Blacklist routes; exact host-cookie stored and sent by a real browser",
+      "status": "passed",
+      "durationMs": 558.4233090000007
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S7: successful Better Auth login replaces an outdated Argon2id PHC hash",
+      "status": "passed",
+      "durationMs": 30.840578999999707
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S9: library flows work with HTTP/HTTPS/fetch denied and sockets limited to the test PostgreSQL port",
+      "status": "passed",
+      "durationMs": 28.422931000000062
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S10: actual auth model SQL is migrator-owned and runtime cannot perform DDL",
+      "status": "passed",
+      "durationMs": 10.17743900000005
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S12: unknown-email vs wrong-password median timing differs by <=20ms and ratio <=1.5",
+      "status": "passed",
+      "durationMs": 451.16900200000055
+    },
+    {
+      "file": "src/identity.integration.test.ts",
+      "name": "S17: E-1 attack variants fail; legitimate cookies work; rotation plus revoke-all invalidates them",
+      "status": "passed",
+      "durationMs": 52.284607000000506
+    },
+    {
+      "file": "src/password.test.ts",
+      "name": "S8: NFKC, Unicode code-point and byte boundaries reject without truncation",
+      "status": "passed",
+      "durationMs": 2.7824979999999897
+    },
+    {
+      "file": "src/password.test.ts",
+      "name": "S7 primitive: Argon2id verifies normalized passwords and detects stale parameters",
+      "status": "passed",
+      "durationMs": 30.568866999999983
+    },
+    {
+      "file": "src/reset.integration.test.ts",
+      "name": "S16: crash after every reset boundary leaves credential, tokens, sessions, version, cooling, audit and notice unchanged",
+      "status": "passed",
+      "durationMs": 279.15867999999955
+    },
+    {
+      "file": "src/reset.integration.test.ts",
+      "name": "S16: simultaneous redemption succeeds once; sign-in racing reset never keeps an old-version session",
+      "status": "passed",
+      "durationMs": 114.75614999999925
+    },
+    {
+      "file": "src/reset.integration.test.ts",
+      "name": "S16: reset vs email_change serializes on security version with exactly one transition",
+      "status": "passed",
+      "durationMs": 35.71180099999947
+    },
+    {
+      "file": "src/reset.integration.test.ts",
+      "name": "S16: reset vs recovery serializes on security version with exactly one transition",
+      "status": "passed",
+      "durationMs": 42.51686900000004
+    },
+    {
+      "file": "src/reset.integration.test.ts",
+      "name": "S16: reset vs suspension serializes on security version with exactly one transition",
+      "status": "passed",
+      "durationMs": 42.86491299999943
+    },
+    {
+      "file": "src/reset.integration.test.ts",
+      "name": "S16 negatives: expired, wrong-purpose, stale-version and unassured staff reset never replace credentials",
+      "status": "passed",
+      "durationMs": 172.5021799999995
+    },
+    {
+      "file": "src/webauthn.integration.test.ts",
+      "name": "S16 staff path: real UV assertion; reset/challenge rollback together; wrong origin, token, expiry and replay fail",
+      "status": "passed",
+      "durationMs": 5811.739833
+    }
+  ]
+}

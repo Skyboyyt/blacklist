@@ -1,0 +1,1 @@
+ALTER TABLE "gate"."identity_tokens" ADD COLUMN "request_id" uuid;

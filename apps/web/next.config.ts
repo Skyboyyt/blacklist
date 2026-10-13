@@ -33,6 +33,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
+  async rewrites() {
+    const base = process.env['API_INTERNAL_URL'];
+    if (!base || mockMode) return [];
+    const url = new URL(base);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/')
+      throw new Error('Invalid API_INTERNAL_URL');
+    return [{ source: '/api/v1/:path*', destination: `${url.origin}/api/v1/:path*` }];
+  },
 };
 
 export default nextConfig;

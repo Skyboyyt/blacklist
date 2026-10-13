@@ -8,6 +8,20 @@
     "@blacklist/config": "workspace:*",
     "@blacklist/contracts": "workspace:*",
     "@blacklist/core": "workspace:*",
-    "@blacklist/domain": "workspace:*"
+    "@blacklist/domain": "workspace:*",
+    "fastify": "5.12.5",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "24.19.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node src/main.ts"
   }
 }

@@ -19,6 +19,7 @@ import type {
   Profile,
   ProfileUpdate,
   RecoveryCase,
+  RecoveryCompletion,
   ResponseRequest,
   ResponseTarget,
   ResponseTargetRef,
@@ -323,7 +324,7 @@ export interface AdminApi {
   verifyRecovery(id: string, method: string): Promise<ModerationResult<RecoveryCase>>;
   /** Step-up `staff.recovery.approve`. */
   approveRecovery(id: string): Promise<ModerationResult<RecoveryCase>>;
-  completeRecovery(id: string): Promise<ModerationResult<RecoveryCase>>;
+  completeRecovery(id: string): Promise<ModerationResult<RecoveryCompletion>>;
   listMembers(): Promise<ModerationResult<readonly MemberAccount[]>>;
   /** Step-up `user.suspend` on the member. */
   suspendMember(id: string, reason: string): Promise<ModerationResult<readonly MemberAccount[]>>;

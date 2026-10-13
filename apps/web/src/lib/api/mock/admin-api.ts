@@ -469,7 +469,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       if (r.objectionWindowEndsAt > at()) {
         return err('invalid_transition', 'The 24-hour objection window has not ended yet.');
       }
-      r.state = 'completed';
+      r.state = 'fresh_enrollment';
       const subject = store.staff.find((s) => s.id === r.subject.id);
       store.invitations.unshift({
         id: nextId(store, 'INV'),
@@ -485,7 +485,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       record(me, 'staff_recovery_completed', null, [
         { field: r.subject.handle, from: 'objection window', to: 're-enrollment invitation issued' },
       ]);
-      return ok(clone(r));
+      return ok({ ...clone(r), enrollmentCode: 'RECOVER234' });
     },
 
     async listMembers() {

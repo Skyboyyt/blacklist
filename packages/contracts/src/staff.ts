@@ -9,6 +9,7 @@
 import { z } from './zod.ts';
 import { flowTokenSchema, newPasswordSchema } from './auth.ts';
 import { isoDateTimeSchema } from './common.ts';
+import { accountErrorSchema } from './account.ts';
 
 /** Staff need at least two registered authenticators (identity §10.1). */
 export const STAFF_MIN_AUTHENTICATORS = 2;
@@ -32,6 +33,10 @@ export const staffSecuritySchema = z.strictObject({
   authenticatorDeficitSince: isoDateTimeSchema.nullable(),
 });
 export type StaffSecurity = z.infer<typeof staffSecuritySchema>;
+export const staffSecurityResultSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('ok'), data: staffSecuritySchema }),
+  accountErrorSchema,
+]);
 
 /** Outcome of a WebAuthn ceremony as reported to the UI. */
 export const passkeyResultSchema = z.discriminatedUnion('kind', [
@@ -89,6 +94,7 @@ export const recoveryStageSchema = z.enum([
   'identity_verification',
   'second_admin_approval',
   'objection_window',
+  'objected',
   'fresh_enrollment',
   'completed',
   'rejected',

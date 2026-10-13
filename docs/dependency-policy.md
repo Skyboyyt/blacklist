@@ -103,6 +103,14 @@ Status: **Planned** = approved in architecture, not installed. Versions are pinn
 | `eslint`, `typescript-eslint`, `prettier` | dev | Lint/format, boundary rules (including relative paths and subpath exports) | Use versions compatible with TypeScript 6.x | **Installed (Phase 1, §2.1)** |
 | `gitleaks` (binary, not npm) | dev/CI | Secret scanning | Pin release; verify checksum | Planned |
 
+## 2.2 Installed for isolated Phase 7 acceptance (2026-10-13)
+
+All additions are dev dependencies of `@blacklist/backend-acceptance`, not production application dependencies. Pins: Better Auth 1.7.6, Drizzle ORM 0.45.3 / kit 0.31.11, pg 8.23.1, pg-boss 12.37.0, Argon2 2.2.1, SimpleWebAuthn server 14.0.3, Fastify 5.12.5, pg types 8.23.1 and existing Zod 4.6.5. Existing Node 24 / TypeScript 6 / pnpm 12.7.0 baselines are unchanged.
+
+The owner approved **only esbuild@0.18.20, @0.25.12 and @0.28.2 build scripts** through chat on 2026-10-13. `allowBuilds` entries are version-scoped; release-age, trust, strict-build and exact-version policies remain on. Script source was reviewed: platform binaries come from optional npm packages, with registry fallback and version/integrity validation. Installation and frozen refresh passed. No broad esbuild approval, ignored build failure, checksum modification or TLS bypass was used.
+
+[Phase 7 evidence](phase7-acceptance.md#dependency-review-s15) records each dependency's necessity, maintenance, footprint, alternatives and risks. `pnpm why` confirms Better Auth's transitive Drizzle/Kysely/Mongo/Prisma/memory adapters; only Drizzle is configured. The full audit is **not clean** (9 advisories, including 3 high; no critical). Existing Next/braces/source-map-js paths and the new drizzle-kit loader's old esbuild dev-server advisory require tracked follow-up; no security exception or production-readiness claim is made.
+
 ### Considered and rejected (for now)
 
 | Package | Reason |
@@ -118,3 +126,13 @@ Status: **Planned** = approved in architecture, not installed. Versions are pinn
 | `turbo`, `nx` | Not needed at this size |
 | State libraries (Redux, Zustand, Jotai) | Not needed (§6.4) |
 | `jsonwebtoken`/`jose` for sessions | Opaque DB sessions chosen (Better Auth uses `jose` internally only for flows Blacklist does not use) |
+
+## Phase 7 runtime dependencies and security patch follow-up (2026-10-13)
+
+The previously reviewed backend acceptance pins now live in their approved runtime packages: config (Zod), db (Drizzle/pg/pg-boss), domain (Better Auth headless/Argon2/SimpleWebAuthn server), and API (Fastify). Worker adds Nodemailer **10.0.14** (2026-10-03) and types **8.0.2** (2026-09-15): SMTP is the approved local security-mail transport, with explicit final DATA-250 acceptance, TLS in production, disabled debug/URL/file access and sanitized failures. Web adds SimpleWebAuthn browser **14.0.0** (2026-09-02), matching the approved verifier family and real browser ceremonies. These introduce no new build-script approval.
+
+Next and its lint plugin are patched to **16.3.8** (2026-09-30). Narrow overrides select source-map-js **1.2.2**, esbuild **0.25.12** for vulnerable older loader ranges, and Next **16.3.8** for the old automatically installed optional Better Auth peer. Drizzle generation, strict/frozen install and compatibility/security suites validate these resolutions. Release-age, trust, strictDepBuilds, engineStrict and saveExact are unchanged. The owner-approved three version-specific esbuild build entries remain explicit; 0.18.20 is no longer resolved.
+
+The latest complete audit still fails: **1 high braces advisory, no published patched version; 0 critical/moderate/low**. It is a development-tooling dependency via the Next lint plugin/fast-glob/micromatch. No advisory is suppressed and no security exception is claimed. Earlier nine-advisory results above are historical, superseded by this run. OSV/SBOM and production vulnerability handling still require the planned CI/release workflow. The prepublication review ran Gitleaks 8.30.0 in an isolated, network-disabled container pinned to `sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9`; its specific prose/fictional-placeholder findings were manually classified, without disabling scanner rules.
+
+Prepublication validation adds the already-planned dev-only **@vitest/coverage-v8 5.0.2**, published 2026-09-25, matching Vitest exactly. It measures and enforces the documented domain branch floors rather than treating assertions alone as coverage evidence. No new build scripts or policy exceptions were needed. After the filtered addition, a complete `pnpm install --frozen-lockfile` restored every workspace's links; validation runs use that complete installation.

@@ -83,13 +83,23 @@ export const recoveryCaseSchema = z.strictObject({
   ),
   approvedBy: staffRefSchema.nullable(),
   objectionWindowEndsAt: isoDateTimeSchema.nullable(),
-  state: z.enum(['verifying', 'awaiting_approval', 'objection_window', 'completed']),
+  state: z.enum([
+    'verifying',
+    'awaiting_approval',
+    'objection_window',
+    'fresh_enrollment',
+    'objected',
+    'completed',
+    'cancelled',
+  ]),
   createdAt: isoDateTimeSchema,
 });
 export type RecoveryCase = z.infer<typeof recoveryCaseSchema>;
+export const recoveryCompletionSchema = recoveryCaseSchema.extend({ enrollmentCode: z.string() });
+export type RecoveryCompletion = z.infer<typeof recoveryCompletionSchema>;
 
 export const recoveryVerificationSchema = z.strictObject({
-  method: z.string().trim().min(5, 'Describe how identity was verified.').max(200),
+  method: z.string().trim().min(10, 'Describe how and why identity was verified.').max(100),
 });
 
 export const memberAccountSchema = z.strictObject({

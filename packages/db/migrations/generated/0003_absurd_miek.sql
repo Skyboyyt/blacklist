@@ -1,0 +1,1 @@
+ALTER TABLE "blacklist"."account_security_state" ADD COLUMN "suspension_reason" text;

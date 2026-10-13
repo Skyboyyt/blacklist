@@ -10,8 +10,10 @@ export default tseslint.config(
   {
     ignores: [
       '**/node_modules/**',
+      '**/dist/**',
       '**/.next/**',
       '**/.next-mock/**',
+      '**/.tmp/**',
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',

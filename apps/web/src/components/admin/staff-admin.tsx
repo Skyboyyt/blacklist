@@ -70,7 +70,10 @@ const RECOVERY_STATE: Readonly<Record<RecoveryCase['state'], string>> = {
   verifying: 'Collecting identity verifications',
   awaiting_approval: 'Waiting for a different administrator to approve',
   objection_window: '24-hour objection window',
-  completed: 'Completed: re-enrollment invitation issued',
+  fresh_enrollment: 'Waiting for a new password and two authenticators',
+  objected: 'Blocked by a recovery objection',
+  cancelled: 'Cancelled',
+  completed: 'Completed: re-enrollment finished',
 };
 
 /**
@@ -251,9 +254,11 @@ export function StaffAdmin() {
   }
 
   async function completeRecovery(r: RecoveryCase) {
+    const result = await (await getAdminApi()).completeRecovery(r.id);
+    if (result.kind === 'ok') setCode(result.data.enrollmentCode);
     await report(
-      await (await getAdminApi()).completeRecovery(r.id),
-      'Recovery completed',
+      result,
+      'Re-enrollment invitation issued',
       'A re-enrollment invitation was issued. New password and two new authenticators are required.',
     );
   }
@@ -268,10 +273,10 @@ export function StaffAdmin() {
     <div className="flex flex-col gap-6">
       <FormAlert state={alert} />
       {code ? (
-        <Notice tone="warning" title="One-time enrollment code (demo)">
+        <Notice tone="warning" title="One-time enrollment code">
           <span className="identifier text-base font-semibold">{code}</span> — shown once. Deliver it through
-          a separate, previously verified channel; never in the same message as the invitation link. This demo
-          code is fictional.
+          a separate, previously verified channel; never in the same message as the invitation link.
+          {process.env.NEXT_PUBLIC_API_MODE === 'mock' ? ' This demo code is fictional.' : null}
         </Notice>
       ) : null}
 

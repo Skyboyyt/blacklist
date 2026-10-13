@@ -237,7 +237,7 @@ describe('staff suspension, offboarding and recovery', () => {
     expect(approved.state).toBe('objection_window');
     expect(code(await admin.completeRecovery(opened.id))).toBe('invalid_transition');
     clock = new Date(clock.getTime() + 25 * 60 * 60 * 1000);
-    expect(ok(await admin.completeRecovery(opened.id)).state).toBe('completed');
+    expect(ok(await admin.completeRecovery(opened.id)).state).toBe('fresh_enrollment');
     expect(store.invitations[0]?.state).toBe('issued');
   });
 

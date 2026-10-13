@@ -17,11 +17,20 @@
     "test": "pnpm -r --if-present run test",
     "build": "pnpm --filter @blacklist/web run build",
     "test:e2e": "pnpm --filter @blacklist/e2e run e2e",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build",
+    "local:init": "node infrastructure/local/scripts/init.mjs",
+    "local:up": "docker compose --env-file infrastructure/local/.env -f infrastructure/local/compose.yaml up -d",
+    "local:provision": "node --env-file=infrastructure/local/.env packages/db/scripts/local-provision.mjs",
+    "db:migrate": "node --env-file=infrastructure/local/.env packages/db/scripts/migrate.mjs",
+    "dev:api": "node infrastructure/local/scripts/run.mjs api",
+    "dev:worker": "node infrastructure/local/scripts/run.mjs worker",
+    "staff:operator": "node --env-file=infrastructure/local/.env apps/api/src/cli/staff.ts",
+    "build:backend": "pnpm --filter @blacklist/config --filter @blacklist/db --filter @blacklist/domain --filter @blacklist/api --filter @blacklist/worker run build",
+    "test:backend": "pnpm --filter @blacklist/backend-acceptance test:integration"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
-    "@next/eslint-plugin-next": "16.3.6",
+    "@next/eslint-plugin-next": "16.3.8",
     "@types/node": "24.19.0",
     "eslint": "9.39.5",
     "eslint-plugin-jsx-a11y": "6.10.2",

@@ -2,11 +2,15 @@
 
 | Field | Value |
 |---|---|
-| Status | **Revision 3** (2026-10-04, after the Codex re-review). No migrations exist yet |
+| Status | **Revision 3** (2026-10-04, after the Codex re-review). Phase 7 application migration candidates now exist |
 | Owner | Claude (primary engineer). Changes after approval require an ADR |
 | Related | [ARCHITECTURE.md §12](../ARCHITECTURE.md#12-data-architecture), design docs ([identity](design/identity.md), [moderation](design/moderation.md), [chain-data](design/chain-data.md)), ADRs 0001–0007 |
 
 This is the logical model that backend migrations (Phase 7 onward) implement incrementally; frontend phases use the matching `@blacklist/contracts` DTOs and mocks. Column lists are indicative; types, constraints and indexes are finalized and reviewed in migrations. **Deferred** tables are listed in §10 only to show the V1 schema doesn't block them. They are **not created** in V1.
+
+## Phase 7 acceptance fixtures (2026-10-13)
+
+The isolated [backend acceptance package](../tests/backend-acceptance/README.md) contains reduced, disposable schema fixtures proving D1–D9 and S1–S17. They are **not application migrations or a replacement for the normative model below**. Representative subject/subtype and assessment relationships exist only to exercise D4; no Phase 8–10 feature has been implemented. Production identity/audit/staff migrations remain pending the Phase 6 repair-integration prerequisite and gate review. See [gate evidence](phase7-acceptance.md).
 
 ## 1. Conventions
 
@@ -281,3 +285,13 @@ Invariant tests: a `severe` band requires a severe published finding input with 
 | Notification | Kept (own items) |
 | ResearchContribution, ReputationEvent | Deferred |
 | AuditLog | Kept (hash-chained, honest claim) + actor identity map + security events |
+
+## Phase 7 application migration candidates (2026-10-13)
+
+`packages/db/migrations` implements 27 identity/staff/audit tables in the `blacklist` schema; the separate `gate` schema remains disposable acceptance evidence. PostgreSQL 18 is the tested local candidate, using its native UUIDv7 default. The production hosting choice (O-4) is not decided.
+
+Reviewed generated SQL 0000–0004 and hand SQL 0001–0002 are forward-only. The later generated migrations add private email-change snapshots/terminal timestamps, credential drafts, suspension reasons and captured role-request security versions; initial/new-column backfills and retirement of unversioned requests are explicit. Runtime has DML only, no CREATE/TEMP, no access to unused auth_verifications, and audit append via a fixed-search-path SECURITY DEFINER function. Owner-executed append-only triggers and immutable account-kind guards prevent ordinary mutation.
+
+Implementation support fields refine the indicative logical model: `staff_enrollment_flows` holds an opaque flow hash, invitation generation, Argon2 password draft and two verified public-key drafts, expiring after 15 minutes; challenges expire after five minutes. `staff_credential_change_intents` binds a five-minute immutable Argon2 hash draft to the account, signed session and security version. Action-bound password changes reference that draft ID, never a fast password digest. `email_change_requests.old_email` supports notices to both confirmed addresses, and `identity_tokens.terminal_at` anchors terminal retention. Role requests capture the target security version and reject stale/inactive elevation.
+
+No chain, report, evidence, finding, risk or deployment tables/features are introduced by these application migrations. Their Phase 8+ models and normative provenance/revision/independence/reversal invariants remain required.

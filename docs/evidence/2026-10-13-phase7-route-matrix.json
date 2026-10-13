@@ -1,0 +1,590 @@
+{
+  "recordedAt": "2026-10-13T06:10:12.900Z",
+  "scope": "Runtime route policies; anonymous denials exercised in maintained integration suite",
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/start",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/complete",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/password/forgot",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/password/reset",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/password/reset/challenge",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/email-change/confirm",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/viewer",
+      "policy": {
+        "auth": "public",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/viewer",
+      "policy": {
+        "auth": "public",
+        "mutation": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/internal/v1/viewer",
+      "policy": {
+        "auth": "internal",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/internal/v1/viewer",
+      "policy": {
+        "auth": "internal",
+        "mutation": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me/security",
+      "policy": {
+        "auth": "authenticated",
+        "permission": "session:manage:own",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/me/security",
+      "policy": {
+        "auth": "authenticated",
+        "permission": "session:manage:own",
+        "mutation": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reauth",
+      "policy": {
+        "auth": "member",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/password",
+      "policy": {
+        "auth": "member",
+        "permission": "session:manage:own",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/email-change",
+      "policy": {
+        "auth": "member",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/sessions/revoke",
+      "policy": {
+        "auth": "authenticated",
+        "permission": "session:manage:own",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/sessions/revoke-all",
+      "policy": {
+        "auth": "authenticated",
+        "permission": "session:manage:own",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me",
+      "policy": {
+        "auth": "member",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/me",
+      "policy": {
+        "auth": "member",
+        "mutation": false
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/me",
+      "policy": {
+        "auth": "member",
+        "permission": "profile:update:own",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me/staff-recovery",
+      "policy": {
+        "auth": "staff",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/me/staff-recovery",
+      "policy": {
+        "auth": "staff",
+        "mutation": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/mod/recoveries",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:recovery:verify",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/mod/recoveries",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:recovery:verify",
+        "mutation": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/mod/recoveries/verify",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:recovery:verify",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/overview",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/admin/overview",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/roles",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/admin/roles",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/recoveries",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/admin/recoveries",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/members",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/admin/members",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/roles/cancel",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/recoveries/object",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/members/state",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/stepup/preview",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/enrollment/start",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/enrollment/password",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/enrollment/challenge",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/enrollment/credential",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/enrollment/complete",
+      "policy": {
+        "auth": "public",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/login/challenge",
+      "policy": {
+        "auth": "staff_pending",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/login/assertion",
+      "policy": {
+        "auth": "staff_pending",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/staff/stepup/challenge",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me/staff-security",
+      "policy": {
+        "auth": "staff",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/me/staff-security",
+      "policy": {
+        "auth": "staff",
+        "mutation": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/staff-authenticators/remove",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/staff-authenticators/challenge",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/staff-authenticators/credential",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/staff-password/prepare",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/staff-password/complete",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/staff-email-change",
+      "policy": {
+        "auth": "staff",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/staff",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/admin/staff",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/invitations",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/v1/admin/invitations",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/invitations",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/invitations/action",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/staff/state",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/roles",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/roles/approve",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/recoveries",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/recoveries/verify",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:recovery:verify",
+        "mutation": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/recoveries/action",
+      "policy": {
+        "auth": "staff",
+        "permission": "staff:invite",
+        "mutation": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "policy": {
+        "auth": "public",
+        "mutation": false
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/healthz",
+      "policy": {
+        "auth": "public",
+        "mutation": false
+      }
+    }
+  ]
+}

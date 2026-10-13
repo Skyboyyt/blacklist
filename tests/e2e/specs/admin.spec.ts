@@ -120,7 +120,8 @@ test.describe('administrator console (mock)', () => {
     await page.getByLabel('Role', { exact: true }).first().selectOption('admin');
     await page.getByRole('button', { name: 'Create invitation' }).click();
     await confirmWithSecurityKey(page);
-    await expect(page.getByText('One-time enrollment code (demo)')).toBeVisible();
+    await expect(page.getByText('One-time enrollment code', { exact: true })).toBeVisible();
+    await expect(page.getByText(/This demo code is fictional/)).toBeVisible();
     const invitation = page
       .getByRole('listitem')
       .filter({ hasText: 'Waiting for a second administrator' })

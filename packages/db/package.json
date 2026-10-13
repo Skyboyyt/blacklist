@@ -6,6 +6,23 @@
   "type": "module",
   "sideEffects": false,
   "dependencies": {
-    "@blacklist/core": "workspace:*"
+    "@blacklist/core": "workspace:*",
+    "drizzle-orm": "0.45.3",
+    "pg": "8.23.1",
+    "pg-boss": "12.37.0"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "24.19.0",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "schema:generate": "drizzle-kit generate --config drizzle.config.ts"
   }
 }

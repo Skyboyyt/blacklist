@@ -7,6 +7,21 @@
   "dependencies": {
     "@blacklist/config": "workspace:*",
     "@blacklist/core": "workspace:*",
-    "@blacklist/domain": "workspace:*"
+    "@blacklist/domain": "workspace:*",
+    "zod": "4.6.5",
+    "nodemailer": "10.0.14"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "24.19.0",
+    "@types/nodemailer": "8.0.2"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node src/main.ts"
   }
 }
