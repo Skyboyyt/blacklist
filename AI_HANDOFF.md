@@ -9,8 +9,8 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **PHASE 7 BACKEND FOUNDATION — owner authorizes commit and direct publication to main; validation gaps remain** |
-| Current phase | **Phase 7**, authorized 2026-10-13, on `feat/phase7-backend-foundation-review`; Phase 6 PR #7 integrated at `4b16cdb`. |
+| **Current Stage** | **PHASE 7 BACKEND FOUNDATION — published to main at owner instruction; validation gaps remain** |
+| Current phase | **Phase 7**, authorized 2026-10-13, published to `main`; local review branch `feat/phase7-backend-foundation-review` retained; Phase 6 PR #7 integrated at `4b16cdb`. |
 | Authorized phase | Phase 7 only. No Phase 8, deployment, purchase or production-readiness authorization. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
@@ -31,7 +31,9 @@ Read this first at the start of every session. Update it at the end of every ses
 
 **Validation remains unchanged:** 51 backend tests and isolated D1–D9/S1–S17 pass; `pnpm check` passes 480 unit/component assertions, format/lint/types and production web build; backend builds and seven application migrations pass. Coverage still fails (56.22% global branches; security module floors remain 90%), the full dependency audit still reports one unpatched high development-only braces advisory (production audit zero), and the full browser run remains 416 passed / 2 timeouts / 82 existing skips, with both timed-out tests passing an unchanged focused rerun. Secret review found no actual credentials. Full evidence and the security review below are retained as historical prepublication records, not rewritten to imply green checks.
 
-**Publication procedure:** verify the staged files exclude local secrets and generated outputs, commit the complete reviewed Phase 7 work on `feat/phase7-backend-foundation-review`, then create remote main with a normal push of this descendant of the current default. Record the actual outcome in this handoff after the push. The original preservation stash is retained. No additional application changes or test-policy exceptions accompany this instruction.
+**Actual publication:** implementation commit [`baafe57220b5b42c4e457d92bbae43cf468ff5fd`](https://github.com/Skyboyyt/blacklist/commit/baafe57220b5b42c4e457d92bbae43cf468ff5fd) was created on `feat/phase7-backend-foundation-review` and pushed successfully with `git push origin HEAD:refs/heads/main` (exit 0; new remote branch). `git ls-remote` independently confirmed that exact SHA on main. Local main now tracks origin/main; the review branch and original preservation stash are retained. The existing default branch remains `chore/initial-repository`. No force push, PR creation, PR merge, deployment or Phase 8 work occurred. This publication receipt is a separate documentation follow-up to the implementation commit; it does not rewrite the historical prepublication evidence.
+
+**Final staged-file checks:** all 611 index files were exported from their exact staged blobs; the 184 changed files contained no prohibited local/build artifacts. Exact comparison against seven actual local secret values found zero matches; the local env remains ignored and mode 0600. Gitleaks reported the same three manually reviewed prose/fictional-placeholder false positives, with no rules disabled. `pnpm run format:check` and staged whitespace checks passed. The application suites were not rerun for these authorization/receipt-only documentation edits; the full results above remain unchanged.
 
 **Remaining work:** meaningful coverage expansion, upstream dependency remediation when available, a clean complete browser rerun, independent Claude review, and owner decisions on Proposed ADR 0013 / production providers remain outstanding. Publication does not establish production readiness or satisfy these failed checks.
 
