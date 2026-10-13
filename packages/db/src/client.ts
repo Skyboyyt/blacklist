@@ -39,6 +39,9 @@ export function createDatabase(connectionString: string) {
     db,
     pool,
     boss,
+    async checkConnection() {
+      await pool.query('SELECT 1');
+    },
     async start() {
       const result = await pool.query<{ unsafe: boolean }>(`SELECT
         r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolbypassrls OR

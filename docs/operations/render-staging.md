@@ -1,0 +1,155 @@
+# Render + Neon + Resend restricted staging
+
+Status: **prepared and tested locally; not deployed to staging**. Final owner selections on 2026-10-13: free Render for the backend/API, **Neon PostgreSQL** for the database, Resend HTTPS for activation/reset mail, Vercel frontend with Vercel Authentication, Frankfurt region, and **authenticated TLS over Neon’s public endpoint accepted for staging**. Production changes, paid resources, automatic merge and Phase 8 remain unauthorized.
+
+The selected review template is `infrastructure/render/blueprint.staging-neon-free.yaml`: a free API and a **separate** free web-hosted worker with only a status listener. `infrastructure/neon/project.staging.json` is a reviewed project specification, **not an API creation payload**. No project/service/credential value or public URL is fabricated. Earlier Render-database/free and paid templates are superseded alternatives, never selected or applied.
+
+A free web worker is an optional hosting adapter for the existing separate worker; it has no user/business API, no signing/internal/staging token, no new permissions and no automated keepalive. It sleeps after 15 idle minutes, so testers must wake it before a synthetic test window. It is not an always-on background-worker guarantee. Actual provider deployment and acceptance of these operational limits remain review items.
+
+## Verified source and boundaries
+
+GitHub `main` contains Phase 7 implementation `baafe57220b5b42c4e457d92bbae43cf468ff5fd` and publication receipt `ece2e769fafc9a381ed1b540ae8b7e05fccdbab5`. It was pushed directly at owner instruction; no PR merge occurred. GitHub's default remains `chore/initial-repository`, so explicitly select the infrastructure review branch or reviewed commit. Preserve Phase 6 PR #7 (`4b16cdb`) and the preservation stash.
+
+- `apps/api/src/main.ts`: Fastify 5.12.5, thin routes, Node 24.21.0, pnpm 12.7.0, TypeScript 6.0.3. Render maps `PORT` to `API_PORT` and binds `0.0.0.0` through the runtime wrapper.
+- `apps/worker/src/main.ts`: pg-boss 12.37.0; the separate worker is required for registration/reset/invitation/security mail and cleanup. A healthy API without its worker does not complete authentication workflows.
+- `packages/db`: pg 8.23.1, Drizzle ORM 0.45.3, reviewed SQL and checksum/advisory-lock migrator. Twenty-seven application tables cover identity, staff, audit and security-mail state. Project/submission/evidence/finding/score/appeal/chain backend tables and endpoints are **not implemented**; their approved designs and frontend contracts remain future phase dependencies.
+- Better Auth remains headless for credentials/sessions only. No handler/plugins/cookie cache, cross-domain cookies, bearer login, identity protocol redesign, or mocked authorization is added. Exact-Origin checks, resource/session/version checks, staff assurance, independent approval, audit and recovery barriers remain mandatory.
+
+The Vercel browser talks to **its own** `/api/v1/*`. Its Next server rewrites to the actual Render HTTPS API URL using server-only `API_INTERNAL_URL`. `APP_ORIGIN` is the exact protected Vercel staging origin, not Render's hostname. `WEBAUTHN_RP_ID` is that origin's hostname. Preserve `__Host-bl_session; Secure; HttpOnly; SameSite=Lax; Path=/`, no Domain. **CORS remains disabled**, as identity §11 requires. Do not set a public Render API base URL or broaden origins for preview wildcards.
+
+Vercel cannot resolve Render private-network hostnames. Its API URL must use Render's external HTTPS endpoint; Neon's database uses a direct, certificate/hostname-validated TLS endpoint; that transport exception is approved for staging only. Internal viewer GETs still require the independent internal token and a correctly configured trusted peer. Verify Render ingress peer CIDRs and forwarding-header sanitization and the Vercel SSR path before enabling staging. Do not trust `0.0.0.0/0`, invented ranges, or arbitrary forwarded headers. If the hosting ingress cannot meet these requirements, stop and seek Claude's architecture decision.
+
+## Restricted access
+
+Enable **Vercel Authentication** on the actual staging/preview deployment for the authorized team/testers, and verify access in a signed-out browser before exposing a usable staging app. Authentication itself is available on all plans; account-specific team/seat changes may cost extra; do not modify the existing production project or subscribe without owner approval. Never embed or publicly share a deployment-protection bypass token.
+
+The API has a supplemental staging ingress gate: `DEPLOYMENT_ENV=staging` requires an independent `STAGING_ACCESS_TOKEN`. Only the Next server injects it for `/api/v1/*` or its private SSR viewer GET. Client-supplied staging headers are removed/replaced. Direct Render access without it returns generic 404. It grants **no user or administrator authority**: normal authentication, exact Origin/JSON, version, assurance, permission and domain checks still run. The shared token is server-only and must not equal the signing or internal token.
+
+Generate that token with a CSPRNG: at least 32 random bytes encoded as **base64url**, installed directly in protected Render/Vercel settings without terminal/chat output. Render's `generateValue` uses standard base64, which may contain characters this token intentionally rejects; the Blueprint therefore requires a separately supplied `sync: false` value. Do not weaken validation to accept unsafe header values.
+
+The sole unauthenticated ingress exception is GET/HEAD `/healthz`, returning only `status: ok` after a database `SELECT 1`; outages return sanitized 503. No account, queue, credential or database detail is exposed. Vercel Authentication alone would not protect a directly reachable Render API, so both restrictions must be verified.
+
+## Compatibility and remaining blockers
+
+Render/Vercel/Resend official documentation and Render’s current JSON schema were read successfully after the initial network restriction was updated. Neon’s official website initially returned HTTP 403; its **official `neondatabase/website` source** supplies current role, version, pooling, region, TLS and plan documentation (retrieved 2026-10-13). Source links are below. Account credentials remain missing.
+
+- **Database:** require PostgreSQL 18 for `uuidv7()`; confirm `pg_version` and `SELECT current_setting('server_version_num')` on the actual Neon staging project. Use Frankfurt `aws-eu-central-1`, a fresh empty synthetic-only staging project, independent credentials and a direct endpoint. Do not clone production data, sessions, signer or roles into staging.
+- **TLS:** preserve `verify-full` and hostname/CA validation. The owner expressly accepts the authenticated public Neon endpoint for staging; this supersedes the former Render-private-DB mismatch. It does not authorize unverified/plaintext TLS or a production transport decision. URLs allow exactly one `sslmode=verify-full` parameter and reject user/host/mode overrides. Safely construct role-specific URLs in memory/secret stores; never print them.
+- **Roles:** Neon console/CLI/API-created roles inherit privileged `neon_superuser`. Only the owner/provisioner uses those credentials in an operator session. Create runtime/migrator roles **with SQL** using the prepared operator helper; runtime must have no CREATEROLE/CREATEDB/BYPASSRLS/schema-owner membership or DDL/TEMP. Startup and tests enforce this. Never use `neondb_owner` as runtime.
+- **Connections:** use **direct, non-`-pooler` hosts** for both runtime and migrations. Keep the existing pg pools (max 10 each), session timeout options and migrator session advisory lock; Neon transaction pooling does not preserve session-level state. No serverless/HTTP driver, PgBouncer mode change, Neon Auth, Data API, Functions, Object Storage or AI service is introduced. Verify actual direct connection limits and cold-start behavior before declaring connectivity passed.
+- **Worker:** a free Render background-worker plan does not exist. The prepared separate web-hosted worker starts its optional health listener only after DB/queue/consumer startup; each safe health probe checks DB connectivity and outages return generic 503. It has no user action routes. No actor authority comes from a health result. Free sleep/restart/750-instance-hour and outbound-traffic limits mean jobs may pause; wake the worker manually before tests and verify backlog/retry/latest-generation handling. Never combine it with the API, create a hidden keepalive, or report enqueue as delivery.
+- **Operations:** Neon’s authenticated TLS endpoint permits a separate operator session without Render’s unavailable free SSH/pre-deploy/one-off features. No DDL on API/worker startup. Real TCP/TLS connectivity, pg-boss compatibility, role privileges, migrations, restart persistence and restore are still untested on Neon.
+- **Accounts/front end:** `RENDER_API_KEY`, `NEON_API_KEY`, `VERCEL_TOKEN`, `RESEND_API_KEY` are missing. Dashboard login alone is not shared with this task. Actual workspace, free organization/quota, Vercel staging project/URL/Authentication and verified Resend sender/key/retention/tracking must be inspected via supported credentials. Actual Render ingress peer/header sanitization and Vercel SSR are unverified; do not broaden trusted CIDRs, CORS or cookies.
+- **Security:** current root/backend/proxy tests pass, but application coverage still fails its unchanged floors; the development-only braces advisory and previous complete-browser timeouts remain disclosed. Claude independent review and ADR 0013 remain pending. Free staging is not production readiness and cannot be called validated until provider/account/security checks pass.
+
+## Free cost and limits
+
+| Component | Selected plan | Base recurring resource charge | Limits / verification |
+|---|---|---:|---|
+| Render API | Free web service, Frankfurt | $0 | 512 MB class; sleeps after 15 idle minutes; may restart; free instance-hours and outbound quotas apply |
+| Render worker | **Separate** Free web service, Frankfurt, status-only listener | $0 | Same sleep limits; manual test-window wake-up; no always-on claim |
+| Neon PostgreSQL | Free organization/project, Frankfurt, PG18 | $0 | Official current plan: 100 CU-hours/project, 1 GB/project, 20 GB/account, 5 GB project egress, 5-minute scale-to-zero, 6-hour history up to 1 GB-month, one manual snapshot; inspect actual account/version/limits |
+| Resend | Existing/free account, verified sender, sending-only key | $0 if inside verified free quota | Official page: 100 emails/day and 30-day data retention; account/monthly quota/domain/tracking verification pending |
+| Vercel | Existing project, protected staging | No separate Authentication charge | Authentication is available on all plans; existing account/seats/functions/usage may already cost money and are uninspected |
+| New base resource subtotal | Free plans above | **$0 within confirmed free limits** | No service created or plan changed; never assume a paid existing organization/project is free |
+
+Do not attach billing, upgrade, create a paid worker/database, add domains/seats, enable autoscaling/monitoring add-ons or increase storage without separate itemized approval. Render’s unapproved paid comparison is $7 API + $7 worker + $6 DB + $3/10GB storage = $23/month before workspace/overages/taxes. That alternative is not the target and has no authorization.
+
+Neon’s queues/health/polling can keep compute awake and consume CU-hours even with no human traffic. Existing worker polls every two seconds; do not silently alter job behavior or timing gates to meet a quota. Use temporary synthetic test windows, monitor actual usage and accept that reaching a free cap can suspend service rather than implying unlimited free availability.
+
+Source: [Render pricing](https://render.com/pricing), [Render free limits](https://render.com/docs/free), [Vercel Authentication](https://vercel.com/docs/deployment-protection/methods-to-protect-deployments/vercel-authentication), [Resend pricing](https://resend.com/pricing), official Neon [plans](https://github.com/neondatabase/website/blob/main/content/docs/introduction/plans.md), [roles](https://github.com/neondatabase/website/blob/main/content/docs/manage/roles.md), [pooling](https://github.com/neondatabase/website/blob/main/content/docs/connect/connection-pooling.md), [secure connections](https://github.com/neondatabase/website/blob/main/content/docs/connect/connect-securely.md), [versions](https://github.com/neondatabase/website/blob/main/content/docs/postgresql/postgres-version-support.md), [regions](https://github.com/neondatabase/website/blob/main/content/docs/introduction/regions.md). Current public pricing is evidence, not actual account inspection or an executed plan change.
+
+## Safe environment inventory
+
+Use Render/Vercel secret stores. Generate fresh staging CSPRNG credentials independent of local and production. The repository `.env.example` contains placeholders only. None of the following secret **values** belong in a PR, GitHub variable, log, browser bundle or backup of the credential store.
+
+| Category | Names | Tier / handling |
+|---|---|---|
+| API runtime | `NODE_VERSION`, `NODE_ENV`, `DEPLOYMENT_ENV`, Render `PORT` | Node 24.21.0, production runtime semantics, staging deployment. Wrapper maps host/port; no manual `PORT` hardcoding |
+| Common DB/origin | `DATABASE_URL`, `APP_ORIGIN`, `WEBAUTHN_RP_ID`, `WEBAUTHN_RP_NAME`, optional `NODE_EXTRA_CA_CERTS` | API/worker only; direct Neon URL with SQL-created `blacklist_app`, explicit verified TLS; exact protected Vercel origin/RP |
+| Auth/SSR/staging | `BETTER_AUTH_SECRET`, `INTERNAL_API_TOKEN`, `STAGING_ACCESS_TOKEN`, `TRUSTED_PROXY_CIDRS`, `BREAK_GLASS_ENABLED=false` | API; Vercel receives **only** internal and staging tokens, never DB URL or signer. Worker receives none of these tokens |
+| Worker email | `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` | Worker only; sending-only key scoped to a verified staging domain. Fixed HTTPS endpoint |
+| Optional worker health | `WORKER_WEB_SERVICE=true`, Render `PORT`, derived `WORKER_HEALTH_PORT` | Worker only; wrapper maps the assigned port to the status listener. Omit the flag for the established background-worker mode. No user routes or authority |
+| Existing SMTP/local | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | Existing SMTP mode retained; Mailpit remains local. Production SMTP still requires TLS. Unused by Resend mode |
+| Provisioning | `DATABASE_ADMIN_URL`, `BLACKLIST_RUNTIME_PASSWORD`, `BLACKLIST_MIGRATOR_PASSWORD` | Separate authorized operator session only; never API/worker service configuration |
+| Migration | `DATABASE_MIGRATION_URL` | Separate release/operator session only, `blacklist_migrator`, verified direct Neon TLS. Never runtime or frontend |
+| Vercel server | `API_INTERNAL_URL`, `INTERNAL_API_TOKEN`, `DEPLOYMENT_ENV=staging`, `STAGING_ACCESS_TOKEN` | `API_INTERNAL_URL` must be the **actual** external Render HTTPS origin; configure at build and runtime; free API private inbound DNS is unsupported, so Vercel uses its external HTTPS endpoint. Existing frontend contract unchanged |
+| Vercel build | `NEXT_PUBLIC_API_MODE` **unset**, normal Next production build; Node 24.x meeting root engine range | Never deploy the mock build. No public DB, signing, staging or email key |
+| Local cloud operator | `RENDER_API_KEY`, `NEON_API_KEY`, `VERCEL_TOKEN` | Scoped HTTPS bindings for account/resource inspection and explicitly approved staging operations, not application runtime |
+| Human verification | `HUMAN_VERIFICATION_SECRET_KEY`, `NEXT_PUBLIC_HUMAN_VERIFICATION_SITE_KEY` | O-6 unresolved; not activated by this task; login escalation continues failing closed |
+| Chain/RPC | `SOLANA_PRIMARY_PROVIDER`, `HELIUS_API_KEY`, `SOLANA_SECONDARY_RPC_URL`, `EVM_PRIMARY_PROVIDER`, `ALCHEMY_API_KEY`, `ETHEREUM_SECONDARY_RPC_URL`, `ETHERSCAN_API_KEY`, `DNS_RESOLVER_URL` | Future Phase 8+ only; not provisioned or sent to current API/worker/frontend |
+| Storage/evidence | `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, quarantine/evidence/derivative bucket names, `EVIDENCE_DOWNLOAD_ORIGIN`, `EVIDENCE_PROCESSOR_*` limits | Future Phase 9; no object store, uploads, PDFs/malware service or processor is introduced |
+| Monitoring | `LOG_LEVEL`, `ERROR_TRACKING_DSN`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `WORKER_CONCURRENCY` | Example/future knobs; current API logs info, worker concurrency comes from code. Error export/collector remain disabled; do not claim these knobs currently configure unsupported monitoring |
+
+The Render runtime wrapper passes an explicit allowlist to API/worker children. The worker receives no signer/internal/staging token; neither application receives the provisioner or migrator URL. This is configuration hygiene, **not** an operating-system security boundary against the service wrapper's parent environment. Do not install operator secrets in runtime services in the first place. Free Render lacks shell/pre-deploy/one-off facilities; use a separate authorized operator against Neon’s approved direct TLS endpoint. A local rehearsal is not an executed Neon migration. Build subprocesses receive no application/DB/mail secrets. A frozen install includes build-time development dependencies; the unpatched development advisory remains disclosed. Runtime keeps the established workspace symlinks because Node 24 refuses TypeScript copied inside `node_modules`.
+
+## Account setup when access is absent
+
+Check existing supported bindings first. In environment settings, supply `RENDER_API_KEY` for `api.render.com`, `NEON_API_KEY` for `console.neon.tech`, `VERCEL_TOKEN` for `api.vercel.com`, and `RESEND_API_KEY` for `api.resend.com`; do not paste values in chat. Required Render/Vercel/Resend documentation/API destinations were saved; documentation and GitHub API reads now succeed. Secure credential values are still missing. Draft saves do not execute scripts, inject credentials, provision resources or publish this environment.
+
+If no Render workspace exists after authenticated inspection, sign in at [Render Dashboard](https://dashboard.render.com/) using GitHub, create/select a workspace, and authorize **only** `Skyboyyt/blacklist`. Do not select a paid workspace plan or create services until the quoted budget is approved. Create a scoped operator API key through account settings and enter it securely. Inspect Vercel's existing connected project, root `apps/web`, Git branch and actual deployment URL; create/modify only an approved staging deployment with Authentication. Confirm team/tester access and any extra seats/costs first.
+
+Resend needs a verified sender domain and SPF/DKIM records controlled by the owner. Disable click/open tracking and security-link rewriting; confirm content/log retention and access before real identities. Use a sending-only staging key rather than an administrative key where possible. Resend's HTTPS adapter uses the existing `SecurityMailer` interface, Node fetch and Zod, with no new dependency. It accepts only HTTP 200/201 with a validated UUID receipt, rejects redirects, caps response bytes at 8192 and request time at 15 s, retries 408/429/5xx/transport failures, and never logs provider responses. No scheduled mail, attachments, arbitrary URLs, HTML, SDK callbacks or raw-key queue payloads are introduced. Controlled unit responses prove adapter behavior; they do **not** prove real Resend delivery, configured tracking/retention or receipt semantics under this account.
+
+## Intended deployment order after blocker resolution
+
+1. Inspect the existing Render workspace, Neon Free organization/quota/version, exact Vercel project/staging origin/Authentication and Resend sender; enter credentials securely and satisfy required security checks. Validate the selected Render/Neon template against the current schema and review free-worker operating limits. Only the selected Free profile may be considered; no paid resource or public production activation is authorized. Do not treat syntax validation as deployment readiness.
+2. After verifying free account/limits and the reviewed source, create a dedicated empty Neon staging project in Frankfurt with PostgreSQL 18, independent credentials and direct authenticated TLS. Never clone production records or use its default elevated account as `DATABASE_URL`. Verify actual Free history/snapshot limits; test restore to a separate disposable target without changing original data.
+3. In a separate authorized operator session on Neon’s owner-approved direct TLS endpoint, supply only provisioning credentials and execute:
+   ```bash
+   node infrastructure/render/provision.mjs
+   ```
+   This creates `blacklist_app` (DML) and `blacklist_migrator` (schema creation), preserves existing passwords, rejects unsafe existing roles/schema ownership and requires PostgreSQL 18. It does not create/reset/drop databases or tables. Record only role/privilege status, never the credentials.
+4. Remove provisioner credentials from that session. In a separate migrator session, supply only `DATABASE_MIGRATION_URL` and execute:
+   ```bash
+   node infrastructure/render/migrate.mjs
+   ```
+   Seven unchanged application SQL files run in generated-then-hand order with checksums, advisory locking and supported transactions. pg-boss queues and least-privilege grants are provisioned here, never on startup. Reapply once to verify idempotency. No seed accounts or destructive/down migrations.
+5. Configure API/worker runtime secrets and exact staging origin independently of local/production. Configure the Resend sender/key and the Vercel server-only settings. Verify Vercel Authentication and the server-injected staging gate before a usable app is available. Verify trusted proxy behavior and internal viewer GET through Vercel.
+6. Root directory is the repository root on Render. API build/start:
+   ```bash
+   node infrastructure/render/build.mjs api
+   node infrastructure/render/run.mjs api
+   ```
+   Worker build/start:
+   ```bash
+   node infrastructure/render/build.mjs worker
+   node infrastructure/render/run.mjs worker
+   ```
+   Build validates Node 24.21.0, uses pnpm 12.7.0, frozen install and the existing backend build with unchanged dependency controls. Runtime forces production semantics and restricted staging, uses Render's port and forwards SIGTERM/SIGINT for existing graceful shutdown. Auto-deploy is disabled. Record `RENDER_GIT_COMMIT` and compare to the explicitly reviewed commit; do not rely on the old default branch.
+7. Vercel uses its existing Next.js workflow. Only the protected staging/preview deployment receives the new settings/build. Set the exact staging hostname before building/deploying, then verify headers, cookie host, no mock fixtures or browser secrets and the actual staging URL. Keep existing production settings untouched.
+8. Run the staging checks below and capture sanitized evidence. Availability is blocked until critical security/deployment checks and account restrictions are verified. No real staff bootstrap/invitation or real-user import under this test task.
+
+## Staging verification and recovery
+
+Use synthetic accounts and an owner-controlled test mailbox, not fixture accounts in production or arbitrary recipients. Capture status/counts and commit IDs; never tokens, cookies, mail bodies, passwords, provider payloads or private records.
+
+- Signed-out Vercel visitor is denied; authorized testers can reach the protected site. Direct Render `/api/v1/viewer` is 404 without the server-only staging header. GET/HEAD `/healthz` is 200 only with a healthy database; simulated/real DB outage yields sanitized 503. Wrong/missing/null mutation Origin is 403 even with the staging token; malformed JSON, forged roles and unauthenticated/private/admin requests fail safely.
+- Register via Vercel, observe real Resend acceptance and the owner-controlled mailbox, consume the fragment token, then test login/logout, sessions, expiry/version invalidation, reauthentication, reset and email change using the exact existing contracts. Verify secure host-only cookies through the Vercel rewrite and that provider failures leave tokens unredeemable. Rate-limit/login-escalation cases must fail closed while O-6 is unresolved.
+- Check actual `blacklist_app` flags/grants; deny DDL/TEMP, migration-journal access, auth-verification reads and audit mutation; verify append-only audit and queue payloads contain identifiers only. Verify no provisioner/migrator/signing key leaks in worker/web configuration, logs or bundles.
+- Restart the API and worker, then verify synthetic account/session/queue/audit state persists in the same staging DB. Check connection counts, pool errors, queue progress/backlog and mail failures. Restore/role/password procedures must be tested against a **new** disposable restore target, never reset the live DB.
+- Local migration tests rehearse logical `pg_dump`/`pg_restore` with ownership/ACLs and audit hashes; they do not prove Neon history/snapshot recovery. Neon Free history/snapshots have limited retention/capacity; actual provider restoration is untested. For a future approved production plan, verify retention, encrypted backups, restore-to-new-instance steps and credential separation, then perform the actual provider restore drill before production approval. Restrict restored DB access and apply reviewed grants/checksums without changing audit history.
+- Search, project verification submissions, evidence uploads, scoring, findings and appeals have only approved contracts/mocks; the corresponding real backend workflows remain unavailable. Mark them **blocked by their phases**, not passed or fake successful. Do not deploy the mock API to supply them.
+
+API logs contain request ID, method, route template and status only; exceptions are sanitized. Worker logging omits recipients, message text, links and raw provider errors. Configure platform log access/retention and alert on 5xx, DB health/pool exhaustion, queue failures/backlog and mail failures after provider/cost approval. No external telemetry or monitoring subscription is enabled automatically.
+
+Rollback uses the previous reviewed application commit through a manual deploy, with compatible schema retained. Do not roll back SQL, edit an applied checksum, restore over the current database or force push. If schema compatibility cannot be maintained, stop rollout and use a separately reviewed forward repair or new restore target. Preserve original data and audit history, and record the incident/owner decision.
+
+## Production preparation checklist (not approval or activation)
+
+| Required item | Current preparation / unresolved evidence |
+|---|---|
+| API/worker configuration | Separate pinned Node/pnpm service build/start templates; manual reviewed-commit deployment and DB-backed health. Free worker sleeps; production availability/resource sizing pending |
+| Database/region/resources | Staging Frankfurt PG18 direct verified TLS and SQL roles prepared. Production provider/networking, connection/storage limits and scaling choice pending |
+| Costs | Free staging base $0 within account quotas; production plan, seats/add-ons/overages/taxes require itemized approval |
+| Environment/domain/DNS | Safe inventory above; actual staging URLs and sender/domain unverified. Production domains, DNS, RP ID, exact origins and secrets must be separately reviewed |
+| Recovery | Local logical restore passed; provider restoration, retention, encrypted backup access, RPO/RTO and restore-to-new-target drill pending |
+| Monitoring | Status health and sanitized existing logs; account log access/retention, alert recipients, queue/mail/DB alerts and any paid telemetry approval pending |
+| Release/rollback | Manual deploy exact reviewed commit, preserve migrations/checksums and schema-compatible rollback; no destructive SQL or automatic main merge |
+| Security approval | Local negative tests and scanner evidence recorded. Required coverage, full audit/browser reliability, Claude review, identity recovery/human-verification and real cloud tests remain open |
+
+## Production and Phase 8
+
+Production remains **blocked**: required coverage, the unpatched development dependency, complete browser reliability, Claude review, ADR 0013/P-13, O-6, provider/security/recovery verification, launch/legal/retention gates and later real backend phases remain open. Produce a production checklist only from actual passing staging evidence and verified plan/domain/monitoring/rollback settings, then request separate owner approval. Do not treat restricted staging or publication to main as a production-readiness decision.
+
+Phase 8 has **not begun and is not authorized**. Its future start requires owner authorization, Claude review of the outstanding foundation decisions and an honest assessment of failed foundation gates. No chain/RPC, evidence store, scoring or moderation backend is introduced by this infrastructure task.

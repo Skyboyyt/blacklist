@@ -1,0 +1,76 @@
+# UNAPPROVED PAID ALTERNATIVE. Do not apply; selected target is blueprint.staging-neon-free.yaml.
+# Verify current Render schema, PG18 availability, pricing, quotas and recovery first.
+# The owner selected Frankfurt; no resource has been provisioned by this file.
+services:
+  - type: web
+    name: blacklist-staging-api
+    runtime: node
+    region: frankfurt
+    plan: 0.5c-512mb
+    branch: chore/render-staging-deployment
+    autoDeployTrigger: 'off'
+    buildCommand: node infrastructure/render/build.mjs api
+    startCommand: node infrastructure/render/run.mjs api
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_ENV
+        value: production
+      - key: DEPLOYMENT_ENV
+        value: staging
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: WEBAUTHN_RP_ID
+        sync: false
+      - key: WEBAUTHN_RP_NAME
+        value: Blacklist Staging
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: INTERNAL_API_TOKEN
+        generateValue: true
+      - key: STAGING_ACCESS_TOKEN
+        sync: false
+      - key: TRUSTED_PROXY_CIDRS
+        sync: false
+      - key: BREAK_GLASS_ENABLED
+        value: 'false'
+  - type: worker
+    name: blacklist-staging-worker
+    runtime: node
+    region: frankfurt
+    plan: 0.5c-512mb
+    branch: chore/render-staging-deployment
+    autoDeployTrigger: 'off'
+    buildCommand: node infrastructure/render/build.mjs worker
+    startCommand: node infrastructure/render/run.mjs worker
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_ENV
+        value: production
+      - key: DEPLOYMENT_ENV
+        value: staging
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: WEBAUTHN_RP_ID
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+databases:
+  - name: blacklist-staging-db
+    region: frankfurt
+    plan: 0.1c-256mb
+    postgresMajorVersion: '18'
+    databaseName: blacklist_staging
+    user: blacklist_provisioner
+    diskSizeGB: 10
+    ipAllowList: []

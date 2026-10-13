@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { viewerSchema, type Viewer } from '@blacklist/contracts';
+import { stagingAccessHeaders } from '../../security/staging-gateway';
 export async function getLiveViewer(): Promise<Viewer> {
   const base = process.env['API_INTERNAL_URL'],
     token = process.env['INTERNAL_API_TOKEN'];
@@ -18,7 +19,11 @@ export async function getLiveViewer(): Promise<Viewer> {
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.timeout(5000),
-      headers: { 'x-bl-internal-token': token, ...(cookie ? { cookie: `__Host-bl_session=${cookie}` } : {}) },
+      headers: {
+        ...stagingAccessHeaders(),
+        'x-bl-internal-token': token,
+        ...(cookie ? { cookie: `__Host-bl_session=${cookie}` } : {}),
+      },
     });
     if (!response.ok) return { kind: 'anonymous' };
     return viewerSchema.parse(await response.json());

@@ -1,0 +1,18 @@
+{
+  "status": "review-specification-only-not-an-API-request",
+  "projectName": "blacklist-staging",
+  "planRequired": "Free",
+  "providerRegion": "aws-eu-central-1",
+  "postgresMajorVersionRequired": 18,
+  "dataPolicy": "fresh empty synthetic-only staging project; no production branch/data/credentials clone",
+  "connectionPolicy": {
+    "endpoint": "direct (no -pooler hostname)",
+    "sslmode": "verify-full",
+    "runtimeRole": "blacklist_app",
+    "migrationRole": "blacklist_migrator",
+    "roleCreation": "SQL operator only; never use Neon console/API-created privileged roles for runtime"
+  },
+  "managedServicesDisabled": ["Neon Auth", "Data API", "Functions", "Object Storage", "AI Gateway"],
+  "costPolicy": "no paid organization/resource/upgrade/add-on without explicit approval",
+  "accountLimitsRequireVerification": true
+}

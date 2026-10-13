@@ -1,9 +1,11 @@
 /**
  * Next.js 16 proxy (formerly middleware). Responsibilities: per-request CSP nonce
- * and security headers ONLY. It never makes authorization decisions — the API
+ * and security headers, plus a server-only staging ingress credential. It never makes
+ * user authorization decisions — the API
  * enforces every permission (ARCHITECTURE §9, §26).
  */
 import { NextResponse, type NextRequest } from 'next/server';
+import { stagingGatewayHeaders } from './lib/security/staging-gateway';
 import {
   buildContentSecurityPolicy,
   matchesPrefix,
@@ -31,7 +33,7 @@ export function proxy(request: NextRequest) {
     request.nextUrl.hostname,
   );
 
-  const requestHeaders = new Headers(request.headers);
+  const requestHeaders = stagingGatewayHeaders(request.nextUrl.pathname, request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
 

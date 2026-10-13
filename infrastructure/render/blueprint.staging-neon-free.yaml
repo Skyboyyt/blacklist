@@ -1,0 +1,72 @@
+# SELECTED FREE STAGING REVIEW TEMPLATE; not applied or deployed.
+# Render API and a SEPARATE web-hosted worker; Neon PostgreSQL is configured separately.
+# Free services sleep after 15 idle minutes. Wake the worker for each synthetic test window.
+# Health exposes status only; no API/user actions are added to the worker.
+# Resolve actual accounts/origin/role/TLS/permissions/validation before making staging available.
+services:
+  - type: web
+    name: blacklist-staging-api
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: chore/render-staging-deployment
+    autoDeployTrigger: 'off'
+    buildCommand: node infrastructure/render/build.mjs api
+    startCommand: node infrastructure/render/run.mjs api
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_ENV
+        value: production
+      - key: DEPLOYMENT_ENV
+        value: staging
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: WEBAUTHN_RP_ID
+        sync: false
+      - key: WEBAUTHN_RP_NAME
+        value: Blacklist Staging
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: INTERNAL_API_TOKEN
+        generateValue: true
+      - key: STAGING_ACCESS_TOKEN
+        sync: false
+      - key: TRUSTED_PROXY_CIDRS
+        sync: false
+      - key: BREAK_GLASS_ENABLED
+        value: 'false'
+  - type: web
+    name: blacklist-staging-worker
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: chore/render-staging-deployment
+    autoDeployTrigger: 'off'
+    buildCommand: node infrastructure/render/build.mjs worker
+    startCommand: node infrastructure/render/run.mjs worker
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_ENV
+        value: production
+      - key: DEPLOYMENT_ENV
+        value: staging
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: WEBAUTHN_RP_ID
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: WORKER_WEB_SERVICE
+        value: 'true'
+    healthCheckPath: /healthz

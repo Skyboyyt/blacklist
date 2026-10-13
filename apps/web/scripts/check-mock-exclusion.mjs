@@ -32,7 +32,14 @@ const MARKERS = [
   'Fixture: revision published before the demo started.',
   'At least one of the two verifiers must be an administrator.',
 ];
-const SERVER_ONLY_NAMES = ['INTERNAL_API_TOKEN', 'API_INTERNAL_URL', 'BETTER_AUTH_SECRET', 'DATABASE_URL'];
+const SERVER_ONLY_NAMES = [
+  'INTERNAL_API_TOKEN',
+  'API_INTERNAL_URL',
+  'BETTER_AUTH_SECRET',
+  'DATABASE_URL',
+  'STAGING_ACCESS_TOKEN',
+  'RESEND_API_KEY',
+];
 const TEXT = /\.(js|mjs|cjs|html|json|rsc|body|txt|map)$/;
 
 function files(dir) {

@@ -1276,10 +1276,10 @@ Rev-2 changes are marked; superseded wording is retained for history.
 | E-1 | Plain session-token storage compensated by HMAC-signed cookies | **Resolved (owner 2026-10-04): accepted with mitigations M1–M10**; re-evaluate before any Better Auth upgrade | — |
 | O-2 | Drizzle vs Kysely | **Resolved conditionally:** Drizzle subject to D1–D9 (ADR 0007) | Before first migration |
 | O-3 | Blockchain providers (incl. same-slot Solana capability, archival EVM state) | Open: capability/archival/independence/terms matrix | Phase 8 |
-| O-4 | Hosting, edge, CI | Open | Before staging |
+| O-4 | Hosting, edge, CI | Owner selected free Render backend/API + Neon PostgreSQL + Resend, Frankfurt staging and Vercel Authentication (2026-10-13); authenticated public Neon TLS accepted for staging, separate optional free-web worker prepared; account/provider/operating-limit/CI verification pending, production undecided | Before staging |
 | O-5 | Error tracking | Open; external export off until decided | Before enabling export |
 | O-6 | Human-verification provider | Open (Turnstile candidate); UI phases use a fake | Phase 7 |
-| O-7 | Email provider (TLS, retention, no link rewriting on security mail) | Open; Mailpit locally | Before staging |
+| O-7 | Email provider (TLS, retention, no link rewriting on security mail) | Owner selected Resend, preferring compatible HTTPS (2026-10-13); real account/sender/acceptance, tracking and retention verification pending; Mailpit remains local | Before staging |
 | O-8 | PostgreSQL RLS | Deferred; owner-scoped checks from Phase 7 | When private sharing arrives |
 | O-9 | Message-signing-incapable wallets | **Resolved:** staff-assisted standing | — |
 | O-10 | TypeScript 7 vs 6 | **Resolved:** TypeScript 6.x (ADR 0007) | — |

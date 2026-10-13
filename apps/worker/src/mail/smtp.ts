@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer';
 import type { WorkerConfig } from '@blacklist/config';
 import type { SecurityMailer } from '@blacklist/domain';
 export function smtpMailer(config: WorkerConfig): SecurityMailer {
+  if (config.EMAIL_PROVIDER !== 'smtp' || !config.SMTP_HOST || !config.SMTP_PORT)
+    throw new Error('smtp_mailer_configuration_invalid');
   const transport = nodemailer.createTransport({
     host: config.SMTP_HOST,
     port: config.SMTP_PORT,

@@ -9,13 +9,59 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **PHASE 7 BACKEND FOUNDATION — published to main at owner instruction; validation gaps remain** |
-| Current phase | **Phase 7**, authorized 2026-10-13, published to `main`; local review branch `feat/phase7-backend-foundation-review` retained; Phase 6 PR #7 integrated at `4b16cdb`. |
-| Authorized phase | Phase 7 only. No Phase 8, deployment, purchase or production-readiness authorization. |
+| **Current Stage** | **POST-PHASE 7 RESTRICTED STAGING PREPARATION — implemented/tested locally; cloud deployment blocked** |
+| Current phase | Phase 7 remains published on `main@ece2e76`; infrastructure feature branch `chore/render-staging-deployment`; Phase 6 PR #7 preserved at `4b16cdb`. No Phase 8. |
+| Authorized phase | Post-Phase 7 restricted staging preparation/deployment on free Render + Neon + Resend, protected Vercel. Feature-branch commit/push/PR authorized. No automatic merge, paid resource, production/public launch, Vercel production change or Phase 8. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: owner-authorized commit/publication following documented prepublication review |
+| Last agent | Codex: owner-selected free staging preparation, local validation and security self-review; provider access missing |
 | Last updated | 2026-10-13 |
+
+
+## Restricted staging infrastructure handoff — 2026-10-13
+
+**Actual status:** **Implemented / Tested locally; Blocked for cloud deployment.** No Render service, Neon project/database, Resend key/domain, Vercel configuration, billing change or public launch was created. No staging URL or deployed commit exists. No production readiness or Phase 8 start is claimed. Current evidence: [deployment runbook](docs/operations/render-staging.md), [sanitized test/security evidence](docs/evidence/2026-10-13-render-staging.json), [security self-review](docs/reviews/2026-10-13-render-staging-security.md), [hosting constraints](docs/adr/0014-render-private-tls-and-free-staging.md). Independent Claude review remains pending.
+
+**Owner decisions and scope:** final choice is **free Render backend/API**, **Neon PostgreSQL**, **Resend HTTPS activation/reset mail**, and existing **Vercel frontend protected by Vercel Authentication**. Render Frankfurt and Neon `aws-eu-central-1`; owner explicitly confirmed authenticated public Neon TLS is acceptable for restricted staging. Earlier Render-managed DB/private-network planning is superseded. Use only `blueprint.staging-neon-free.yaml`; historical free Render DB and paid templates are comparisons, not authorized deployments. Do not purchase resources, auto-merge, change Vercel production, launch publicly or start Phase 8. The optional separate free web-hosted worker needs review of idle-sleep/manual test-window limits before availability; no always-on guarantee or automated keepalive.
+
+**Repository verification:** remote main is `ece2e769fafc9a381ed1b540ae8b7e05fccdbab5`, containing Phase 7 `baafe57220b5b42c4e457d92bbae43cf468ff5fd` and the owner's direct-publication receipt. This was a direct push, not a PR merge. GitHub default remains `chore/initial-repository`; use explicit branch/commit. Phase 6 repairs/PR #7 are integrated and the `phase7-preservation-before-pr7` stash is retained. GitHub REST and Git reads now work; the older Forbidden/API-blocked notes below are historical. No open issues were returned at inspection. Work remains on `chore/render-staging-deployment`, with no force push or main push under this task.
+
+**Implemented / changed files:**
+
+- API `server.ts` / `plugins/staging-access.ts`, config and DB client: independent constant-time staging ingress check, safe DB-backed GET/HEAD health, strict configuration and unchanged authentication/Origin/session/domain permissions.
+- Web `proxy.ts`, server viewer adapter, `security/staging-gateway.ts` and tests, mock-exclusion script: server-only staging header injected into existing same-origin proxy/SSR, caller-supplied values overwritten, no browser token/public DB URL or cross-origin cookie/CORS change.
+- Worker `mail/resend.ts`, SMTP selector, `main.ts`, `health.ts`: fixed HTTPS adapter with redirect rejection, bounded timeout/receipt, validated accepted-message UUID and sanitized failures; existing SMTP retained. Optional health-only listener starts after DB/queue startup and closes on shutdown; separate service/credentials, no user API or signer/internal/staging/operator keys.
+- DB `provision.ts`, `infrastructure/render/` build/run/runtime/URL/provision/migrate scripts and review Blueprints, `infrastructure/neon/project.staging.json`: pinned Node 24.21.0/pnpm 12.7.0, full frozen install, explicit child environment allowlists, direct `verify-full` endpoints, separate SQL-created safe roles/operator migrations, Render port/shutdown, manual reviewed-commit deployment. Neon default console/API roles are privileged and must never be runtime credentials. No new dependency, lockfile, build-script approval or relaxed security policy.
+- Local launch whitelist retains SMTP workflows; acceptance package adds deployment, managed-like migration, Resend and worker-health regressions, includes them in maintained coverage. `.env.example`, architecture hosting log, threat model, acceptance record, operating runbook/security review/ADR/evidence and this handoff updated. No frontend research/moderation contracts/mocks or later-phase business implementation replaced.
+
+**Migrations:** **zero new or changed application SQL migrations**. Seven existing SQL files and 27 identity/staff/audit tables retained. Local PG18 checks actually passed: fresh/repeat migrations, populated upgrades, applied-checksum rejection, logical dump/restore with ownership/ACL/audit hashes, non-superuser operator rehearsal, password preservation, unsafe-existing-role rejection, runtime DDL/TEMP/verification/audit denials, and state persistence after runtime restart. Drizzle regeneration reports no drift. Real Neon migrations/TLS/privileges/recovery have not run. Provisioning revokes PUBLIC CREATE/TEMP privileges, so use a dedicated empty staging database; never run against an unrelated/shared or production database.
+
+**Checks actually run (latest code):**
+
+| Check | Actual outcome |
+|---|---|
+| `pnpm check` | **Passed**, exit 0: format, lint, all types, 79 contract + 391 web + 24 backend units = **494**, production Next build |
+| Actual Render worker build command | **Passed**, exit 0: unchanged frozen install across 14 workspaces and five backend package builds; API profile previously passed too |
+| Complete backend `vitest run` | **Passed 67/67**, 15 files, 0 failed/pending; exact D1–D9/S1–S17 still pass unchanged |
+| Maintained application coverage command | **Failed**, exit 1, despite **32/32 assertions passing**. Global branches **59.16% (804/1359)** vs 75%; identity 58.82/access 77.27/audit 80 vs 90%; staff 48.65/db 62.5/API 71.69/worker 68.96 vs 75%. Floors preserved |
+| Full dependency audit | **Failed**, exit 1: one high development-only braces advisory **GHSA-vfj7-8cjw-p6xm**, no patched version reported; no suppression. Production audit **passed**, zero vulnerabilities |
+| Drizzle / mock exclusion | **Passed**, zero drift; **4/4** exclusion checks |
+| Official Render Blueprint schema | **Passed**, all three templates; syntax only, not account/provisioning proof |
+| Native Next → actual local API preflight | **Passed 6/6**: health/login 200, direct ingress 404, private no-session 401, invalid input 400, foreign Origin 403; zero response/build credential leaks, mock markers or browser server-secret names |
+| Native optional worker process smoke | **Passed 4/4**, actual local PostgreSQL/SMTP worker: DB-backed health and HEAD 200, mutations/user route 404, SIGTERM exit 0, zero secret bytes in its log |
+| Credential review | Pinned network-disabled/redacted Gitleaks raw exits 1: **3 tree / 4 history / 3 exact-staged flags**, all reviewed prose or explicit fictional placeholder; no rules disabled and **zero real credentials found**. Exact byte scan: **8 ephemeral/local values, 4,342 source/build files, zero matches**, ignored local env mode 600 |
+| Full frontend browser / actual staging | **Not rerun / not run**. Prior Phase 7 full browser result remains 416 passed / 2 timeouts / 82 existing skips; focused reruns passed but do not turn that full run green. No Render/Vercel/Neon/Resend cloud success claimed |
+
+**Security review / remaining risks:** current baseline coverage, full audit and complete-browser reliability remain unresolved. Claude reviews infrastructure and identity recovery ADR 0013/P-13; O-6 human verification remains unavailable/fail closed. Actual Render ingress peer/CIDR/header handling and Vercel SSR/secure cookies must be verified without widening trust/Origin/CORS. Public health probes expose only status but need provider abuse/connection-budget monitoring; a healthy listener does not prove mail delivery. Free services sleep after 15 minutes; worker polling/health can consume Neon CU-hours and exhaust quotas. Neon Free history/snapshot limits are not production backup assurance. Real sender, tracking/retention, mailbox acceptance, TLS, pooling/limits, restart persistence and provider restoration require testing. Private records, revision/severe independence/appeal/reversal/provenance/risk invariants remain unchanged; future chain/submission/evidence/scoring/appeal endpoints stay unavailable.
+
+**Costs / credentials / environment:** documented base free staging charge is **$0 within verified Free quotas**, not an account quote; existing Vercel account/seats/usage and all provider plans are uninspected. No billed resource/upgrade is authorized. `RENDER_API_KEY`, `NEON_API_KEY`, `VERCEL_TOKEN`, `RESEND_API_KEY` remain absent in the process and unbound in environment metadata. A dashboard login does not provide task access. Missing scoped HTTPS requirements and updated complete startup instructions are saved in the onboarding draft; saving does not inject values, execute, publish or prove fresh-task restoration. Enter values securely in environment settings, never chat. The complete application variable inventory and operator-secret separation are in the runbook.
+
+**Next step:** review the feature PR and obtain Claude's operating/security review; resolve baseline checks. Owner supplies the four protected bindings, then inspect existing Render workspace, Neon **Free** organization/PG18/Frankfurt limits, exact protected Vercel staging URL and Resend verified sender. Verify a concrete free plan without billing changes; only then provision a fresh synthetic staging DB, run operator roles/unchanged migrations separately, deploy the intended reviewed API/worker commit and test real authentication/authorization/email/restoration before availability. Stop at infrastructure; production activation and Phase 8 need separate authorization.
+
+**GitHub publication receipt:** pending the final safe feature-branch commit/push/PR; no merge authorized. A receipt will be recorded below after the GitHub operation succeeds.
+
+---
+
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
 >
