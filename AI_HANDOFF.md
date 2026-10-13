@@ -14,9 +14,17 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Post-Phase 7 restricted staging preparation/deployment on free Render + Neon + Resend, protected Vercel. Feature-branch commit/push/PR authorized. No automatic merge, paid resource, production/public launch, Vercel production change or Phase 8. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: reviewed existing DB scripts; prepared masked Windows operator procedure and read-only verifications; 11 local checks pass, cloud SQL and correct runtime settings await owner PC execution; services remain suspended |
+| Last agent | Codex: native/proxy PostgreSQL reachability rechecked; documented supported local Codex execution option; cloud SQL/settings remain blocked, services suspended |
 | Last updated | 2026-10-13 |
 
+
+## Owner requested agent execution — 2026-10-13
+
+Owner asked Codex to perform the Windows setup. Actual capability checks: this task has only the cloud terminal, no PC/remote-desktop/SSH connection tool. Fresh native IPv4 TCP probes to the intended staging endpoint are refused (errno111). Existing environment HTTPS proxy CONNECT establishes a tunnel but the native PostgreSQL SSLRequest is closed; a verified direct TLS probe does not negotiate PostgreSQL ALPN. No DB password, login or SQL was sent in these transport probes, and no transport/TLS policy was bypassed. These observations do not prove a PostgreSQL session or provider outage. Render GET metadata confirms both existing services remain Free/suspended; no provider mutation, migration, resume or merge.
+
+**Prepared supported alternative:** Windows guide now includes an official native Codex desktop/IDE local-project path and a safe task prompt. A local terminal on a PC with native reachability can run the already-reviewed scripts, avoiding an unreviewed privileged cloud runner, alternate driver or paid service. Its credential access is separate: do not extract proxy-held bindings or place values in prompts. Owner must open the local checkout/task; this cloud chat cannot silently control their PC. Existing guide/preflight/role/hash/TLS/grant/save-only requirements and no-resume/merge/production boundaries apply. Cloud SQL/runtime configuration remains blocked/pending, not complete. Formatting/whitespace checks pass; pinned network-isolated two-file Gitleaks reports zero leaks/exit0. No application/tests/SQL/dependency changes; prior source test results are retained, not rerun.
+
+---
 
 ## Windows operator procedure prepared — 2026-10-13
 

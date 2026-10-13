@@ -4,6 +4,30 @@ Use **PowerShell 7** on your own Windows PC. These commands use the existing pro
 
 Current cloud status: the API has an unsuitable privileged/pooler URL, the worker has no URL, and both Render services remain suspended. Native TCP/5432 from the Codex environment is unreachable. **Cloud roles/migrations have not been verified or executed.** Windows execution still needs your PC; the local Linux PostgreSQL rehearsals are separate evidence.
 
+## Have a local Codex agent execute the procedure
+
+This cloud chat does not have a terminal on your Windows PC. If you prefer Codex to run the commands, use the supported [native Windows Codex setup](https://developers.openai.com/codex/windows/) in the desktop app or VS Code extension. Open the **local repository folder** as the project, using the feature-branch checkout below, and start a task with access to its local terminal. No new hosting service or alternative database driver is needed.
+
+Paste this request into that local task:
+
+```text
+Finish Blacklist's staging database setup using chore/render-staging-deployment.
+Read AGENTS.md, AI_HANDOFF.md and docs/operations/neon-windows-setup.md.
+Use the existing provisioning/migration scripts and the guide's direct,
+verify-full staging endpoint. Preserve existing files, credentials and data.
+Check the exact target, reviewed SQL bytes, native TCP and empty-target preflight.
+Run provisioning, separate-role migrations twice, and read-only TLS/hash/grant
+verification. Configure only the verified blacklist_app DATABASE_URL on the
+existing Render API and worker using save-only settings, if protected access is
+available. Supply any missing credentials through private environment settings
+or a masked terminal prompt; never ask for values in chat or print them.
+Keep both services suspended. Do not merge PR8, touch production, reset/drop
+databases, create another cloud runner, change architecture or begin Phase8.
+Stop and report a blocker if native connectivity, credentials or checks fail.
+```
+
+A local task needs its own authorized credential access; this cloud's proxy-backed bindings are not automatically available on your PC and must not be extracted or copied into a saved prompt. Follow the masked prompts/private settings when required. Opening a local project does not itself prove Neon connectivity or complete the setup.
+
 ## 1. Install the pinned tools and obtain the feature branch
 
 Install [Git for Windows](https://git-scm.com/downloads/win), [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows), and the official [Node 24.21.0 x64 installer](https://nodejs.org/dist/v24.21.0/node-v24.21.0-x64.msi). Use the corresponding official ARM64 installer if your PC is ARM64. Verify the downloaded Node installer with its official SHA-256 manifest and Windows signature before installation. For an x64 installer saved in Downloads, run this in PowerShell 7:
