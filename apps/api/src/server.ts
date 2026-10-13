@@ -5,6 +5,7 @@ import type { IdentityContext } from '@blacklist/domain';
 import { installSecurity } from './plugins/security.ts';
 import { installStagingAccess } from './plugins/staging-access.ts';
 import { installErrors } from './plugins/errors.ts';
+import { installIngressDiagnostics } from './plugins/ingress-diagnostics.ts';
 import { authRoutes } from './routes/auth.ts';
 import { accountRoutes } from './routes/account.ts';
 import { staffRoutes } from './routes/staff.ts';
@@ -31,6 +32,7 @@ export function createServer(ctx: IdentityContext, config: ApiConfig, logging = 
   installErrors(app);
   installStagingAccess(app, config);
   installSecurity(app, ctx, config);
+  installIngressDiagnostics(app, config);
   authRoutes(app, ctx);
   accountRoutes(app, ctx);
   staffRoutes(app, ctx);
