@@ -5,6 +5,17 @@ import { DomainError } from '../shared/errors.ts';
 // Bundled denylist applies even when the range service is unavailable. Context
 // terms are denied as complete phrases, rather than rejecting ordinary words.
 const blocked = new Set([
+  'password',
+  'password1',
+  'password123',
+  '12345678',
+  '123456789',
+  '1234567890',
+  'qwertyui',
+  'qwertyuiop',
+  'qwerty123',
+  'letmein1',
+  'blacklist',
   'passwordpassword',
   'password123456789',
   '123456789012345',

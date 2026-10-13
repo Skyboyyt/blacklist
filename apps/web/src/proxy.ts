@@ -6,6 +6,7 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { stagingGatewayHeaders } from './lib/security/staging-gateway';
+import { canonicalRedirectUrl } from './lib/security/canonical-origin';
 import {
   buildContentSecurityPolicy,
   matchesPrefix,
@@ -24,6 +25,18 @@ export function proxy(request: NextRequest) {
       status: 400,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
+  }
+
+  const canonical = canonicalRedirectUrl(
+    request.nextUrl,
+    process.env['CANONICAL_APP_ORIGIN'],
+    request.method,
+  );
+  if (canonical) {
+    const response = NextResponse.redirect(canonical, 307);
+    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('Referrer-Policy', 'no-referrer');
+    return response;
   }
 
   const nonce = btoa(crypto.randomUUID());

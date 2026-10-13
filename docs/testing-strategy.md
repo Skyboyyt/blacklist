@@ -69,7 +69,7 @@
 - Revoked session rejected on the next request (cookie cache off, S4). Sessions **without** `session_policy_state` or with a **stale `security_version`** rejected (S5).
 - Member idle 7 d / absolute 30 d; staff 30 min / 12 h; staff pending-WebAuthn session limited to assertion endpoints and revoked after 5 minutes.
 - Login: generic errors; unknown-email timing (S12); throttle thresholds per email hash, account, IPv4 and IPv6 /64; human-verification escalation; no permanent lockout; **the sign-in response body never contains a token**.
-- Passwords: 14 vs 15 code points; 128 vs 129 code points; 512 vs 513 bytes; NFKC equivalence; no truncation; HIBP fake down → local blocklist used.
+- Passwords: 7 vs 8 code points; 128 vs 129 code points; 512 vs 513 bytes; NFKC equivalence; no truncation; HIBP fake down → local blocklist used.
 - **Reset atomicity (S16):**
   - crash injection after every step of the reset transaction leaves either the complete old state (token still usable) or the complete new state (new password, token consumed, **all sessions revoked**, cooling set, security version bumped, audit row and notice job present). No mixed state;
   - a forced revocation failure rolls back the password change;

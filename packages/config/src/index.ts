@@ -48,6 +48,28 @@ const apiSchema = shared.extend({
   API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).default('127.0.0.1'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4107),
   INTERNAL_API_TOKEN: z.string().min(32),
+  MAIL_WORKER_HEALTH_URL: z
+    .string()
+    .url()
+    .refine((value) => {
+      let url: URL;
+      try {
+        url = new URL(value);
+      } catch {
+        return false;
+      }
+      return (
+        url.protocol === 'https:' &&
+        /^[a-z0-9-]+\.onrender\.com$/u.test(url.hostname) &&
+        !url.username &&
+        !url.password &&
+        !url.port &&
+        url.pathname === '/healthz' &&
+        !url.search &&
+        !url.hash
+      );
+    })
+    .optional(),
   STAGING_INGRESS_DIAGNOSTIC_KEY: z
     .string()
     .regex(/^[A-Za-z0-9_-]{32,128}$/u)
@@ -100,6 +122,8 @@ function parse<S extends z.ZodType>(
 }
 export const readApiConfig = (env = process.env) => {
   const config = parse(apiSchema, env);
+  if (config.MAIL_WORKER_HEALTH_URL && config.DEPLOYMENT_ENV !== 'staging')
+    throw new Error('MAIL_WORKER_HEALTH_URL staging only');
   if (
     Boolean(config.STAGING_INGRESS_DIAGNOSTIC_KEY) !== Boolean(config.STAGING_INGRESS_DIAGNOSTIC_UNTIL) ||
     (config.STAGING_INGRESS_DIAGNOSTIC_KEY &&

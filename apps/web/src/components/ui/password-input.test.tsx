@@ -29,6 +29,6 @@ describe('PasswordInput', () => {
     const user = userEvent.setup();
     render(<PasswordInput id="pw" aria-label="Password" autoComplete="new-password" showRequirement />);
     await user.type(screen.getByLabelText('Password'), '🔐🔐🔐');
-    expect(screen.getByText('At least 15 characters (3/15)')).toBeInTheDocument();
+    expect(screen.getByText('At least 8 characters (3/8)')).toBeInTheDocument();
   });
 });

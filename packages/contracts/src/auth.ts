@@ -7,7 +7,7 @@
  */
 import { z } from './zod.ts';
 
-export const PASSWORD_MIN_CODE_POINTS = 15;
+export const PASSWORD_MIN_CODE_POINTS = 8;
 export const PASSWORD_MAX_CODE_POINTS = 128;
 export const PASSWORD_MAX_BYTES = 512;
 
@@ -160,6 +160,7 @@ export const tokenFlowOutcomeSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('success') }),
   z.strictObject({ kind: z.literal('token_problem'), status: tokenStatusSchema.exclude(['valid']) }),
   z.strictObject({ kind: z.literal('handle_unavailable') }),
+  z.strictObject({ kind: z.literal('password_rejected'), reason: z.enum(['policy', 'breached']) }),
   z.strictObject({ kind: z.literal('rate_limited'), retryAfterSeconds: z.number().int().positive() }),
   z.strictObject({ kind: z.literal('temporarily_unavailable') }),
   z.strictObject({ kind: z.literal('unexpected_error'), requestId: z.string() }),
@@ -181,6 +182,7 @@ export type ResetPasskeyProblem = z.infer<typeof resetPasskeyProblemSchema>;
  * and no password, session or cooling state moves until the assertion verifies.
  */
 export const resetPasswordOutcomeSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('password_rejected'), reason: z.enum(['policy', 'breached']) }),
   z.strictObject({ kind: z.literal('success') }),
   z.strictObject({ kind: z.literal('token_problem'), status: tokenStatusSchema.exclude(['valid']) }),
   z.strictObject({ kind: z.literal('passkey_required') }),

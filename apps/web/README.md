@@ -50,7 +50,7 @@ Product requirements: PRD §5.2. Security behaviour: identity design §5, §11�
 - **Accessibility:** WCAG 2.2 AA, keyboard-only, visible focus, announced errors.
 - **Tests:** testing-strategy §10.
 
-`/register` asks for an email only (email-first). `/register/complete` collects handle, password and confirmation (15–128 Unicode code points, ≤ 512 bytes, show/hide, paste allowed). `/staff/enroll` collects the out-of-band enrollment code in addition to the fragment token.
+`/register` asks for an email only (email-first). `/register/complete` collects handle, password and confirmation (8–128 Unicode code points, ≤ 512 bytes, show/hide, paste allowed). `/staff/enroll` collects the out-of-band enrollment code in addition to the fragment token.
 
 ## Planned layout (Phases 1–6)
 

@@ -13,7 +13,7 @@ import { Field } from '@/components/ui/field';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Spinner } from '@/components/ui/spinner';
 import { getAuthApi } from '@/lib/api/browser';
-import { NEW_PASSWORD_HINT } from '@/lib/auth/password-copy';
+import { NEW_PASSWORD_HINT, passwordRejectionMessage } from '@/lib/auth/password-copy';
 import { useFragmentToken } from '@/lib/auth/use-fragment-token';
 import { focusFirstError, readFields, validateForm, type FieldErrors } from '@/lib/forms/validate';
 import { webAuthnSupported, type PasskeyCeremonyState } from '@/lib/security/use-passkey-ceremony';
@@ -79,7 +79,11 @@ export function ResetPasswordForm() {
       setPasskey({ status: 'idle' });
       setOutcome({ kind: 'passkey' });
     } else if (res.kind === 'passkey_not_verified') setPasskey({ status: res.result });
-    else if (res.kind === 'rate_limited') setAlert(rateLimitedAlert(res.retryAfterSeconds));
+    else if (res.kind === 'password_rejected') {
+      pendingForm.current = null;
+      setOutcome({ kind: 'form' });
+      setErrors({ password: passwordRejectionMessage(res.reason) });
+    } else if (res.kind === 'rate_limited') setAlert(rateLimitedAlert(res.retryAfterSeconds));
     else if (res.kind === 'temporarily_unavailable') setAlert(unavailableAlert());
     else setAlert(unexpectedAlert(res.requestId));
   }

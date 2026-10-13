@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { describe, it, expect, vi } from 'vitest';
 import { readApiConfig, readWorkerConfig } from '@blacklist/config';
 import { ipPrefix, hasPermission, isPermission, type UserActor } from '@blacklist/domain';
@@ -14,8 +15,8 @@ import {
 const env = {
   DATABASE_URL: 'postgresql://fictional@localhost/fictional',
   APP_ORIGIN: 'http://localhost:3000',
-  BETTER_AUTH_SECRET: 'fictional-config-placeholder-at-least-32-characters',
-  INTERNAL_API_TOKEN: 'fictional-internal-placeholder-at-least-32-characters',
+  BETTER_AUTH_SECRET: randomBytes(32).toString('hex'),
+  INTERNAL_API_TOKEN: randomBytes(32).toString('hex'),
   WEBAUTHN_RP_ID: 'localhost',
 };
 describe('runtime security/configuration boundaries', () => {
@@ -34,6 +35,22 @@ describe('runtime security/configuration boundaries', () => {
       }),
     ).toThrow('SMTP_SECURE');
     expect(Object.isFrozen(readApiConfig(env))).toBe(true);
+  });
+  it('enforces the owner-requested eight-code-point boundary without changing normalization or hashing', async () => {
+    expect(() => normalizePassword('a'.repeat(7))).toThrow('password_policy_rejected');
+    expect(normalizePassword('Ａ'.repeat(8))).toBe('A'.repeat(8));
+    const stored = await hashPassword('Ａ'.repeat(8));
+    expect(await verifyPassword({ hash: stored, password: 'A'.repeat(8) })).toBe(true);
+    expect(await verifyPassword({ hash: stored, password: 'B'.repeat(8) })).toBe(false);
+  });
+  it('still blocks common eight-character passwords during a breach-provider outage', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('provider unavailable')));
+    try {
+      for (const value of ['password', '12345678', 'blacklist', 'qwertyui'])
+        await expect(preparePassword(value)).rejects.toThrow('password_breached');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
   it('normalizes IPv6 /64 and mapped IPv4 buckets without admitting arbitrary prefixes', () => {
     expect(ipPrefix('2001:db8:1234:5678::1')).toBe(ipPrefix('2001:0db8:1234:5678:abcd:efab:0:2'));

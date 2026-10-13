@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createServer as netServer } from 'node:net';
-import { beforeAll, afterAll, describe, it, expect } from 'vitest';
+import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
 import { writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { z } from 'zod';
@@ -281,6 +281,148 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
       headers: { authorization: 'Bearer fake', cookie: '__Host-bl_session=fake' },
     });
     expect(r.json()).toEqual({ kind: 'anonymous' });
+  });
+  it('wakes only after committed accepted mail requests and preserves actual queued SMTP delivery', async () => {
+    const target = 'https://fixture-worker.onrender.com/healthz',
+      originalFetch = globalThis.fetch;
+    const wake = vi.fn(async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
+      input === target ? new Response(null) : originalFetch(input, init),
+    );
+    vi.stubGlobal('fetch', wake);
+    const gateway = randomBytes(32).toString('hex');
+    const second = createServer(
+      ctx,
+      readApiConfig({
+        NODE_ENV: 'test',
+        DEPLOYMENT_ENV: 'staging',
+        DATABASE_URL: urlFor(h.runtime),
+        APP_ORIGIN: origin,
+        WEBAUTHN_RP_ID: 'localhost',
+        BETTER_AUTH_SECRET: secret,
+        INTERNAL_API_TOKEN: randomBytes(32).toString('hex'),
+        STAGING_ACCESS_TOKEN: gateway,
+        MAIL_WORKER_HEALTH_URL: target,
+      }),
+      false,
+    );
+    const email = `wake-${randomUUID()}@example.test`;
+    try {
+      for (const [extra, payload, expected] of [
+        [{ origin: 'https://foreign.example.test', 'x-blacklist-staging-access': gateway }, { email }, 403],
+        [{ origin, 'x-blacklist-staging-access': 'incorrect' }, { email }, 404],
+        [{ origin, 'x-blacklist-staging-access': gateway }, { email: 'invalid' }, 400],
+      ] as const) {
+        expect(
+          (
+            await second.inject({
+              method: 'POST',
+              url: '/api/v1/auth/register/start',
+              headers: { ...extra, 'content-type': 'application/json' },
+              payload,
+            })
+          ).statusCode,
+        ).toBe(expected);
+      }
+      expect(wake.mock.calls.filter(([input]) => input === target)).toHaveLength(0);
+      expect(
+        (
+          await second.inject({
+            method: 'POST',
+            url: '/api/v1/auth/register/start',
+            headers: { origin, 'x-blacklist-staging-access': gateway, 'content-type': 'application/json' },
+            payload: { email },
+          })
+        ).statusCode,
+      ).toBe(202);
+      expect(wake.mock.calls.filter(([input]) => input === target)).toHaveLength(1);
+      expect(
+        await ctx.runtime.db.select().from(schema.user).where(eq(schema.user.email, email)),
+      ).toHaveLength(0);
+      await findToken(email, '/register/complete');
+      await waitFor(async () => {
+        const [intent] = await ctx.runtime.db
+          .select()
+          .from(schema.intents)
+          .where(eq(schema.intents.email, email));
+        return intent?.state === 'issued' ? true : null;
+      });
+    } finally {
+      await second.close();
+      vi.unstubAllGlobals();
+    }
+  });
+  it('registers and resets with eight characters while rejecting shorter passwords, expired links and replay', async () => {
+    const email = `eight-${randomUUID()}@example.test`,
+      password = randomBytes(4).toString('hex');
+    expect((await post('/api/v1/auth/register/start', { email })).statusCode).toBe(202);
+    const token = await findToken(email, '/register/complete');
+    const form = { handle: `e_${randomBytes(5).toString('hex')}`, password, confirmPassword: password };
+    expect(
+      (
+        await post('/api/v1/auth/register/complete', {
+          token,
+          form: { ...form, password: 'short77', confirmPassword: 'short77' },
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(await ctx.runtime.db.select().from(schema.user).where(eq(schema.user.email, email))).toHaveLength(
+      0,
+    );
+    const result = await post('/api/v1/auth/register/complete', { token, form });
+    expect(result.statusCode).toBe(200);
+    const cookie = cookieOf(result.headers);
+    expect((await post('/api/v1/auth/register/complete', { token, form })).statusCode).toBe(400);
+    expect((await post('/api/v1/auth/login', { email, password })).statusCode).toBe(200);
+    expect((await post('/api/v1/auth/password/forgot', { email })).statusCode).toBe(202);
+    const reset = await findToken(email, '/reset-password'),
+      next = randomBytes(4).toString('hex');
+    expect(
+      (
+        await post('/api/v1/auth/password/reset', {
+          token: reset,
+          form: { password: 'short77', confirmPassword: 'short77' },
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await post('/api/v1/auth/password/reset', {
+          token: reset,
+          form: { password: next, confirmPassword: next },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/v1/me/security', headers: { cookie } })).statusCode,
+    ).toBe(401);
+    expect((await post('/api/v1/auth/login', { email, password })).statusCode).toBe(401);
+    expect((await post('/api/v1/auth/login', { email, password: next })).statusCode).toBe(200);
+    expect(
+      (
+        await post('/api/v1/auth/password/reset', {
+          token: reset,
+          form: { password: next, confirmPassword: next },
+        })
+      ).statusCode,
+    ).toBe(400);
+    const expiredEmail = `expired-${randomUUID()}@example.test`;
+    expect((await post('/api/v1/auth/register/start', { email: expiredEmail })).statusCode).toBe(202);
+    const expiredToken = await findToken(expiredEmail, '/register/complete');
+    await ctx.runtime.db
+      .update(schema.intents)
+      .set({ expiresAt: new Date(0) })
+      .where(eq(schema.intents.email, expiredEmail));
+    expect(
+      (
+        await post('/api/v1/auth/register/complete', {
+          token: expiredToken,
+          form: { ...form, handle: `x_${randomBytes(5).toString('hex')}` },
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      await ctx.runtime.db.select().from(schema.user).where(eq(schema.user.email, expiredEmail)),
+    ).toHaveLength(0);
   });
   it('completes email-first registration via real queued SMTP delivery and rejects replay', async () => {
     const email = `member-${randomUUID()}@example.test`,

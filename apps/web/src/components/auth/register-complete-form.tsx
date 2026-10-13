@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Spinner } from '@/components/ui/spinner';
 import { getAuthApi } from '@/lib/api/browser';
-import { NEW_PASSWORD_HINT } from '@/lib/auth/password-copy';
+import { NEW_PASSWORD_HINT, passwordRejectionMessage } from '@/lib/auth/password-copy';
 import { useFragmentToken } from '@/lib/auth/use-fragment-token';
 import { focusFirstError, readFields, validateForm, type FieldErrors } from '@/lib/forms/validate';
 import {
@@ -73,6 +73,10 @@ export function RegisterCompleteForm() {
           break;
         case 'token_problem':
           setOutcome({ kind: 'problem', status: res.status });
+          break;
+        case 'password_rejected':
+          setErrors({ password: passwordRejectionMessage(res.reason) });
+          focusFirstError(form, { password: 'x' }, FIELDS);
           break;
         case 'handle_unavailable':
           setErrors({ handle: 'This handle is not available. Try another.' });

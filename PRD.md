@@ -13,7 +13,7 @@
 >
 > **Revision 2** applies the owner's decisions of 2026-10-04:
 > - library-first authentication;
-> - 15-character passwords;
+> - 8-character minimum passwords (owner update, ADR0016);
 > - no public pending-report counts;
 > - the smaller V1;
 > - image-first evidence;
@@ -190,7 +190,7 @@ Keywords: **MUST** / **SHOULD** / **MAY**. Normative protocols live in the desig
 | AUTH-2 | Registration MUST NOT reveal whether an email has an account. Responses are identical; an existing account's owner receives a notice email instead (rate-limited). |
 | AUTH-3 | Every account has a verified email by construction. There are no unverified accounts. |
 | AUTH-4 | Emailed tokens MUST be single-use, purpose-bound and short-lived, carried in the URL **fragment**, and consumed only by POST from a confirm page. They are generated at send time and never stored in plaintext or placed in queues or logs. |
-| AUTH-5 | Passwords MUST be 15–128 Unicode code points and ≤ 512 bytes after NFKC normalization. Longer input is rejected, **never truncated**. No composition rules; no periodic expiry; paste, autofill and password managers supported; breached passwords blocked (HIBP range API, with a local blocklist fallback). |
+| AUTH-5 | Passwords MUST be 8–128 Unicode code points and ≤ 512 bytes after NFKC normalization. Longer input is rejected, **never truncated**. No composition rules; no periodic expiry; paste, autofill and password managers supported; breached passwords blocked (HIBP range API, with a local blocklist fallback). |
 | AUTH-6 | Login MUST use a generic failure message and equalized timing. |
 | AUTH-7 | Brute-force and credential-stuffing defenses MUST use durable per-account, per-IP (IPv6 /64) and global throttling with human-verification escalation, and MUST NOT allow permanent lockout of legitimate users. |
 | AUTH-8 | Forgot-password MUST always answer "If an account exists, we sent instructions". Reset tokens expire after 30 minutes and are single-use. **At most one reset link per account is valid at a time**, and a link becomes usable only after the email provider has accepted the message. |
@@ -493,7 +493,7 @@ Graceful provider degradation with "as of" times; never stale-as-current. 99.5% 
 
 | # | Decision | Status |
 |---|---|---|
-| P-1 | Password minimum | **Decided (owner):** 15 code points for password-only accounts; max 128 code points / 512 bytes; NFKC; no truncation |
+| P-1 | Password minimum | **Decided (owner):** 8 code points for password-only accounts; max 128 code points / 512 bytes; NFKC; no truncation |
 | P-2 | Public pending-report counts | **Decided (owner):** not shown; unreviewed reports have no public effect |
 | P-3 | Search-engine indexing of address/transaction pages | Open. Recommendation: `noindex` for address and transaction pages in V1; index methodology and reviewed project pages (robots is not access control) |
 | P-4 | Second approval when staff are scarce | **Decided (owner):** never relaxed; severe not published until independently approved |

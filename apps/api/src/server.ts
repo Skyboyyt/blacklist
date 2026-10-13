@@ -6,6 +6,7 @@ import { installSecurity } from './plugins/security.ts';
 import { installStagingAccess } from './plugins/staging-access.ts';
 import { installErrors } from './plugins/errors.ts';
 import { installIngressDiagnostics } from './plugins/ingress-diagnostics.ts';
+import { installMailWorkerWake } from './plugins/mail-worker-wake.ts';
 import { authRoutes } from './routes/auth.ts';
 import { accountRoutes } from './routes/account.ts';
 import { staffRoutes } from './routes/staff.ts';
@@ -33,6 +34,7 @@ export function createServer(ctx: IdentityContext, config: ApiConfig, logging = 
   installStagingAccess(app, config);
   installSecurity(app, ctx, config);
   installIngressDiagnostics(app, config);
+  installMailWorkerWake(app, config);
   authRoutes(app, ctx);
   accountRoutes(app, ctx);
   staffRoutes(app, ctx);

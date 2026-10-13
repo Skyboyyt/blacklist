@@ -25,7 +25,8 @@ export async function request<S extends z.ZodType>(
       redirect: 'error',
       headers: body === undefined ? {} : { 'content-type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(20000),
+      // Free Render can take longer than20seconds to wake for an auth request.
+      signal: AbortSignal.timeout(path.startsWith('/auth/') ? 90_000 : 20_000),
     });
     const payload: unknown = await response.json();
     if (!response.ok) {

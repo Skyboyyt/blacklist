@@ -134,7 +134,7 @@ describe('password change', () => {
     const user = userEvent.setup();
     render(<PasswordChangeForm />);
     await user.type(screen.getByLabelText('New password'), 'short');
-    expect(screen.getByText('At least 15 characters (5/15)')).toBeInTheDocument();
+    expect(screen.getByText('At least 8 characters (5/8)')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/strong|weak|symbol/i);
   });
 });

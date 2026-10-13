@@ -57,6 +57,39 @@ describe('live adapters preserve contracts and never invent success', () => {
       status: 'invalid',
     });
   });
+  it('shows password-policy rejection without pretending registration or reset succeeded', async () => {
+    for (const [code, reason] of [
+      ['password_breached', 'breached'],
+      ['password_policy_rejected', 'policy'],
+    ] as const) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ code }, 400)));
+      const form = { handle: 'fictional', password: 'test8888', confirmPassword: 'test8888' };
+      expect(await liveAuthApi.registerComplete('fictional_token_12345678', form)).toEqual({
+        kind: 'password_rejected',
+        reason,
+      });
+      expect(
+        await liveAuthApi.resetPassword('fictional_token_12345678', {
+          password: form.password,
+          confirmPassword: form.password,
+        }),
+      ).toEqual({ kind: 'password_rejected', reason });
+    }
+  });
+  it('bounds auth cold-start waiting without changing non-auth request deadlines', async () => {
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ kind: 'accepted' })));
+    try {
+      expect(await liveAuthApi.registerStart({ email: 'fictional@example.test' })).toEqual({
+        kind: 'accepted',
+      });
+      expect(timeout).toHaveBeenLastCalledWith(90_000);
+      await liveAccountApi.getSecurity();
+      expect(timeout).toHaveBeenLastCalledWith(20_000);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
   it('requires an action assertion and keeps later-phase services unavailable', async () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
