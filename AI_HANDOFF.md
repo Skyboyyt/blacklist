@@ -9,14 +9,26 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **POST-PHASE 7 — NEON DATABASE INTEGRATION VERIFIED; API/WORKER CONFIGURED AND HELD** |
-| Current phase | Phase 7 remains published on `main@ece2e76`; infrastructure feature branch `chore/render-staging-deployment`; Phase 6 PR #7 preserved at `4b16cdb`. No Phase 8. |
-| Authorized phase | Post-Phase 7 restricted staging preparation/deployment on free Render + Neon + Resend, protected Vercel. Feature-branch commit/push/PR authorized. No automatic merge, paid resource, production/public launch, Vercel production change or Phase 8. |
+| **Current Stage** | **PUBLIC FOUNDATION SITE/API/WORKER LIVE — SIGNED-IN SSR BLOCKED** |
+| Current phase | Phase7 and infrastructure PR8 merged on main; rollout source `ef384475`, frontend parent `34447fe` with identical tree; Phase6 repairs/stash preserved. No Phase8. |
+| Authorized phase | Owner explicitly authorized merging current work, removing Vercel visitor restrictions and public activation of existing Free foundation services. No auth/security-policy removal, paid resource, production DB change or Phase8. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: acknowledged owner review, revalidated database/runtime boundaries and security checks, added ingress adversary coverage, completed clean full Chromium rerun; remaining security gates block application activation/conditional merge; PR8 draft/unmerged, API/worker held |
+| Last agent | Codex: merged PR8 at owner instruction, removed visitor hosting restriction, deployed exact merged source to both Free Render services, verified public frontend and health/denial checks; signed-in SSR404 remains unresolved |
 | Last updated | 2026-10-13 |
 
+
+## Owner-authorized public foundation activation — 2026-10-13
+
+**Authorization/result:** owner explicitly said “remove restriction and merged everything to go live no long talk”, superseding prior hold/no-merge/visitor restriction instructions for the current deployment. PR8 marked ready and merged at `ef3844755ca95e58ba65880b7521165910c36143`. Existing Free Frankfurt API/worker branch changed to main, auto-deploy remains off; both resumed and explicit builds deploy that exact merge. Deployments `dep-db7771bbc2fs73e1satg` / `dep-db7771ss728c73fc6s7g` are live, `/healthz`200 with real DB checks. No paid resource or billing change, no SQL/migration/account seed, no production database change. No tests, dependency policies, actor permissions or identity controls disabled; known validation failures remain failures.
+
+**Public frontend:** project-level Vercel `ssoProtection=null` set/read back, removing visitor Authentication. Existing actual URL `https://blacklist-web-git-chore-render-staging-deployment-skyboy.vercel.app` homepage/login200 without Vercel login. Alias is READY deployment `dpl_AvkcZVJY5yGAgz9ESRbW6ZGusmaW`, source34447fe; Git tree `da13ee40f77cfca7981b719ab25a06608ee3917c` matches backend merge exactly. No production branch/env/domain change; project-wide visitor-protection removal affects matching deployments. API ingress key remains server-only in Vercel; public visitors use the existing same-origin proxy, not a shared user credential.
+
+**Actual hosted checks:** homepage/login/API health/worker health200. Ten API/proxy/denial checks pass: direct private404; gate-authorized anonymous private/admin401; allowlisted anonymous viewer200; foreign-Origin403; invalid input400; forbidden headless auth path404; frontend real viewer200/private401; forged browser gateway header overwritten. No protected values in checked responses. Initial admin probe corrected to actual `/api/v1/admin/overview`. **FAILED:** internal SSR viewer404 rather than200 with correct server tokens; `TRUSTED_PROXY_CIDRS` remains unset, so signed-in dashboard fails closed. Do not bypass trusted peers/internal token or guess broad ranges; Claude must resolve actual provider ingress within the approved design/ADR process. Render log inspection403 still prevents actual hosted log verification.
+
+**Open limits:** full hosted registration/activation/login/logout/reset/cookies/restart/restore remain untested; no new email sent. Resend default sender only supports the approved account mailbox; zero verified domains. Required coverage59.38%/75% and security package floors fail; full dev audit1high/unpatched braces, production audit0. Prior500unit/48integration/focused6/418browser82skips/build/lint/type/secret results retained, not rerun for documentation-only rollout. Free sleep/cold starts/quota limits apply; worker is not always-on. Independent Claude review, ADR0013/O6/P13/retention/monitoring/legal/recovery remain open. No production readiness, complete platform functionality or Phase8 claim.
+
+**Files/evidence:** this handoff, current-state AGENTS/ARCHITECTURE/THREAT-MODEL, hosting ADR/runbook, and sanitized `docs/evidence/2026-10-13-public-foundation-activation.json`; no application/migration/dependency source change. Local branch `chore/live-foundation-activation` holds documentation follow-up for owner-authorized commit/PR/merge. Preserve infrastructure branch, all history and stash. Next step is trusted-ingress/SSR resolution and proper hosted identity/sender validation; do not characterize health/public site as working dashboard or completed production security review. Older suspended/restricted/no-merge checkpoints below are historical.
 
 ## Finalization after owner review — 2026-10-13
 
