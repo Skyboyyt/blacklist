@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| Status | **Proposed — not implemented or activated** |
+| Status | **Accepted by owner — implementation authorized; Claude independent review pending** |
 | Proposed by | Codex, 2026-10-13 |
 | Reviewed by | Claude recommendation pending |
-| Decided by | Owner decision pending |
+| Decided by | Owner, 2026-10-13: “accept it do it fast please” |
 | Affects | Staging operator execution/credential boundary; hosting ADR0014; T-45/T-48/T-49; no application schema, identity protocol or API/worker redesign |
 
 ## Problem
 
 The owner wants database preparation without Windows terminal work. This Codex cloud machine cannot establish native PostgreSQL to the selected Neon staging endpoint. The existing Free Render API/worker remain suspended; Free Render does not provide an operator shell or one-off/pre-deploy execution. Their application processes must never receive provisioner/migrator credentials or run migrations on startup.
 
-A new credential-carrying operator service is a separate security boundary. AGENTS.md §6 requires Claude review and owner acceptance before implementing that change. The owner requested an alternative, not activation of a new privileged service or a production launch.
+A new credential-carrying operator service is a separate security boundary. AGENTS.md §6 requires Claude review and owner acceptance before implementing that change. The owner subsequently accepted this operator plan and authorized its execution. This session instruction authorizes scoped implementation/activation; it does not represent a Claude recommendation or production launch approval.
 
 ## Evidence
 
@@ -27,7 +27,7 @@ A new credential-carrying operator service is a separate security boundary. AGEN
 
 Keeping the present topology requires an owner/operator PC with native connectivity. An isolated Render operator could run the same scripts through Render's network using the already connected provider, preserving GitHub as source-only and keeping the API/worker free of DDL. It introduces temporary privileged compute, protected secret storage, restart/partial-failure handling and additional free-quota consumption that need review.
 
-## Proposed solution
+## Accepted solution
 
 Use **short-lived, separate Free Docker web-service executions on Render**, Frankfurt, from one explicitly reviewed feature-branch commit. This is an operator execution workaround, **not Render's paid one-off-job feature**, a permanent background worker or an application endpoint.
 
@@ -47,7 +47,7 @@ Implementation must be modular: build/container definition, secret/target valida
 ## Cost and quotas
 
 - New service **base price: $0 on Free**, only within verified included limits. Plan two serial bounded executions; at most one extra active instance. A 30-minute aggregate active window consumes about 0.5 of the workspace's shared 750 monthly Free instance-hours. This is a planning bound, not measured usage or a quote.
-- Builds and outbound traffic consume separate included budgets. Official Render docs say supplementary bandwidth/build usage can be billed when a payment method is present; builds can be disabled at the spend limit. **Free plan does not guarantee a zero total bill.** Actual remaining quotas/payment/spend controls are unverified; block creation/activation if zero-charge operation cannot be established. Do not add a card or change billing settings without explicit approval.
+- Builds and outbound traffic consume separate included budgets. Official Render docs say supplementary bandwidth/build usage can be billed when a payment method is present; builds can be disabled at the spend limit. **Free plan does not guarantee a zero total bill.** Owner confirmed no payment method saved; official no-card allowance-exhaustion behavior establishes the scoped zero-charge basis. Actual remaining quotas are unverified and may stop execution. Do not add a card or change billing settings without explicit approval.
 - No extra Neon project/database, Resend email, Vercel seat or external registry/monitoring subscription is required. Neon existing Free compute/storage/history limits still apply. Docker base pulls must use an approved public artifact; no paid registry.
 
 ## Alternatives considered
@@ -61,7 +61,7 @@ Implementation must be modular: build/container definition, secret/target valida
 
 ## Consequences
 
-No implementation/resource/secret/billing/default-branch changes follow merely from this proposal. If accepted, update hosting/threat/operations docs and add/test the executor in a separate implementation change. Validate protected secret-file/storage API behavior and Docker secret exclusion, failure/cleanup paths and actual network access before privileged execution. Existing baseline failures are not waived. Rollback concerns executor configuration only; keep any successfully applied migrations/data and original credentials for reviewed recovery.
+Owner acceptance authorizes the scoped executor implementation and activation; hosting/threat/operations docs record the added boundary. No billing/default-branch/application activation changes are authorized. Validate protected secret-file/storage API behavior and Docker secret exclusion, failure/cleanup paths and actual network access before privileged execution. Existing baseline failures are not waived. Rollback concerns executor configuration only; keep any successfully applied migrations/data and original credentials for reviewed recovery.
 
 ## Recommendation (Claude)
 
@@ -69,4 +69,4 @@ Pending: review the additional privileged execution/storage boundary, Docker bui
 
 ## Decision (owner)
 
-Pending: no acceptance or operator-activation approval is recorded. Existing API/worker resume and PR8 merge require separate explicit approval.
+Accepted by owner on 2026-10-13, including scoped temporary Free operator activation. Owner subsequently confirmed no payment method is saved. Per official Free-plan documentation, allowance exhaustion stops services/builds without overage billing in that situation; this fact is owner-reported, not API-verified. No billing changes or paid fallback. Claude independent review remains pending. Existing API/worker resume and PR8 merge require separate explicit approval.

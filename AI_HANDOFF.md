@@ -14,9 +14,15 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Post-Phase 7 restricted staging preparation/deployment on free Render + Neon + Resend, protected Vercel. Feature-branch commit/push/PR authorized. No automatic merge, paid resource, production/public launch, Vercel production change or Phase 8. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: prepared ADR0015 for a Render-only operator alternative; Claude/owner decision and quota validation pending; no operator code/resources or cloud SQL changes, services held |
+| Last agent | Codex: owner accepted ADR0015 temporary Free Render operator; implementation/local validation in progress, Claude review pending, API/worker held |
 | Last updated | 2026-10-13 |
 
+
+## Owner-accepted operator implementation — 2026-10-13
+
+Owner explicitly accepted the isolated operator plan ("accept it do it fast please") and confirmed **no payment method saved**. This authorizes scoped temporary Free execution and secure held-runtime configuration; no paid fallback, billing change, API/worker resume, PR8 merge, production or Phase8. ADR0015 is owner-accepted; **Claude independent review remains pending**, not claimed completed. New modular config/target, DB verification, phased execution/status and digest-pinned Docker modules reuse existing scripts/migrations/toolchain/dependency policies. Credentials are runtime-only protected files excluded from Docker context; continuity uses an unlinked operator-only group. App contract/business logic and seven migration bytes remain unchanged.
+
+Local checks completed: eight new operator negative/catalog tests passed; root formatting/lint/typechecks/498unit tests/Next production build passed; full disposable PG18 integration47passed; production dependency audit0 vulnerabilities. Digest-pinned Docker built with verified public proxy CA, all image layers/history exclude the secret-file sentinel, UID1000 runtime health200 and public status404. Actual Render execution is next. Evidence: `docs/evidence/2026-10-13-staging-operator-local.json`; Codex security review: `docs/reviews/2026-10-13-staging-operator-security.md`. No hosted SQL/TLS/grant/migration or readiness success claimed at this checkpoint. API/worker remain suspended. Final evidence/status will supersede this progress entry.
 
 ## Alternative operator execution proposal — 2026-10-13
 
