@@ -19,3 +19,7 @@ Six diagnostic unit tests and seven real-PG deployment integration tests pass lo
 Initial fixture passed an undefined header to the HTTP injection library and initial strict typing missed an optional route URL; both were repaired and the13test rerun passed. Broader checks and actual provider measurements are recorded in AI_HANDOFF/evidence after execution. No cloud measurement or successful signed-in flow is inferred from local fixtures.
 
 After measurement, remove both protected diagnostic settings and redeploy; verify public and owner requests contain no receipt. The fixed deadline disables receipts across restarts even before cleanup. Never commit actual credentials or live private peer addresses. Resend still requires an owned verified sender domain for other recipients; that is independent of the SSR repair.
+
+## Actual cloud result
+
+Source `ca2590c` deployed on the existing Free Frankfurt API. One exact private peer measured, configured only as `/32` in protected settings. Real Vercel SSR changed from0accepted/2denied to2accepted/0denied; anonymous internal viewer200. Six direct/Vercel forwarding probes per phase rejected spoof authority. Both temporary diagnostic fields removed and cleanup deployment live; receipts absent. No peer/key/identity values copied into evidence, no worker/frontend/SQL changes. Hosted signed-in authentication remains untested and sender domain missing; baseline audit/coverage, independent review and recovery gaps remain. See sanitized repair evidence for deployment IDs and final negatives.

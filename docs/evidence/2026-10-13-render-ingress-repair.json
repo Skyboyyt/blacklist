@@ -1,6 +1,6 @@
 {
   "date": "2026-10-13",
-  "status": "ingress measurement prepared; hosted repair not yet verified",
+  "status": "exact-peer ingress repair deployed and tested; signed-in identity and sender workflows remain unverified",
   "branch": "fix/render-ssr-and-email",
   "implementation": "expiring triple-credential private-peer response header on existing safe routes, no automatic trust or authorization change",
   "tests": {
@@ -14,7 +14,14 @@
       "passed": 13,
       "overlapsBroaderSuites": true
     },
-    "initialFailures": "undefined injection header and optional route URL type corrected; rerun passed"
+    "initialFailures": "undefined injection header and optional route URL type corrected; rerun passed",
+    "productionAudit": "passed,0 vulnerabilities",
+    "mockAndServerOnlyExclusion": "passed,4 checks",
+    "changedSourceSecretScan": "passed,0 matches,13 changed files, pinned network-isolated Gitleaks",
+    "broaderBrowser": "prior completed run418passed/0failed/82intentional skips; not rerun for backend-only repair",
+    "requiredCoverage": "previous command failed59.38%/75% and package floors; not rerun or waived",
+    "fullAudit": "previous command failed1high development-only unpatched braces advisory; no dependency changes or waiver",
+    "evidenceSecretScan": "passed,0 matches,7 changed evidence/docs files"
   },
   "controls": {
     "defaultDisabled": true,
@@ -27,10 +34,351 @@
     "noAutomaticTrustLearning": true,
     "noWorkerOrBuildDiagnosticCredential": true
   },
-  "cloudMeasurement": "pending",
+  "cloudMeasurement": {
+    "sourceCommit": "ca2590c285c73e6e6ca0fad6f443a0f9b85040af",
+    "serviceId": "srv-db72r4d9fdbs73erf1s0",
+    "deployments": [
+      {
+        "phase": "measurement",
+        "id": "dep-db77vvq5b2lc73esf0eg",
+        "sourceCommit": "ca2590c285c73e6e6ca0fad6f443a0f9b85040af",
+        "status": "live"
+      },
+      {
+        "phase": "exactPeers1",
+        "id": "dep-db780rui0phs73c5jbvg",
+        "sourceCommit": "ca2590c285c73e6e6ca0fad6f443a0f9b85040af",
+        "status": "live"
+      },
+      {
+        "phase": "diagnosticCleanup",
+        "id": "dep-db781oks728c73ffrd10",
+        "sourceCommit": "ca2590c285c73e6e6ca0fad6f443a0f9b85040af",
+        "status": "live"
+      }
+    ],
+    "measurements": [
+      {
+        "phase": "beforeConfiguration",
+        "exactPrivatePeersMeasured": 1,
+        "probeResults": [
+          {
+            "target": "direct",
+            "probe": false,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "direct",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "direct",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "vercelProxy",
+            "probe": false,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "vercelProxy",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "vercelProxy",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          }
+        ],
+        "realSsrAcceptedDelta": 0,
+        "realSsrDeniedDelta": 2
+      },
+      {
+        "phase": "configured1",
+        "exactPrivatePeersMeasured": 1,
+        "probeResults": [
+          {
+            "target": "direct",
+            "probe": false,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "direct",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "direct",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "vercelProxy",
+            "probe": false,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "vercelProxy",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          },
+          {
+            "target": "vercelProxy",
+            "probe": true,
+            "forwardedIsSingleIp": false,
+            "probePreservedAsSingleIp": false,
+            "probeAcceptedAsClientIp": false
+          }
+        ],
+        "realSsrAcceptedDelta": 2,
+        "realSsrDeniedDelta": 0
+      }
+    ],
+    "peerAddressesOrCredentialValuesInRecord": false,
+    "workerAndDatabaseChanged": false,
+    "ssrConnectionVerified": true,
+    "exactPrivatePeerCountConfigured": 1,
+    "temporaryDiagnosticSettingsRemoved": true,
+    "receiptAbsentAfterCleanup": true,
+    "finished": true,
+    "successful": true
+  },
   "senderDomainsVerified": 0,
   "emailBlocker": "owner domain and DNS control required; asked asynchronously, no domain invented",
   "priorCoverageAndFullDevelopmentAuditFailures": "retained, not waived",
   "appIdentityOrMigrationOrDependencyPolicyChanged": false,
-  "credentialOrPrivateUserValuesInEvidence": false
+  "credentialOrPrivateUserValuesInEvidence": false,
+  "sourceCommit": "ca2590c285c73e6e6ca0fad6f443a0f9b85040af",
+  "hostedSignedInIdentityFlows": "untested; anonymous SSR handling proves ingress only",
+  "publicFoundationOnly": true,
+  "hostedInitialFailures": {
+    "publicSmokeTimeouts": 2,
+    "finalNegativeSuite": "application timeout before completion",
+    "coldStartDiagnosis": "possible Free idle wake; later requests responded, warmed rerun pending",
+    "failuresRetained": true,
+    "warmedRerun": "passed11public smoke and11final checks across overlapping suites",
+    "receiptWriterMistake": "temporary local verification helper lacked pathlib qualification; corrected and whole verification rerun passed"
+  },
+  "hostedFinalChecks": {
+    "sourceCommit": "ca2590c285c73e6e6ca0fad6f443a0f9b85040af",
+    "apiBranch": "fix/render-ssr-and-email",
+    "checks": [
+      {
+        "check": "internalMissingKey",
+        "status": 404,
+        "expected": 404,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "internalWrongKey",
+        "status": 404,
+        "expected": 404,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "internalMissingGateway",
+        "status": 404,
+        "expected": 404,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "internalPublicAuthorityDenied",
+        "status": 401,
+        "expected": 401,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "internalExactPeerAfterCleanup",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "frontendDashboard",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "apiHealth",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "workerHealth",
+        "status": 200,
+        "expected": 200,
+        "passed": true,
+        "receiptPresent": false,
+        "credentialValuesInResponse": false
+      },
+      {
+        "check": "internalNonGetDeniedPOST",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "check": "internalNonGetDeniedPUT",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "check": "internalNonGetDeniedDELETE",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      }
+    ],
+    "checksPassed": 11,
+    "checksFailed": 0,
+    "diagnosticSettingsAbsent": true,
+    "exactPrivatePeerCount": 1,
+    "workerSecretsSeparated": true,
+    "workerDirectRuntimeRoleVerifiedTls": true,
+    "frontendSecretsSeparated": true,
+    "senderDomainCount": 0,
+    "visitorRestrictionRemoved": true,
+    "privateValuesInEvidence": false
+  },
+  "hostedPublicSmoke": [
+    {
+      "check": "directPrivateDenied",
+      "status": 404,
+      "expected": 404,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "unauthenticatedPrivateDenied",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "anonymousStaffDenied",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "viewerAllowlist",
+      "status": 200,
+      "expected": 200,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8",
+      "anonymousAllowlistedViewer": true
+    },
+    {
+      "check": "foreignOriginDenied",
+      "status": 403,
+      "expected": 403,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/problem+json; charset=utf-8"
+    },
+    {
+      "check": "invalidInputDenied",
+      "status": 400,
+      "expected": 400,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/problem+json; charset=utf-8"
+    },
+    {
+      "check": "headlessHandlerAbsent",
+      "status": 404,
+      "expected": 404,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "frontendViewerProxy",
+      "status": 200,
+      "expected": 200,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8",
+      "anonymousAllowlistedViewer": true
+    },
+    {
+      "check": "frontendPrivateProxyDenied",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "frontendForgedGatewayOverwritten",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "internalSsrViewer",
+      "status": 200,
+      "expected": 200,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    }
+  ],
+  "publication": {
+    "branch": "fix/render-ssr-and-email",
+    "pullRequest": 10,
+    "url": "https://github.com/Skyboyyt/blacklist/pull/10",
+    "base": "main",
+    "status": "repair source deployed, branch evidence published; consult PR10 for subsequent authorized merge and API branch-to-main readback"
+  }
 }
