@@ -1,0 +1,55 @@
+import { beforeEach, expect, it } from 'vitest';
+import type { CaseDecision } from '@blacklist/contracts';
+import { createMockModerationApi, stepUpActionFor } from './moderation-api';
+import { createMockMemberApi } from './member-api';
+import { createStore } from './store';
+let store = createStore();
+let cookies = '';
+const as = (v: string) => { cookies = `bl_mock_viewer=${v}; bl_mock_passkey=verified`; };
+const options = () => ({ store, cookies: () => cookies, latencyMs: 0 });
+const ok = <T>(r: { kind: 'ok'; data: T } | { kind: 'error' }) => {
+  if (r.kind !== 'ok') throw new Error(JSON.stringify(r));
+  return r.data;
+};
+beforeEach(() => { store = createStore(); as('moderator'); });
+const draft = { severity: 'high', publicSummary: 'Updated finding based on additional reviewed evidence.', internalRationale: 'Additional evidence was reviewed.' } as const;
+async function propose() {
+  const api = createMockModerationApi(options());
+  const r = ok(await api.getFindingHistory('demo-finding-301')).revisions[0];
+  if (!r) throw new Error('missing revision');
+  return ok(await api.proposeRevision(r.findingId, { revisionNumber: r.revisionNumber, contentHash: r.contentHash }, draft)).revisions[0];
+}
+async function approve() {
+  const api = createMockModerationApi(options());
+  const r = store.revisions.find((r) => r.findingId === 'demo-finding-301' && r.isLatest);
+  if (!r) throw new Error('missing revision');
+  await api.verifyStepUp('finding.approve', r.findingId, [r.findingId, r.revisionNumber, r.contentHash]);
+  return api.approveRevision(r.findingId, r.revisionNumber, r.contentHash);
+}
+async function decide(decision: CaseDecision) {
+  as('appeal_reviewer');
+  const api = createMockModerationApi(options());
+  const c = ok(await api.getCase('APL-2002'));
+  await api.verifyStepUp(stepUpActionFor(decision.action), c.id, [c.id, c.version, decision]);
+  return api.decide(c.id, c.version, decision);
+}
+it('P6-01 refuses a decision against revision 1 after revision 2 is public', async () => {
+  await propose();
+  ok(await approve());
+  expect(await decide({ action: 'reverse', publicSummary: 'Original finding reversed after evidence review.', internalRationale: 'The old finding was incorrect.' })).toMatchObject({ kind: 'error', code: 'conflict' });
+});
+it('P6-01 new appeals record the actual public revision', async () => {
+  await propose();
+  ok(await approve());
+  as('member');
+  const result = ok(await createMockMemberApi(options()).submitAppeal({ findingId: 'demo-finding-301', grounds: 'The new revision overstates what the evidence establishes.', standing: { mechanism: 'signature', simulated: true } }));
+  const c = store.cases.get(result.id);
+  expect(c?.type === 'appeal_review' && c.appealedDecision.revisionNumber).toBe(2);
+});
+it('P6-02 rejects a pending revision after the finding is reversed', async () => {
+  await propose();
+  ok(await decide({ action: 'reverse', publicSummary: 'Finding reversed after independent review.', internalRationale: 'The evidence disproves the original allegation.' }));
+  expect(store.addresses.flatMap((a) => a.findings).some((f) => f.id === 'demo-finding-301')).toBe(false);
+  as('moderator');
+  expect(await approve()).toMatchObject({ kind: 'error', code: 'invalid_transition' });
+});

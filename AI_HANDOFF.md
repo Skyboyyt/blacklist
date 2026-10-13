@@ -9,12 +9,12 @@ Read this first at the start of every session. Update it at the end of every ses
 | Field | Value |
 |---|---|
 | Project | **Blacklist**: Web3 anti-scam, wallet intelligence, project verification and investigation platform |
-| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 6 quality pass implemented; awaiting Codex review and owner sign-off)** |
-| Current phase | **Phase 6 (Frontend Quality Pass and Final Review) implemented on `claude/amazing-goodall-drtbc9`; awaiting Codex review and owner sign-off.** Phases 3–5 merged (#1–#4); Codex's six review repairs merged (#5). No backend exists. |
-| Authorized phase | Phase 6 (owner, 2026-10-13). **Phase 7 is not authorized**; no backend, deployment or production-readiness claim. |
+| **Current Stage** | **FRONTEND-FIRST DEVELOPMENT (Phase 6 review findings repaired locally)** |
+| Current phase | **Phase 6 merged in PR #6 and reviewed at `93356a1`; P6-01/P6-02/P6-03 repaired on `fix/phase6-review-findings`; browser execution and owner sign-off remain open.** Phases 3–5 merged (#1–#4); Codex's six review repairs merged (#5). No backend exists. |
+| Authorized phase | Phase 6 (owner, 2026-10-13). **Phase 7 authorized by owner after the Phase 6 repair session**; implementation has not started here. No deployment or production-readiness claim. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Claude: Phase 6 frontend quality pass |
+| Last agent | Codex: Phase 6 review repairs |
 | Last updated | 2026-10-13 |
 
 > **Development order: FRONTEND-FIRST** (ARCHITECTURE §36). Phases 1–6 are frontend on contracts and mocks; Phase 7 is Backend Foundation (gates D1–D9, S1–S17 first).
@@ -24,6 +24,29 @@ Read this first at the start of every session. Update it at the end of every ses
 ---
 
 ## Session log
+
+### Codex Phase 6 repairs (2026-10-13)
+
+- Owner requested “fix it”. Fixed P6-01–P6-03 within the frontend mock adapter and E2E configuration; no backend or architecture change.
+- Appeals capture the published revision number. Decisions reject a superseded or reversed target before case, public projection, audit, or step-up consumption changes. Revision content remains immutable; legacy suspended fixtures retain their revision-1 snapshot.
+- Both reversal paths mark the finding reversed and supersede its revisions while retaining their content/history. Pending proposals cannot regain publication authority even with fresh step-up.
+- Firefox/WebKit/WebKit-mobile now select all E2E specs: 250 each, including 88 Phase 6 cases each; 1,250 total listed. This is test discovery, not browser execution.
+- Added six regression cases covering stale uphold/amend/reverse with unchanged state, a new appeal against revision 2, and publication attempts after appeal/suspension reversal.
+- Validation: `pnpm check` passed (79 contract + 384 web tests, formatting, lint, typecheck, production build). Mock build passed; mock-exclusion scan passed 4/4 checks.
+- Security: exact revision/state authority checked before effects; public/private and scoring invariants preserved. No dependencies, migrations, routes or permission changes. Existing mock boundaries remain; browser binaries unavailable.
+- Owner authorized push and merge of `fix/phase6-review-findings`. This change is being published through a PR; verify GitHub merge status before continuing. Real browser coverage remains open. Owner subsequently authorized Phase 7 for Codex; backend implementation has not started in this checkout.
+
+
+### Codex Phase 6 review (2026-10-13)
+
+- **Scope:** merged PR #6, commit `93356a16ee8f2031813dfd60d01778f8f0707486`, compared with PR #5 merge `0e9bf58`. No application repairs or backend implementation.
+- **Verdict:** required fixes before Phase 6 closure: two High (appeal decisions not bound to the actual public revision; a pending revision can resurrect a reversed finding) and one Medium (Firefox/WebKit test selection excludes the new Phase 6 workflows). See [review](docs/reviews/2026-10-13-phase-6-codex-review.md).
+- **Independent checks:** `pnpm check` exit 0: format/lint/typecheck, 79 contract + 378 web tests, production build. Mock build exit 0; exclusion scan 4/4 PASS. Previous six fixes/regression source unchanged and passing.
+- **Additional evidence:** three lifecycle regression expectations failed on the reviewed source. Reproduction sample: `docs/reviews/reproductions/2026-10-13-phase-6.test.ts.sample` (outside the baseline suite). All-browser test listing has 602 cases, but Firefox/WebKit/WebKit-mobile each have zero cases from revisions/recovery/quality-audit specs.
+- **Limits:** no independent browser execution/screenshots; compatible browsers unavailable in this environment. Claude's reported 418 passes/82 skips remain author-reported. Manual/assistive-technology and actual cross-browser checks are open.
+- **Changes:** this handoff, the Phase 6 review, and reproduction sample only. No dependency, migration, architecture change, application fix, commit, push, merge or posted GitHub comment.
+- **Next:** Claude fixes P6-01–P6-03 and records outcomes; Codex rechecks; owner resolves existing pagination/status/permission questions before sign-off. No Phase 7 authorization is implied.
+
 
 ### Session 19: Claude Phase 6 — Frontend Quality Pass and Final Review (2026-10-13)
 
