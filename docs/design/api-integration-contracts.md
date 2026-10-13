@@ -80,6 +80,9 @@ Contracts: `moderation.ts`. Audience: staff with WebAuthn assurance. Members and
 | `getProfileState(slug)` | `GET /projects/:slug` (staff fields) | Current revision and domains for correction review |
 | `listFindings()` | `GET /mod/findings` | Published and suspended findings with author, approver and any open suspension review (`finding:suspend`) |
 | `suspendFinding(id, reason)` | `POST /mod/findings/:id/suspend` | Step-up `finding.suspend`; opens a `suspension_review` case due in 72 hours; a severe suspension alerts every admin |
+| `getFindingHistory(id)` | `GET /mod/findings/:id/revisions` | `finding:propose`. Every revision newest first (immutable), the currently public text, and the reason approval is blocked (an open suspension review). Phase 6 |
+| `proposeRevision(id, base, draft)` | `POST /mod/findings/:id/revisions` | `finding:propose`; no step-up (a proposal publishes nothing; identity §10.7). `base` = `{ revisionNumber, contentHash }` of the latest revision the editor saw, else `conflict`; unchanged content is refused; carries the evidence set forward; supersedes an earlier revision still awaiting approval; status `pending_second_approval` when the new **or** the currently public revision is severe (moderation §4.1, §8.1). Allowed during a suspension, but approval stays blocked. Phase 6 |
+| `listRecoveryVerifications()` / `verifyRecoveryIdentity(id, method)` | `GET /mod/recovery`, `POST /mod/recovery/:id/verifications` | `staff:recovery:verify` (moderators and administrators). Two different verifiers, at least one an administrator, neither the subject; the subject never sees their own case (identity §10.11 step 2). The same rule backs `AdminApi.verifyRecovery`. Phase 6 |
 
 **Server check order for `decide`** (the mock implements exactly this): staff + assurance → scope → permission (ARCHITECTURE §9.2; `project:manage` for accepting corrections and suggestions; `standing:decide` for standing) → `expectedVersion` → allowed transition for type and status → assignment (only the assigned reviewer decides; `start_review` assigns) → independence (appeal participants refused for standing and appeal decisions; severe and severe-replacement approvals need an independent non-author; a replacement approver must also be a non-participant of the current public revision) → step-up grant for consequential decisions.
 
@@ -88,7 +91,7 @@ Contracts: `moderation.ts`. Audience: staff with WebAuthn assurance. Members and
 | Type | Transitions | Step-up |
 |---|---|---|
 | Report | `queued → in_review`; `in_review → needs_info / accepted / rejected / rejected_abusive` | accept, reject, reject as abusive |
-| Appeal | `submitted → in_review`; while `in_review`: pending standing → granted / denied; with standing granted → `upheld / amended / reversed` | uphold, amend, reverse |
+| Appeal | `submitted → in_review`; while `in_review`: pending standing → granted / denied; with standing granted → `upheld / amended / reversed`. `amend` carries the new severity and public summary and creates a new finding revision authored by the reviewer (`sourceCaseId` = the appeal); nothing public changes until that exact revision is approved under §4.1, and the amended text never appears in the public timeline before approval (moderation §8.1, §9) | uphold, amend, reverse |
 | Correction | `submitted → in_review → accepted / rejected` | accept, reject |
 | Project suggestion | `submitted → needs_information / accepted_into_profile / not_accepted` | accept, do not accept |
 | Subject response | `submitted → in_review`; while `in_review`: pending standing → granted / denied; with standing granted → `published / rejected` (`response:moderate`) | publish, do not publish |
@@ -111,7 +114,7 @@ Contracts: `admin.ts`. Audience: active administrators in an assured session. Ev
 | `suspendStaff(id, reason)` | `POST /admin/staff/:id/suspend` | Step-up; ends staff access at once and releases assigned cases; restoration goes through recovery (identity §10.12) |
 | `offboardStaff(id, reason)` | `POST /admin/staff/:id/offboard` | Step-up; not yourself; revokes roles, authenticators and the invitations they issued; releases cases |
 | `listRecoveries()` / `openRecovery(id)` | `GET/POST /admin/staff/recovery` | Step-up; not yourself; subject suspended |
-| `verifyRecovery(id, method)` | `POST /admin/staff/recovery/:id/verifications` | Two different verifiers, neither the subject (identity §10.11 step 2) |
+| `verifyRecovery(id, method)` | `POST /admin/staff/recovery/:id/verifications` | Two different verifiers, at least one an administrator, neither the subject (identity §10.11 step 2); moderators verify through `ModerationApi.verifyRecoveryIdentity` |
 | `approveRecovery(id)` | `POST /admin/staff/recovery/:id/approve` | Step-up; approver ≠ opener; starts the 24-hour objection window |
 | `completeRecovery(id)` | `POST /admin/staff/recovery/:id/complete` | Only after the window; issues a re-enrollment invitation |
 | `listMembers()` / `suspendMember(id, reason)` / `restoreMember(id, reason)` | `/admin/users/*` | Step-up `user.suspend` / `user.restore`; a suspended member cannot submit |
@@ -159,11 +162,16 @@ Unchanged since Phases 1–3 and specified in [frontend.md](frontend.md) §1, §
 
 ## 9. Open items before integration
 
-1. Pagination model for the directory and queue (§1).
-2. Correction and response statuses: the UI uses the interim sets `submitted, in_review, accepted, rejected` and `submitted, in_review, published, rejected, withdrawn`; the data model does not yet define them (documentation gaps).
-3. Endpoint additions to ARCHITECTURE §7.1 for ADR 0010 Part A, the member submission views, suspension reviews and the admin console (`/project-suggestions`, `/me/submissions*`, `/mod/cases/:id/{assignment,notes,decisions}`, `/mod/findings`, `/admin/overview`, `/admin/staff/*` detail).
-4. Staff recovery verifiers: the demo lets two administrators verify; identity §10.11 allows any two staff members, at least one an admin, which needs a staff-facing verification screen.
-5. Scoring sign-off (O-12) before staff scores leave "calibration proposal"; ADRs 0009 and 0011 remain Proposed (0012 accepted, band-only).
+Phase 6 reconciliation (2026-10-13). Resolved where the approved design answers; the rest needs an owner decision.
+
+| # | Item | State |
+|---|---|---|
+| 1 | Pagination for the directory and queue (§1) | **Owner decision.** The approved design (ARCHITECTURE §7.1) is cursor pagination, max 100. The UI shows "Page N of M" with the page in the URL. Choosing cursors means the contracts drop `page`/`totalPages` for `cursor`/`nextCursor`/`prevCursor` and the two views show previous/next only (about a day of frontend work: two contracts, two mock services, `Pagination`, URL parsing, tests). Keeping page numbers for these two bounded lists changes §7.1 and needs an ADR. Until decided, the frontend stays on page numbers and the HTTP adapter must not ship |
+| 2 | Correction and response statuses | **Documentation gap.** docs/data-model.md does not define them; the UI uses the interim sets `submitted, in_review, accepted, rejected` and `submitted, in_review, published, rejected, withdrawn`. Needs a data-model decision (no ADR required if the interim sets are adopted) |
+| 3 | Endpoint additions to ARCHITECTURE §7.1 | **Resolved.** §7.1 now lists the member submission views, project suggestions, case assignment/notes/decisions, finding revisions, suspension and recovery verification, and the admin overview |
+| 4 | Staff recovery verifiers | **Resolved** per identity §10.11: any two staff members, at least one an administrator (`/mod/recovery`). ARCHITECTURE §9.2 now lists `staff:recovery:verify` for moderators to match the normative design; appeal reviewers (who may be external, moderation §9) are not verifiers. Confirm at review |
+| 5 | Scoring sign-off (O-12) | **Owner decision.** Staff scores stay "calibration proposal"; ADRs 0009 and 0011 remain Proposed (0012 accepted, band-only) |
+| 6 | Revision evidence edits | **Gap.** The editor changes severity, public summary and rationale and carries the evidence set forward; adding or removing evidence on an existing finding needs the upload pipeline (Phase 7, ADR 0004). The protocol already covers it (any evidence change is a new revision) |
 
 ## Review repair notes (2026-10-13)
 

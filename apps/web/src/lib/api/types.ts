@@ -45,7 +45,10 @@ import type {
   EnrollmentPasswordRequest,
   EnrollmentStart,
   EnrollmentStartResult,
+  FindingHistory,
   FindingRevision,
+  RevisionBase,
+  RevisionDraft,
   ForgotPasswordRequest,
   InfoResponse,
   LoginOutcome,
@@ -235,6 +238,21 @@ export interface ModerationApi {
   listFindings(): Promise<ModerationResult<readonly StaffFinding[]>>;
   /** Emergency suspension with step-up `finding.suspend`; opens a 72-hour suspension review case. */
   suspendFinding(findingId: string, reason: string): Promise<ModerationResult<CaseDetail>>;
+  /** Immutable revision history of a published finding, with what blocks approval now. */
+  getFindingHistory(findingId: string): Promise<ModerationResult<FindingHistory>>;
+  /**
+   * Propose a new revision (moderation §2, §8.1). `base` is the latest revision the editor
+   * saw; a newer one is a `conflict`. Nothing becomes public until a separate approval.
+   */
+  proposeRevision(
+    findingId: string,
+    base: RevisionBase,
+    draft: RevisionDraft,
+  ): Promise<ModerationResult<FindingHistory>>;
+  /** Open staff recovery cases collecting identity verifications (identity §10.11 step 2). */
+  listRecoveryVerifications(): Promise<ModerationResult<readonly RecoveryCase[]>>;
+  /** Record how the caller verified the subject's identity; the subject never verifies. */
+  verifyRecoveryIdentity(id: string, method: string): Promise<ModerationResult<RecoveryCase>>;
 }
 
 /** Result of a member submission call. */

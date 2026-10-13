@@ -86,6 +86,10 @@ export const notConnectedModerationApi: ModerationApi = {
   getProfileState: moderationUnavailable,
   listFindings: moderationUnavailable,
   suspendFinding: moderationUnavailable,
+  getFindingHistory: moderationUnavailable,
+  proposeRevision: moderationUnavailable,
+  listRecoveryVerifications: moderationUnavailable,
+  verifyRecoveryIdentity: moderationUnavailable,
 };
 
 /** The administrator console needs the API (Phase 7+). Step-ups never succeed. */

@@ -12,7 +12,7 @@ const variants: Record<ButtonVariant, string> = {
   primary: 'bg-accent text-accent-fg hover:bg-accent-hover',
   secondary: 'border border-border-strong bg-surface text-text hover:bg-surface-2',
   ghost: 'text-text hover:bg-surface-2',
-  danger: 'bg-danger text-white hover:opacity-90 dark:text-bg',
+  danger: 'bg-danger text-danger-fg hover:opacity-90',
 };
 
 // Minimum 44px touch target on md/lg (WCAG 2.5.8 target size is 24px; 44px is our standard).

@@ -41,7 +41,7 @@ export function AppShell({ viewer, children }: AppShellProps) {
       <div className="flex min-h-dvh min-w-0 flex-col">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4 lg:px-6">
           <MobileMenu sections={sections} signedIn={viewer.kind === 'signed_in'} />
-          <div className="lg:hidden">
+          <div className="min-w-0 lg:hidden">
             <Brand />
           </div>
           <form action="/search" method="get" role="search" className="ml-4 hidden max-w-md flex-1 md:flex">
@@ -65,7 +65,7 @@ export function AppShell({ viewer, children }: AppShellProps) {
               />
             </div>
           </form>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <ThemeToggle />
             <AccountMenu viewer={viewer} />
           </div>

@@ -240,6 +240,48 @@ describe('staff suspension, offboarding and recovery', () => {
     expect(ok(await admin.completeRecovery(opened.id)).state).toBe('completed');
     expect(store.invitations[0]?.state).toBe('issued');
   });
+
+  it('moderators verify identity from the staff screen; one of the two verifiers must be an administrator (identity §10.11)', async () => {
+    const opened = ok(
+      await withStepUp('staff.recovery.open', 'stf_mod_c', ['stf_mod_c'], () =>
+        admin.openRecovery('stf_mod_c'),
+      ),
+    );
+    as('moderator');
+    expect(ok(await staff.listRecoveryVerifications()).map((r) => r.id)).toEqual([opened.id]);
+    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'abc'))).toBe('invalid_transition');
+    ok(await staff.verifyRecoveryIdentity(opened.id, 'Video call; matched the staff photo.'));
+    as('moderator_b');
+    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'Call-back to the number on file.'))).toBe(
+      'not_eligible',
+    );
+    for (const viewer of ['appeal_reviewer', 'member', 'anonymous']) {
+      as(viewer);
+      expect(code(await staff.listRecoveryVerifications())).toBe('forbidden');
+      expect(code(await staff.verifyRecoveryIdentity(opened.id, 'Not allowed to verify.'))).toBe('forbidden');
+    }
+    as('admin_b');
+    const verified = ok(await staff.verifyRecoveryIdentity(opened.id, 'Call-back to the number on file.'));
+    expect(verified.state).toBe('awaiting_approval');
+    expect(verified.verifications.map((v) => v.verifier.handle)).toEqual(['demo_moderator', 'demo_admin_b']);
+    as('moderator');
+    expect(ok(await staff.listRecoveryVerifications())).toEqual([]);
+  });
+
+  it('the subject of a recovery case cannot verify it, even with staff access', async () => {
+    const opened = ok(
+      await withStepUp('staff.recovery.open', 'stf_mod_a', ['stf_mod_a'], () =>
+        admin.openRecovery('stf_mod_a'),
+      ),
+    );
+    as('moderator');
+    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'I am who I say I am.'))).toBe('forbidden');
+    store.staff.forEach((m) => {
+      if (m.id === 'stf_mod_a') m.status = 'active';
+    });
+    expect(ok(await staff.listRecoveryVerifications())).toEqual([]);
+    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'I am who I say I am.'))).toBe('not_eligible');
+  });
 });
 
 describe('members, labels and suppressions reach the rest of the demo', () => {

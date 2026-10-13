@@ -30,5 +30,6 @@ export function TabsTrigger({ className, ...rest }: ComponentProps<typeof TabsPr
 }
 
 export function TabsContent({ className, ...rest }: ComponentProps<typeof TabsPrimitive.Content>) {
-  return <TabsPrimitive.Content className={cn('pt-4 focus-visible:outline-none', className)} {...rest} />;
+  // The panel is focusable (Radix), so it keeps the global focus outline (WCAG 2.4.7).
+  return <TabsPrimitive.Content className={cn('mt-4 rounded-sm', className)} {...rest} />;
 }

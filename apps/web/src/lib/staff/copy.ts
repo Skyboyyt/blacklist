@@ -154,7 +154,7 @@ export const DECISION_COPY: Readonly<
   amend: {
     label: 'Amend finding',
     consequence:
-      'The appeal is decided as amended. A new revision must then be approved before anything public changes.',
+      'The appeal is decided as amended and a new revision of the finding is created from your severity and summary. Nothing public changes until that exact revision is approved; an independent approver is needed when either version is severe.',
     tone: 'default',
   },
   reverse: {
@@ -224,3 +224,12 @@ export const DECISION_COPY: Readonly<
 
 export const MOCK_AUDIT_NOTICE =
   'Mock history for the demo. It lives in this browser tab and resets on reload. Production audit records are append-only, server-side and tamper-evident (ADR 0006).';
+
+/** Revision statuses (moderation §2–§4). */
+export const REVISION_STATUS_LABEL = {
+  proposed: 'Awaiting approval',
+  pending_second_approval: 'Awaiting an independent approver',
+  published: 'Published',
+  rejected: 'Rejected',
+  superseded: 'Superseded by a newer revision',
+} as const;

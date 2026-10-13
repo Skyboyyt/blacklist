@@ -58,6 +58,7 @@ export const STAFF_NAV: NavSection = {
     { href: '/mod/approvals', label: 'Approvals', icon: 'shield' },
     { href: '/mod/appeals', label: 'Appeal reviews', icon: 'shield' },
     { href: '/mod/findings', label: 'Published findings', icon: 'shield' },
+    { href: '/mod/recovery', label: 'Recovery verification', icon: 'shield' },
     { href: '/admin', label: 'Administration', icon: 'settings', matchPrefix: '/admin' },
   ],
 };

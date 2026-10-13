@@ -28,6 +28,9 @@ const MARKERS = [
   // Phase 5 follow-up: administrator console fixtures.
   'demo_flooder',
   'Demo bridge router contract',
+  // Phase 6: finding revisions and staff recovery verification (mock services).
+  'Fixture: revision published before the demo started.',
+  'At least one of the two verifiers must be an administrator.',
 ];
 const SERVER_ONLY_NAMES = ['INTERNAL_API_TOKEN', 'API_INTERNAL_URL', 'BETTER_AUTH_SECRET', 'DATABASE_URL'];
 const TEXT = /\.(js|mjs|cjs|html|json|rsc|body|txt|map)$/;

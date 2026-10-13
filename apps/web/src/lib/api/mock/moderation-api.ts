@@ -16,6 +16,11 @@
  */
 import {
   caseDecisionSchema,
+  revisionBaseSchema,
+  revisionDraftSchema,
+  type FindingHistory,
+  type FindingRevision,
+  type RevisionDraft,
   findingSeveritySchema,
   QUEUE_PAGE_SIZE,
   suspensionRequestSchema,
@@ -46,6 +51,8 @@ import { currentPasskeyResult, currentScenario, currentViewerKey, type MockViewe
 import { staffAssessmentFor } from './staff-scoring';
 import { consumeGrant as consumeBoundGrant, issueGrant } from './step-up';
 import { participantIds } from './finding-participants';
+import { addRecoveryVerification } from './recovery';
+import { revisionHash } from './revision-hash';
 import { createStore, nextId, type MockStore } from './store';
 
 export interface MockModerationOptions {
@@ -278,17 +285,6 @@ export function stepUpActionFor(decision: CaseDecision['action']): string {
   return `case.${decision}`;
 }
 
-/** Deterministic short content hash for demo revisions (not cryptographic). */
-function demoHash(text: string): string {
-  let h = 0xcbf29ce4;
-  let g = 0x84222325;
-  for (let i = 0; i < text.length; i++) {
-    h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
-    g = Math.imul(g ^ text.charCodeAt(i), 0x0100019b) >>> 0;
-  }
-  return h.toString(16).padStart(8, '0') + g.toString(16).padStart(8, '0');
-}
-
 const clone = <T>(value: T): T => structuredClone(value);
 const ok = <T>(data: T): ModerationResult<T> => ({ kind: 'ok', data });
 
@@ -443,36 +439,115 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
     d: Extract<CaseDecision, { action: 'accept_report' }>,
   ): void {
     const findingId = `demo-finding-${600 + store.revisions.filter((r) => r.revisionNumber === 1).length}`;
-    const content = JSON.stringify([
-      findingId,
-      1,
-      c.subject,
-      d.severity,
-      d.publicSummary,
-      d.internalRationale,
-    ]);
-    store.revisions.push({
-      findingId,
-      revisionNumber: 1,
-      subject: c.subject,
-      severity: d.severity,
-      publicSummary: d.publicSummary,
-      internalRationale: d.internalRationale,
+    appendRevision(findingId, c.subject, me, d, {
       evidenceIds: c.evidence.filter((e) => e.state === 'available').map((e) => e.id),
-      author: me,
-      createdAt: at(),
-      contentHash: demoHash(content),
-      status: d.severity === 'severe' ? 'pending_second_approval' : 'proposed',
-      isLatest: true,
       sourceCaseId: c.id,
     });
+  }
+
+  /** Severity of the finding's currently public revision, if it has one. */
+  function publicSeverity(findingId: string): string | undefined {
+    return (
+      store.revisions.find((r) => r.findingId === findingId && r.status === 'published')?.severity ??
+      store.findingParticipants.get(findingId)?.severity
+    );
+  }
+
+  /**
+   * Append a new immutable revision (moderation §2). An earlier revision that was still
+   * waiting for approval is superseded: an approval only authorizes the latest revision.
+   * The public revision stays public until the new one is approved (§8.1).
+   */
+  function appendRevision(
+    findingId: string,
+    subject: CaseDetail['subject'],
+    me: StaffRef,
+    draft: RevisionDraft,
+    source: { readonly evidenceIds: readonly string[]; readonly sourceCaseId: string | null },
+  ): FindingRevision {
+    const revisionNumber =
+      Math.max(0, ...store.revisions.filter((r) => r.findingId === findingId).map((r) => r.revisionNumber)) +
+      1;
+    for (const r of store.revisions) {
+      if (r.findingId !== findingId) continue;
+      r.isLatest = false;
+      if (r.status === 'proposed' || r.status === 'pending_second_approval') r.status = 'superseded';
+    }
+    const fields = {
+      findingId,
+      revisionNumber,
+      subject,
+      severity: draft.severity,
+      publicSummary: draft.publicSummary,
+      internalRationale: draft.internalRationale,
+      evidenceIds: [...source.evidenceIds],
+    };
+    const independent = draft.severity === 'severe' || publicSeverity(findingId) === 'severe';
+    const revision: FindingRevision = {
+      ...fields,
+      author: me,
+      createdAt: at(),
+      contentHash: revisionHash(fields),
+      status: independent ? 'pending_second_approval' : 'proposed',
+      isLatest: true,
+      sourceCaseId: source.sourceCaseId,
+    };
+    store.revisions.push(revision);
     record({
       actor: me,
       action: 'finding_revision_submitted',
-      caseId: c.id,
-      reason: d.internalRationale,
-      changes: [{ field: `finding ${findingId}`, from: null, to: `revision 1 (${d.severity})` }],
+      caseId: source.sourceCaseId,
+      reason: draft.internalRationale,
+      changes: [
+        { field: `finding ${findingId}`, from: null, to: `revision ${revisionNumber} (${draft.severity})` },
+      ],
     });
+    return revision;
+  }
+
+  /** The currently public finding as staff see it, or `undefined` when it is not public. */
+  function staffFinding(findingId: string): StaffFinding | undefined {
+    const address = store.addresses.find((a) => a.findings.some((f) => f.id === findingId));
+    const f = address?.findings.find((x) => x.id === findingId);
+    const p = store.findingParticipants.get(findingId);
+    if (!address || !f || !p) return undefined;
+    const review = [...store.cases.values()].find(
+      (c) => c.type === 'suspension_review' && c.status === 'open' && c.suspendedFinding.findingId === f.id,
+    );
+    const original = store.suspended.get(f.id)?.finding;
+    return {
+      findingId: f.id,
+      title: original?.title ?? f.title,
+      severity: findingSeveritySchema.parse(p.severity),
+      subject: {
+        kind: 'address',
+        chain: address.chain,
+        address: address.address,
+        displayAddress: address.displayAddress,
+      },
+      author: p.author,
+      approver: p.approver,
+      publishedAt: f.publishedAt,
+      status: f.disputeState === 'suspended_pending_review' ? 'suspended' : 'published',
+      reviewCaseId: review?.id ?? null,
+    };
+  }
+
+  function findingHistory(finding: StaffFinding): FindingHistory {
+    const revisions = store.revisions
+      .filter((r) => r.findingId === finding.findingId)
+      .sort((a, b) => b.revisionNumber - a.revisionNumber);
+    const original = store.suspended.get(finding.findingId)?.finding;
+    const shown = store.addresses.flatMap((a) => a.findings).find((f) => f.id === finding.findingId);
+    return {
+      finding: clone(finding),
+      revisions: revisions.map(clone),
+      publicText: original?.summary ?? shown?.summary ?? null,
+      approvalBlockedReason:
+        finding.status === 'suspended'
+          ? 'An emergency suspension review is open. No revision can be published until it is resolved.'
+          : null,
+    };
   }
 
   /** Member-visible effects of a decision: notices, public changes. Never internal text. */
@@ -513,7 +588,17 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       case 'reverse':
         if (c.type === 'appeal_review') {
           const outcome = d.action === 'uphold' ? 'upheld' : d.action === 'amend' ? 'amended' : 'reversed';
-          applyAppealOutcome(store, c.appealedDecision.findingId, outcome, d.publicSummary, at());
+          const findingId = c.appealedDecision.findingId;
+          if (d.action === 'amend') {
+            // The amendment is a new revision; the public text changes only after a fresh
+            // approval under moderation §4.1 (§8.1, §9).
+            const latest = store.revisions.find((r) => r.findingId === findingId && r.isLatest);
+            appendRevision(findingId, c.subject, me, d, {
+              evidenceIds: latest?.evidenceIds ?? [],
+              sourceCaseId: c.id,
+            });
+          }
+          applyAppealOutcome(store, findingId, outcome, d.publicSummary, at());
           notifyOwner(c, `Your appeal “${c.title}” was decided: ${outcome}.`);
         }
         return;
@@ -1043,34 +1128,10 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       if (!who || !hasPermission(who.role, 'finding:suspend')) {
         return err('forbidden', 'Suspending findings needs a moderator or administrator role.');
       }
-      const out: StaffFinding[] = [];
-      for (const address of store.addresses) {
-        for (const f of address.findings) {
-          const p = store.findingParticipants.get(f.id);
-          if (!p) continue;
-          const review = [...store.cases.values()].find(
-            (c) =>
-              c.type === 'suspension_review' && c.status === 'open' && c.suspendedFinding.findingId === f.id,
-          );
-          const original = store.suspended.get(f.id)?.finding;
-          out.push({
-            findingId: f.id,
-            title: original?.title ?? f.title,
-            severity: findingSeveritySchema.parse(p.severity),
-            subject: {
-              kind: 'address',
-              chain: address.chain,
-              address: address.address,
-              displayAddress: address.displayAddress,
-            },
-            author: p.author,
-            approver: p.approver,
-            publishedAt: f.publishedAt,
-            status: f.disputeState === 'suspended_pending_review' ? 'suspended' : 'published',
-            reviewCaseId: review?.id ?? null,
-          });
-        }
-      }
+      const out = store.addresses
+        .flatMap((a) => a.findings)
+        .map((f) => staffFinding(f.id))
+        .filter((f): f is StaffFinding => f !== undefined);
       return ok(out.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)));
     },
 
@@ -1123,7 +1184,9 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         submitterMessages: [],
         suspendedFinding: {
           findingId,
-          revisionNumber: 1,
+          revisionNumber:
+            store.revisions.find((r) => r.findingId === findingId && r.status === 'published')
+              ?.revisionNumber ?? 1,
           severity,
           publicSummary: original.summary,
           author: p.author,
@@ -1147,6 +1210,87 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         record({ actor: 'system', action: 'admin_alert', caseId: id, reason: text, changes: [] });
       }
       return ok(view(review));
+    },
+
+    async getFindingHistory(findingId) {
+      await wait();
+      const who = identity();
+      if (!who || !hasPermission(who.role, 'finding:propose')) {
+        return err('forbidden', 'Revising findings needs a moderator or administrator role.');
+      }
+      const finding = staffFinding(findingId);
+      if (!finding) return { kind: 'error', code: 'not_found' };
+      return ok(findingHistory(finding));
+    },
+
+    async proposeRevision(findingId, base, draft) {
+      await wait();
+      const who = identity();
+      if (!who || !hasPermission(who.role, 'finding:propose')) {
+        return err('forbidden', 'Revising findings needs a moderator or administrator role.');
+      }
+      const finding = staffFinding(findingId);
+      if (!finding) return { kind: 'error', code: 'not_found' };
+      const parsedBase = revisionBaseSchema.safeParse(base);
+      const parsed = revisionDraftSchema.safeParse(draft);
+      if (!parsedBase.success || !parsed.success) {
+        return err(
+          'invalid_transition',
+          'Give a severity, a public summary and an internal rationale of at least 10 characters.',
+        );
+      }
+      const latest = store.revisions.find((r) => r.findingId === findingId && r.isLatest);
+      if (
+        !latest ||
+        latest.revisionNumber !== parsedBase.data.revisionNumber ||
+        latest.contentHash !== parsedBase.data.contentHash
+      ) {
+        return {
+          kind: 'error',
+          code: 'conflict',
+          detail:
+            'Someone added a newer revision. Load the latest revision and make your change on top of it.',
+          currentVersion: latest?.revisionNumber ?? parsedBase.data.revisionNumber,
+        };
+      }
+      if (
+        latest.severity === parsed.data.severity &&
+        latest.publicSummary === parsed.data.publicSummary &&
+        latest.internalRationale === parsed.data.internalRationale
+      ) {
+        return err('invalid_transition', 'Nothing changed. A new revision must change something.');
+      }
+      appendRevision(findingId, latest.subject, who.ref, parsed.data, {
+        evidenceIds: latest.evidenceIds,
+        sourceCaseId: null,
+      });
+      return ok(findingHistory(finding));
+    },
+
+    async listRecoveryVerifications() {
+      await wait();
+      const who = identity();
+      if (!who || !hasPermission(who.role, 'staff:recovery:verify')) {
+        return err('forbidden', 'Recovery verification needs a moderator or administrator role.');
+      }
+      return ok(
+        store.recoveries.filter((r) => r.state === 'verifying' && r.subject.id !== who.ref.id).map(clone),
+      );
+    },
+
+    async verifyRecoveryIdentity(id, method) {
+      await wait();
+      const who = identity();
+      if (!who || !hasPermission(who.role, 'staff:recovery:verify')) {
+        return err('forbidden', 'Recovery verification needs a moderator or administrator role.');
+      }
+      return addRecoveryVerification(
+        store,
+        id,
+        { ref: who.ref, isAdmin: who.role === 'admin' },
+        method,
+        at(),
+      );
     },
 
     async getProfileState(slug) {

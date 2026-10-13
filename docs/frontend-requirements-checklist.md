@@ -1,8 +1,8 @@
-# Frontend Requirements Checklist (Phase 5)
+# Frontend Requirements Checklist (Phases 5–6)
 
 | Field | Value |
 |---|---|
-| Status | Phase 5 audit, 2026-10-12; updated by the Phase 5 follow-up (remaining gaps and the administrator console) |
+| Status | Phase 5 audit, 2026-10-12; updated by the Phase 5 follow-up (remaining gaps and the administrator console) and the Phase 6 quality pass (2026-10-13) |
 | Scope | PRD §4.1 V1 areas and the §5 functional requirements that have a frontend. Backend-only requirements are listed with their Phase 7 owner |
 | Legend | **Done (mock)**: built against contracts and the mock service, with test evidence. **Partial**: built with a stated limit. **Gap**: not built in the frontend phases (reason given). **Backend**: no frontend work; enforced by the API |
 
@@ -44,21 +44,24 @@ Test evidence paths: unit tests are under `apps/web/src/**.test.ts(x)` and `pack
 | Review dashboard and queue (§5.23) | `/mod`, `/mod/appeals` | Counts, filters, pages, states; project suggestions included | `staff.spec.ts`, `staff-review.test.tsx` | Done (mock) |
 | Case workspace and decisions (§5.13) | `/mod/cases/[id]` | Assignment, notes, decisions by type and status, confirmation and step-up, information requests and member replies, suggestion details with defanged links | `staff.spec.ts`, `staff-review.test.tsx`, `journeys.spec.ts` | Done (mock) |
 | Independent approval of severe findings (§5.13) | `/mod/approvals` | Exact revision and hash; severe needs a non-author | `staff.spec.ts`, `moderation-api.test.ts` | Done (mock) |
+| Editing an existing finding (moderation §2, §8.1) | `/mod/findings` → `/mod/findings/[id]` | Immutable history with hashes; the editor names its exact base revision and hash; saving proposes a new revision (stale base → conflict; unchanged → refused); nothing public changes until that revision is approved; a severe or severe-replacing revision needs an independent approver who took no part in the public revision; proposals are allowed during a suspension but publication stays blocked | `finding-revisions.test.ts`, `moderation.test.ts` (contracts), `revisions.spec.ts` | Done (mock); evidence changes on an existing finding wait for the upload pipeline (Phase 7) |
+| Appeal amendment needs a new revision and fresh approval (moderation §8.1, §9) | `/mod/cases/APL-…` → `/mod/approvals` | "Amend finding" takes severity and amended summary and creates a revision from the appeal; public text and timeline do not show it until approval | `finding-revisions.test.ts`, `revisions.spec.ts` | Done (mock) |
 | Standing decisions and independent appeal review (§5.18) | `/mod/cases/[id]` | Pending documentary standing granted or denied first; participants refused | `member-api.test.ts`, `journeys.spec.ts` | Done (mock) |
 | Emergency suspension of a finding (§5.13; moderation §8.3) | `/mod/findings` → `/mod/cases/SUS-…` | Suspend with reason and step-up; public page shows only "Temporarily suspended pending review" and the finding stops counting; 72-hour review by a non-participant (reinstate or reverse; a severe finding cannot be reversed by its suspender); severe suspension alerts every admin | `suspension-responses.test.ts`, `admin.spec.ts` | Done (mock) |
 | Admin: staff lifecycle, user suspension, labels, signal suppressions (§5.24; identity §10) | `/admin`, `/admin/staff`, `/admin/users`, `/admin/labels`, `/admin/signals` | Invitations (admin role needs a second admin; one-time code shown once), role changes (grants and removing another admin need a second admin; reductions immediate), staff suspension, offboarding, recovery (two verifiers, different approver, 24-hour objection window), member suspension (blocks submissions), public labels (never change the band), suppressions of analysis indicators only (shown publicly with reason) | `admin-api.test.ts`, `admin-public.test.ts`, `admin.spec.ts` | Done (mock); project management uses the correction and suggestion workflows |
 | Audit viewer (§5.25) | `/admin/audit` | Administrators only, labelled mock | `staff.spec.ts` | Done (mock) |
 | Staff WebAuthn enrollment, step-up, recovery (§4.1) | `/staff/*`, `/settings/security/staff` | Phase 2 flows | `account.spec.ts`, Phase 2 tests | Done (mock) |
+| Staff recovery identity verification (identity §10.11 step 2) | `/mod/recovery` (moderators, administrators); `/admin/staff` | Two different verifiers, at least one an administrator, never the subject; guidance never to verify by email | `admin-api.test.ts` (recovery verification), `recovery.spec.ts` | Done (mock) |
 
 ## Cross-cutting
 
 | Requirement | Evidence | Status |
 |---|---|---|
-| WCAG 2.2 AA (axe) on public, member, staff, admin and transparency pages | `a11y-security.spec.ts`, `staff.spec.ts`, `journeys.spec.ts`, `admin.spec.ts`, component axe tests | Partial: automated checks only; the full manual audit is Phase 6 |
-| No horizontal scroll at 360 px | `projects.spec.ts`, `staff.spec.ts`, `journeys.spec.ts`, `admin.spec.ts` | Done (mock) |
+| WCAG 2.2 AA on public, member, staff, admin and transparency pages | Automated: axe light and dark (`a11y-security.spec.ts`, `quality-audit.spec.ts`, others), target size, focus visibility, dialog focus trap/restore, reflow and text spacing (`quality-audit.spec.ts`). Agent-performed checks recorded in AI_HANDOFF Session 19 | Partial: no assistive-technology (screen reader) or human visual audit yet; **not a WCAG 2.2 AA conformance claim** |
+| Responsive: 320, 375, 768, 1024, 1280, 1440 px and phone landscape | `quality-audit.spec.ts` (39 routes), plus earlier 360 px checks | Done (mock, Chromium) |
 | Light and dark themes | `theme.spec.ts` | Done |
 | Private data never in public responses | `moderation-api.test.ts`, `public-effects.test.ts`, `journeys.spec.ts` (internal text absent from public pages) | Done (mock); enforced by the API in Phase 7 |
 | Nothing sensitive in browser storage | Only mock cookies (`bl_mock_*`, fictional, no personal data) and the theme preference in `localStorage`; nothing from submissions is stored in the browser | Done |
 | No executable previews, no raw HTML, links never fetched | Evidence shows names only; statements as text; links defanged | Done |
 | Mock code absent from production builds | `check:mock-exclusion` (Phase 5 and admin markers added) | Done |
-| Firefox and WebKit | Configured (`E2E_ALL_BROWSERS=1`) but not installed in this environment | Not run in Phase 5 |
+| Firefox and WebKit | Configured (`E2E_ALL_BROWSERS=1`). Not installable here: the browser download host is blocked by the environment's network policy (HTTP 403) | **Open**: not run in Phase 5 or 6 |

@@ -32,6 +32,7 @@ import {
   STAFF_MEMBER_FIXTURES,
 } from './fixtures/admin';
 import { ADDRESS_FIXTURES } from './fixtures/addresses';
+import { revisionHash } from './revision-hash';
 import {
   CASE_FIXTURES,
   CASE_OWNERS,
@@ -95,16 +96,56 @@ function withLabels(addresses: AddressResearch[], labels: readonly AdminLabel[])
   return addresses;
 }
 
+/**
+ * Published fixture findings that have no stored revision get their published
+ * revision 1 from the public record, so the revision editor has an exact base.
+ */
+function seedPublishedRevisions(addresses: readonly AddressResearch[]): FindingRevision[] {
+  const revisions = structuredClone([...REVISION_FIXTURES]);
+  for (const [findingId, p] of Object.entries(FINDING_PARTICIPANTS)) {
+    if (revisions.some((r) => r.findingId === findingId)) continue;
+    const address = addresses.find((a) => a.findings.some((f) => f.id === findingId));
+    const finding = address?.findings.find((f) => f.id === findingId);
+    if (!address || !finding) continue;
+    const subject = {
+      kind: 'address' as const,
+      chain: address.chain,
+      address: address.address,
+      displayAddress: address.displayAddress,
+    };
+    const fields = {
+      findingId,
+      revisionNumber: 1,
+      subject,
+      severity: p.severity,
+      publicSummary: finding.summary,
+      internalRationale: 'Fixture: revision published before the demo started.',
+      evidenceIds: [],
+    };
+    revisions.push({
+      ...fields,
+      author: p.author,
+      createdAt: finding.publishedAt,
+      contentHash: revisionHash(fields),
+      status: 'published',
+      isLatest: true,
+      sourceCaseId: null,
+    });
+  }
+  return revisions;
+}
+
 export function createStore(): MockStore {
+  const addresses = withLabels(
+    structuredClone([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
+    LABEL_FIXTURES,
+  );
   return {
-    addresses: withLabels(
-      structuredClone([...ADDRESS_FIXTURES, ...PROJECT_ADDRESS_FIXTURES]),
-      LABEL_FIXTURES,
-    ),
+    addresses,
     projects: structuredClone([...PROJECT_FIXTURES]),
     cases: new Map(CASE_FIXTURES.map((c) => [c.id, structuredClone(c)])),
     owners: new Map(Object.entries(CASE_OWNERS)),
-    revisions: structuredClone([...REVISION_FIXTURES]),
+    revisions: seedPublishedRevisions(addresses),
     audit: CASE_FIXTURES.flatMap((c) => structuredClone(c.history)),
     grants: new Map(),
     findingFactors: new Map(Object.entries(FINDING_FACTORS)),

@@ -19,6 +19,10 @@ const MODERATION: Readonly<Record<keyof ModerationApi, true>> = {
   getProfileState: true,
   listFindings: true,
   suspendFinding: true,
+  getFindingHistory: true,
+  proposeRevision: true,
+  listRecoveryVerifications: true,
+  verifyRecoveryIdentity: true,
 };
 
 const MEMBER: Readonly<Record<keyof MemberApi, true>> = {

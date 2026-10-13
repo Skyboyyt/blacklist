@@ -23,6 +23,8 @@ export type StaffPermission =
   | 'staff:role:approve'
   | 'staff:suspend'
   | 'staff:recovery'
+  /** Identity verification in a staff recovery case (identity §10.11 step 2). */
+  | 'staff:recovery:verify'
   | 'staff:offboard'
   | 'user:suspend'
   | 'label:manage'
@@ -46,6 +48,7 @@ const MODERATOR: readonly StaffPermission[] = [
   'response:moderate',
   'correction:decide',
   'evidence:read_derivative',
+  'staff:recovery:verify',
 ];
 
 export const ROLE_PERMISSIONS: Readonly<Record<StaffRole, readonly StaffPermission[]>> = {
