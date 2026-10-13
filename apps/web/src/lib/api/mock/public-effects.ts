@@ -61,8 +61,12 @@ function setDispute(address: AddressResearch): void {
 /** The system publication caused by an approval: the finding and its factor become public. */
 export function publishFinding(store: MockStore, revision: FindingRevision, now: string): void {
   if (revision.subject.kind !== 'address') return;
-  const address = findAddress(store, revision.subject.chain, revision.subject.address);
-  if (!address) return;
+  let address = findAddress(store, revision.subject.chain, revision.subject.address);
+  if (!address) {
+    address = projectOnlyAddress(revision.subject.chain, revision.subject.address, 'unknown', 'not_assessed');
+    address.assessment.coverage = 'Only a reviewed finding is available. No chain data has been loaded.';
+    store.addresses.push(address);
+  }
   const summary = {
     id: revision.findingId,
     title:

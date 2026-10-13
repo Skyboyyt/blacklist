@@ -212,7 +212,7 @@ export interface ModerationApi {
   ): Promise<ModerationResult<CaseDetail>>;
   addNote(caseId: string, expectedVersion: number, text: string): Promise<ModerationResult<CaseDetail>>;
   /** Action-bound step-up (identity §10.7): single use, for this action and target only. */
-  verifyStepUp(action: string, targetId: string): Promise<PasskeyResult>;
+  verifyStepUp(action: string, targetId: string, parameters?: readonly unknown[]): Promise<PasskeyResult>;
   decide(
     caseId: string,
     expectedVersion: number,
@@ -279,7 +279,7 @@ export interface MemberApi {
  * action-bound step-up obtained with `verifyStepUp` for the named action and target.
  */
 export interface AdminApi {
-  verifyStepUp(action: string, targetId: string): Promise<PasskeyResult>;
+  verifyStepUp(action: string, targetId: string, parameters?: readonly unknown[]): Promise<PasskeyResult>;
   getOverview(): Promise<ModerationResult<AdminOverview>>;
   listStaff(): Promise<ModerationResult<readonly StaffMember[]>>;
   listInvitations(): Promise<ModerationResult<readonly Invitation[]>>;

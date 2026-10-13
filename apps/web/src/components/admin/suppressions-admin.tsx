@@ -72,6 +72,7 @@ export function SuppressionsAdmin() {
           with this reason: <span className="font-medium text-text">{parsed.data.publicReason}</span>
         </p>
       ),
+      parameters: () => [parsed.data],
       stepUp: { action: 'signal.suppress', targetId: 'new', description: 'suppress an indicator' },
       run: async () => {
         const result = await (await getAdminApi()).suppressSignal(parsed.data);
@@ -95,6 +96,7 @@ export function SuppressionsAdmin() {
       title: 'Lift this suppression?',
       description: 'The indicator counts again and the band is recomputed.',
       reasonLabel: 'Internal reason (staff only)',
+      parameters: (reason) => [s.id, reason],
       stepUp: { action: 'signal.suppression.lift', targetId: s.id, description: `lift suppression ${s.id}` },
       run: async (reason) => {
         const result = await (await getAdminApi()).liftSuppression(s.id, reason);

@@ -38,7 +38,17 @@ describe('public effects of staff decisions (mock store)', () => {
 
     cookies = 'bl_mock_viewer=moderator; bl_mock_passkey=verified';
     ok(await staff.decide(id, ok(await staff.getCase(id)).version, { action: 'start_review' }));
-    await staff.verifyStepUp(stepUpActionFor('accept_report'), id);
+    const decision = {
+      action: 'accept_report',
+      severity: 'high',
+      publicSummary: 'This address collected approvals through a fake airdrop page.',
+      internalRationale: 'INTERNAL-ONLY the reporter evidence matched.',
+    } as const;
+    await staff.verifyStepUp(stepUpActionFor('accept_report'), id, [
+      id,
+      ok(await staff.getCase(id)).version,
+      decision,
+    ]);
     ok(
       await staff.decide(id, ok(await staff.getCase(id)).version, {
         action: 'accept_report',
@@ -52,7 +62,11 @@ describe('public effects of staff decisions (mock store)', () => {
 
     const revision = ok(await staff.listRevisions()).find((r) => r.sourceCaseId === id);
     if (!revision) throw new Error('no revision');
-    await staff.verifyStepUp('finding.approve', revision.findingId);
+    await staff.verifyStepUp('finding.approve', revision.findingId, [
+      revision.findingId,
+      revision.revisionNumber,
+      revision.contentHash,
+    ]);
     ok(await staff.approveRevision(revision.findingId, revision.revisionNumber, revision.contentHash));
 
     cookies = 'bl_mock_viewer=anonymous';

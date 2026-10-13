@@ -15,9 +15,14 @@ interface StepUpDialogProps {
   /** Machine action name and target the future API binds the challenge to (identity §10.7). */
   readonly action: string;
   readonly targetId: string;
+  readonly parameters?: readonly unknown[];
   readonly onVerified: () => void;
   /** Runs the ceremony through a specific service (default: the staff security API). */
-  readonly verify?: (action: string, targetId: string) => Promise<PasskeyResult>;
+  readonly verify?: (
+    action: string,
+    targetId: string,
+    parameters?: readonly unknown[],
+  ) => Promise<PasskeyResult>;
 }
 
 /**
@@ -31,15 +36,16 @@ export function StepUpDialog({
   actionDescription,
   action,
   targetId,
+  parameters,
   onVerified,
   verify: verifyWith,
 }: StepUpDialogProps) {
   const run = useCallback(
     async () =>
       verifyWith
-        ? verifyWith(action, targetId)
+        ? verifyWith(action, targetId, parameters)
         : (await getStaffSecurityApi()).verifyPasskey({ kind: 'step_up', action, targetId }),
-    [action, targetId, verifyWith],
+    [action, targetId, parameters, verifyWith],
   );
   const { state, start, reset } = usePasskeyCeremony(run);
 

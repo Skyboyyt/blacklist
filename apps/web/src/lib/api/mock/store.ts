@@ -52,12 +52,13 @@ export interface MockStore {
   owners: Map<string, string>;
   revisions: FindingRevision[];
   audit: AuditEntry[];
-  /** Single-use step-up grants: `${action}:${target}` → expiry (ms). */
-  grants: Map<string, number>;
+  /** Single-use grants keyed by actor, demo session, action and target, with exact parameters. */
+  grants: Map<string, { parameters: string; expires: number }>;
   /** findingId → id of the risk factor it contributes. */
   findingFactors: Map<string, string>;
   /** findingId → author and approver, for appeal independence. */
   findingParticipants: Map<string, { author: StaffRef; approver: StaffRef; severity: string }>;
+  findingParticipantHistory: Map<string, Set<string>>;
   notices: (MemberNotice & { handle: string })[];
   /** The one-time simulated concurrent edit on the conflict demo case. */
   conflictPending: boolean;
@@ -108,6 +109,9 @@ export function createStore(): MockStore {
     grants: new Map(),
     findingFactors: new Map(Object.entries(FINDING_FACTORS)),
     findingParticipants: new Map(Object.entries(structuredClone(FINDING_PARTICIPANTS))),
+    findingParticipantHistory: new Map(
+      Object.entries(FINDING_PARTICIPANTS).map(([id, p]) => [id, new Set([p.author.id, p.approver.id])]),
+    ),
     notices: [
       {
         handle: 'demo_member',

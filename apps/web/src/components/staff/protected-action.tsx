@@ -18,6 +18,7 @@ export interface ProtectedActionRequest {
   readonly reasonLabel?: string;
   /** Step-up action and target (identity §10.7); omit for actions without a step-up. */
   readonly stepUp?: { readonly action: string; readonly targetId: string; readonly description: string };
+  readonly parameters?: (reason: string) => readonly unknown[];
   readonly run: (reason: string) => Promise<void>;
 }
 
@@ -37,7 +38,11 @@ export function useProtectedAction() {
 interface ProtectedActionProps {
   readonly request: ProtectedActionRequest | null;
   readonly onClose: (request: ProtectedActionRequest) => void;
-  readonly verify: (action: string, targetId: string) => Promise<PasskeyResult>;
+  readonly verify: (
+    action: string,
+    targetId: string,
+    parameters?: readonly unknown[],
+  ) => Promise<PasskeyResult>;
 }
 
 /**
@@ -124,6 +129,7 @@ export function ProtectedAction({ request, onClose, verify }: ProtectedActionPro
           actionDescription={request.stepUp.description}
           action={request.stepUp.action}
           targetId={request.stepUp.targetId}
+          parameters={request.parameters?.(reason.trim()) ?? [request.stepUp.targetId]}
           verify={verify}
           onVerified={() => void finish()}
         />

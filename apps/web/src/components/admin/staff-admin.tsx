@@ -115,6 +115,7 @@ export function StaffAdmin() {
         parsed.data.role === 'admin'
           ? 'An administrator invitation waits until a second, different administrator approves it.'
           : 'The invitation is issued now and expires after 72 hours.',
+      parameters: () => [parsed.data],
       stepUp: { action: 'staff.invite', targetId: 'new', description: 'invite a staff member' },
       run: async () => {
         const result = await (await getAdminApi()).createInvitation(parsed.data);
@@ -140,6 +141,7 @@ export function StaffAdmin() {
         ? 'This waits for a second, different administrator to approve it.'
         : 'Removing this role takes effect immediately and ends their sessions.',
       tone: action === 'revoke' ? 'danger' : 'default',
+      parameters: () => [{ targetId: target.id, role, action }],
       stepUp: { action: 'staff.role', targetId: target.id, description: `change ${target.handle}’s role` },
       run: async () => {
         const result = await (await getAdminApi()).requestRoleChange({ targetId: target.id, role, action });
@@ -174,6 +176,7 @@ export function StaffAdmin() {
       description: copy.description,
       tone: kind === 'recovery' ? 'default' : 'danger',
       ...(kind === 'recovery' ? {} : { reasonLabel: 'Internal reason (staff only)' }),
+      parameters: (reason) => (kind === 'recovery' ? [m.id] : [m.id, reason]),
       stepUp: { action: copy.action, targetId: m.id, description: `${kind} ${m.handle}` },
       run: async (reason) => {
         const api = await getAdminApi();

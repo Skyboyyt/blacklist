@@ -11,6 +11,7 @@ import { ADDRESS_FIXTURES } from './fixtures/addresses';
 import { CASE_FIXTURES } from './fixtures/moderation';
 import { PROJECT_ADDRESS_FIXTURES, PROJECT_FIXTURES } from './fixtures/projects';
 import { createMockModerationApi, stepUpActionFor } from './moderation-api';
+import { createStore } from './store';
 import { applyCorrection } from './profile-corrections';
 import { createProjectCatalog } from './project-api';
 import { PROPOSED_CONTRIBUTIONS, staffAssessmentFor } from './staff-scoring';
@@ -38,8 +39,9 @@ const code = (result: ModerationResult<unknown>) => (result.kind === 'error' ? r
 const version = async (id: string) => data(await api.getCase(id)).version;
 
 async function decide(id: string, decision: CaseDecision) {
-  await api.verifyStepUp(stepUpActionFor(decision.action), id);
-  return api.decide(id, await version(id), decision);
+  const v = await version(id);
+  await api.verifyStepUp(stepUpActionFor(decision.action), id, [id, v, decision]);
+  return api.decide(id, v, decision);
 }
 
 const reason = 'Enough detail for the internal record.';
@@ -305,10 +307,18 @@ describe('project-profile corrections', () => {
 
 describe('finding approvals (moderation §4)', () => {
   it('requires an independent approver for severe revisions', async () => {
-    await api.verifyStepUp('finding.approve', 'demo-finding-502');
+    await api.verifyStepUp('finding.approve', 'demo-finding-502', [
+      'demo-finding-502',
+      1,
+      'b2c3d4e5f6071829',
+    ]);
     expect(code(await api.approveRevision('demo-finding-502', 1, 'b2c3d4e5f6071829'))).toBe('not_eligible');
     as('moderator_b');
-    await api.verifyStepUp('finding.approve', 'demo-finding-502');
+    await api.verifyStepUp('finding.approve', 'demo-finding-502', [
+      'demo-finding-502',
+      1,
+      'b2c3d4e5f6071829',
+    ]);
     const revisions = data(await api.approveRevision('demo-finding-502', 1, 'b2c3d4e5f6071829'));
     expect(revisions.find((r) => r.findingId === 'demo-finding-502')?.status).toBe('published');
     as('admin');
@@ -320,13 +330,31 @@ describe('finding approvals (moderation §4)', () => {
   });
 
   it('allows self-approval of a non-severe revision', async () => {
-    await api.verifyStepUp('finding.approve', 'demo-finding-501');
-    expect(code(await api.approveRevision('demo-finding-501', 1, 'a1b2c3d4e5f60718'))).toBe('ok');
+    const store = createStore();
+    const template = store.revisions[0];
+    if (!template) throw new Error('missing revision');
+    store.revisions.push({
+      ...template,
+      findingId: 'demo-self-approved',
+      evidenceIds: [],
+      subject: { ...template.subject },
+    });
+    api = createMockModerationApi({ cookies: () => cookies, latencyMs: 0, store });
+    await api.verifyStepUp('finding.approve', 'demo-self-approved', [
+      'demo-self-approved',
+      1,
+      template.contentHash,
+    ]);
+    expect(code(await api.approveRevision('demo-self-approved', 1, template.contentHash))).toBe('ok');
   });
 
   it('refuses a superseded revision and blocks publication while evidence is unavailable', async () => {
     expect(code(await api.approveRevision('demo-finding-503', 1, 'c3d4e5f60718293a'))).toBe('conflict');
-    await api.verifyStepUp('finding.approve', 'demo-finding-503');
+    await api.verifyStepUp('finding.approve', 'demo-finding-503', [
+      'demo-finding-503',
+      2,
+      'd4e5f60718293a4b',
+    ]);
     expect(code(await api.approveRevision('demo-finding-503', 2, 'd4e5f60718293a4b'))).toBe(
       'evidence_unavailable',
     );

@@ -34,8 +34,13 @@ function ok<T>(result: ModerationResult<T>): T {
 }
 const code = (result: { kind: string; code?: string }) => (result.kind === 'error' ? result.code : 'ok');
 
-async function withStepUp<T>(action: string, target: string, run: () => Promise<T>): Promise<T> {
-  await admin.verifyStepUp(action, target);
+async function withStepUp<T>(
+  action: string,
+  target: string,
+  parameters: readonly unknown[],
+  run: () => Promise<T>,
+): Promise<T> {
+  await admin.verifyStepUp(action, target, parameters);
   return run();
 }
 
@@ -55,7 +60,10 @@ describe('access', () => {
     expect(code(await admin.suspendMember('usr_demo_member', 'Repeated abusive reports.'))).toBe(
       'stepup_required',
     );
-    await admin.verifyStepUp('user.suspend', 'usr_demo_member');
+    await admin.verifyStepUp('user.suspend', 'usr_demo_member', [
+      'usr_demo_member',
+      'Repeated abusive reports.',
+    ]);
     ok(await admin.suspendMember('usr_demo_member', 'Repeated abusive reports.'));
     expect(code(await admin.restoreMember('usr_demo_member', 'Suspension was a mistake.'))).toBe(
       'stepup_required',
@@ -66,7 +74,7 @@ describe('access', () => {
 describe('two-person rules (identity §10.4, §10.8)', () => {
   it('an admin invitation waits for a second, different administrator', async () => {
     const created = ok(
-      await withStepUp('staff.invite', 'new', () =>
+      await withStepUp('staff.invite', 'new', [{ email: 'new.admin@example.test', role: 'admin' }], () =>
         admin.createInvitation({ email: 'new.admin@example.test', role: 'admin' }),
       ),
     );
@@ -75,14 +83,14 @@ describe('two-person rules (identity §10.4, §10.8)', () => {
     expect(created.invitation.emailMasked).toBe('n•••@example.test');
     expect(
       code(
-        await withStepUp('staff.invitation.approve', created.invitation.id, () =>
+        await withStepUp('staff.invitation.approve', created.invitation.id, [created.invitation.id], () =>
           admin.approveInvitation(created.invitation.id),
         ),
       ),
     ).toBe('not_eligible');
     as('admin_b');
     const approved = ok(
-      await withStepUp('staff.invitation.approve', created.invitation.id, () =>
+      await withStepUp('staff.invitation.approve', created.invitation.id, [created.invitation.id], () =>
         admin.approveInvitation(created.invitation.id),
       ),
     );
@@ -91,16 +99,22 @@ describe('two-person rules (identity §10.4, §10.8)', () => {
   });
 
   it('refuses to invite an email that already belongs to an account', async () => {
-    const result = await withStepUp('staff.invite', 'new', () =>
-      admin.createInvitation({ email: 'demo_member@example.test', role: 'moderator' }),
+    const result = await withStepUp(
+      'staff.invite',
+      'new',
+      [{ email: 'demo_member@example.test', role: 'moderator' }],
+      () => admin.createInvitation({ email: 'demo_member@example.test', role: 'moderator' }),
     );
     expect(code(result)).toBe('invalid_transition');
   });
 
   it('a moderator invitation is issued at once by one administrator', async () => {
     const created = ok(
-      await withStepUp('staff.invite', 'new', () =>
-        admin.createInvitation({ email: 'reviewer@example.test', role: 'appeal_reviewer' }),
+      await withStepUp(
+        'staff.invite',
+        'new',
+        [{ email: 'reviewer@example.test', role: 'appeal_reviewer' }],
+        () => admin.createInvitation({ email: 'reviewer@example.test', role: 'appeal_reviewer' }),
       ),
     );
     expect(created.invitation.state).toBe('issued');
@@ -108,8 +122,11 @@ describe('two-person rules (identity §10.4, §10.8)', () => {
 
   it('a role grant needs a second admin, while removing a moderator role is immediate', async () => {
     const pending = ok(
-      await withStepUp('staff.role', 'stf_mod_a', () =>
-        admin.requestRoleChange({ targetId: 'stf_mod_a', role: 'appeal_reviewer', action: 'grant' }),
+      await withStepUp(
+        'staff.role',
+        'stf_mod_a',
+        [{ targetId: 'stf_mod_a', role: 'appeal_reviewer', action: 'grant' }],
+        () => admin.requestRoleChange({ targetId: 'stf_mod_a', role: 'appeal_reviewer', action: 'grant' }),
       ),
     );
     const request = pending[0];
@@ -117,15 +134,26 @@ describe('two-person rules (identity §10.4, §10.8)', () => {
     expect(request.state).toBe('pending');
     expect(store.staff.find((s) => s.id === 'stf_mod_a')?.roles).toEqual(['moderator']);
     expect(
-      code(await withStepUp('staff.role.approve', request.id, () => admin.approveRoleRequest(request.id))),
+      code(
+        await withStepUp('staff.role.approve', request.id, [request.id], () =>
+          admin.approveRoleRequest(request.id),
+        ),
+      ),
     ).toBe('not_eligible');
     as('admin_b');
-    ok(await withStepUp('staff.role.approve', request.id, () => admin.approveRoleRequest(request.id)));
+    ok(
+      await withStepUp('staff.role.approve', request.id, [request.id], () =>
+        admin.approveRoleRequest(request.id),
+      ),
+    );
     expect(store.staff.find((s) => s.id === 'stf_mod_a')?.roles).toEqual(['moderator', 'appeal_reviewer']);
 
     ok(
-      await withStepUp('staff.role', 'stf_mod_b', () =>
-        admin.requestRoleChange({ targetId: 'stf_mod_b', role: 'moderator', action: 'revoke' }),
+      await withStepUp(
+        'staff.role',
+        'stf_mod_b',
+        [{ targetId: 'stf_mod_b', role: 'moderator', action: 'revoke' }],
+        () => admin.requestRoleChange({ targetId: 'stf_mod_b', role: 'moderator', action: 'revoke' }),
       ),
     );
     expect(store.staff.find((s) => s.id === 'stf_mod_b')?.roles).toEqual([]);
@@ -135,8 +163,11 @@ describe('two-person rules (identity §10.4, §10.8)', () => {
 
   it('removing another administrator waits for a second admin; the last admin is never removed', async () => {
     ok(
-      await withStepUp('staff.role', 'stf_admin_b', () =>
-        admin.requestRoleChange({ targetId: 'stf_admin_b', role: 'admin', action: 'revoke' }),
+      await withStepUp(
+        'staff.role',
+        'stf_admin_b',
+        [{ targetId: 'stf_admin_b', role: 'admin', action: 'revoke' }],
+        () => admin.requestRoleChange({ targetId: 'stf_admin_b', role: 'admin', action: 'revoke' }),
       ),
     );
     expect(store.staff.find((s) => s.id === 'stf_admin_b')?.roles).toEqual(['admin']);
@@ -150,8 +181,11 @@ describe('staff suspension, offboarding and recovery', () => {
     expect(code(await staff.getQueue({}))).toBe('ok');
     as('admin');
     ok(
-      await withStepUp('staff.suspend', 'stf_mod_b', () =>
-        admin.suspendStaff('stf_mod_b', 'Suspected compromise of the account.'),
+      await withStepUp(
+        'staff.suspend',
+        'stf_mod_b',
+        ['stf_mod_b', 'Suspected compromise of the account.'],
+        () => admin.suspendStaff('stf_mod_b', 'Suspected compromise of the account.'),
       ),
     );
     as('moderator_b');
@@ -162,7 +196,7 @@ describe('staff suspension, offboarding and recovery', () => {
   it('offboarding deactivates the account and revokes the invitations it issued', async () => {
     as('admin_b');
     ok(
-      await withStepUp('staff.offboard', 'stf_admin', () =>
+      await withStepUp('staff.offboard', 'stf_admin', ['stf_admin', 'Left the organisation.'], () =>
         admin.offboardStaff('stf_admin', 'Left the organisation.'),
       ),
     );
@@ -174,7 +208,9 @@ describe('staff suspension, offboarding and recovery', () => {
 
   it('recovery needs two verifiers, a different approver and a 24-hour objection window', async () => {
     const opened = ok(
-      await withStepUp('staff.recovery.open', 'stf_mod_c', () => admin.openRecovery('stf_mod_c')),
+      await withStepUp('staff.recovery.open', 'stf_mod_c', ['stf_mod_c'], () =>
+        admin.openRecovery('stf_mod_c'),
+      ),
     );
     expect(store.staff.find((s) => s.id === 'stf_mod_c')?.status).toBe('suspended');
     ok(await admin.verifyRecovery(opened.id, 'Video call with ID check.'));
@@ -186,11 +222,17 @@ describe('staff suspension, offboarding and recovery', () => {
     expect(verified.state).toBe('awaiting_approval');
     as('admin');
     expect(
-      code(await withStepUp('staff.recovery.approve', opened.id, () => admin.approveRecovery(opened.id))),
+      code(
+        await withStepUp('staff.recovery.approve', opened.id, [opened.id], () =>
+          admin.approveRecovery(opened.id),
+        ),
+      ),
     ).toBe('not_eligible');
     as('admin_b');
     const approved = ok(
-      await withStepUp('staff.recovery.approve', opened.id, () => admin.approveRecovery(opened.id)),
+      await withStepUp('staff.recovery.approve', opened.id, [opened.id], () =>
+        admin.approveRecovery(opened.id),
+      ),
     );
     expect(approved.state).toBe('objection_window');
     expect(code(await admin.completeRecovery(opened.id))).toBe('invalid_transition');
@@ -203,8 +245,11 @@ describe('staff suspension, offboarding and recovery', () => {
 describe('members, labels and suppressions reach the rest of the demo', () => {
   it('a suspended member cannot submit', async () => {
     ok(
-      await withStepUp('user.suspend', 'usr_demo_member', () =>
-        admin.suspendMember('usr_demo_member', 'Repeated abusive reports.'),
+      await withStepUp(
+        'user.suspend',
+        'usr_demo_member',
+        ['usr_demo_member', 'Repeated abusive reports.'],
+        () => admin.suspendMember('usr_demo_member', 'Repeated abusive reports.'),
       ),
     );
     as('member');
@@ -258,7 +303,9 @@ describe('members, labels and suppressions reach the rest of the demo', () => {
       internalRationale: 'INTERNAL-ONLY bridge documentation was reviewed.',
     };
     expect(code(await admin.suppressSignal(request))).toBe('stepup_required');
-    const list = ok(await withStepUp('signal.suppress', 'new', () => admin.suppressSignal(request)));
+    const list = ok(
+      await withStepUp('signal.suppress', 'new', [request], () => admin.suppressSignal(request)),
+    );
     const after = await research().getAddressResearch('solana', SOLANA.lookalikeToken);
     if (after.kind !== 'found') throw new Error('missing');
     expect(after.data.assessment.factors).toHaveLength(0);
@@ -267,7 +314,7 @@ describe('members, labels and suppressions reach the rest of the demo', () => {
     expect(JSON.stringify(after.data)).not.toContain('INTERNAL-ONLY');
     const id = list[0]?.id ?? '';
     ok(
-      await withStepUp('signal.suppression.lift', id, () =>
+      await withStepUp('signal.suppression.lift', id, [id, 'New evidence of impersonation.'], () =>
         admin.liftSuppression(id, 'New evidence of impersonation.'),
       ),
     );
@@ -276,14 +323,26 @@ describe('members, labels and suppressions reach the rest of the demo', () => {
   });
 
   it('findings cannot be suppressed: only analysis indicators', async () => {
-    const result = await withStepUp('signal.suppress', 'new', () =>
-      admin.suppressSignal({
-        chain: 'ethereum',
-        address: EVM.high,
-        factorCode: 'eoa.delegated_to_flagged',
-        publicReason: 'Trying to suppress a finding factor.',
-        internalRationale: 'This must be refused by the service.',
-      }),
+    const result = await withStepUp(
+      'signal.suppress',
+      'new',
+      [
+        {
+          chain: 'ethereum',
+          address: EVM.high,
+          factorCode: 'eoa.delegated_to_flagged',
+          publicReason: 'Trying to suppress a finding factor.',
+          internalRationale: 'This must be refused by the service.',
+        },
+      ],
+      () =>
+        admin.suppressSignal({
+          chain: 'ethereum',
+          address: EVM.high,
+          factorCode: 'eoa.delegated_to_flagged',
+          publicReason: 'Trying to suppress a finding factor.',
+          internalRationale: 'This must be refused by the service.',
+        }),
     );
     expect(code(result)).toBe('invalid_transition');
   });

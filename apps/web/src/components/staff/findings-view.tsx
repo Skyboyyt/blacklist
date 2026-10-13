@@ -73,6 +73,7 @@ export function FindingsView() {
         </ul>
       ),
       reasonLabel: 'Internal reason (staff only)',
+      parameters: (reason) => [f.findingId, reason],
       stepUp: {
         action: 'finding.suspend',
         targetId: f.findingId,
@@ -159,7 +160,9 @@ export function FindingsView() {
       <ProtectedAction
         request={request}
         onClose={close}
-        verify={async (action, target) => (await getModerationApi()).verifyStepUp(action, target)}
+        verify={async (action, target, parameters) =>
+          (await getModerationApi()).verifyStepUp(action, target, parameters)
+        }
       />
     </div>
   );

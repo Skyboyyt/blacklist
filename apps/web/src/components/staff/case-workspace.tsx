@@ -325,7 +325,9 @@ export function CaseWorkspace({ caseId, staffRole, myHandle }: CaseWorkspaceProp
           key={`${d.id}-${d.status}`}
           detail={d}
           staffRole={staffRole}
-          verifyStepUp={async (action, target) => (await api()).verifyStepUp(action, target)}
+          verifyStepUp={async (action, target, parameters) =>
+            (await api()).verifyStepUp(action, target, parameters)
+          }
           onDecide={(decision: CaseDecision) => mutate(async (v) => (await api()).decide(d.id, v, decision))}
         />
       </DataCard>

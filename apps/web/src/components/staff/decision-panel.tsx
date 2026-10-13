@@ -88,7 +88,11 @@ interface DecisionPanelProps {
   readonly detail: CaseDetail;
   readonly staffRole: StaffRole;
   readonly onDecide: (decision: CaseDecision) => Promise<FormAlertState | null>;
-  readonly verifyStepUp: (action: string, targetId: string) => Promise<PasskeyResult>;
+  readonly verifyStepUp: (
+    action: string,
+    targetId: string,
+    parameters?: readonly unknown[],
+  ) => Promise<PasskeyResult>;
 }
 
 /**
@@ -329,6 +333,7 @@ export function DecisionPanel({ detail, staffRole, onDecide, verifyStepUp }: Dec
           actionDescription={DECISION_COPY[decision.action].label.toLowerCase()}
           action={`case.${decision.action}`}
           targetId={detail.id}
+          parameters={[detail.id, detail.version, decision]}
           verify={verifyStepUp}
           onVerified={() => {
             void finish(decision);

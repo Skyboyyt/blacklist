@@ -26,6 +26,7 @@ import {
   type StaffRef,
 } from '@blacklist/contracts';
 import type { AdminApi, ModerationResult } from '../types';
+import { consumeGrant, issueGrant } from './step-up';
 import { KNOWN_ACCOUNT_EMAILS } from './fixtures/admin';
 import { STAFF } from './fixtures/moderation';
 import { applySuppression, liftSuppression, syncLabel } from './public-effects';
@@ -78,7 +79,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
   /** The calling administrator, only while their account is active and holds the admin role. */
   function admin(): StaffRef | null {
     const ref = ADMINS[currentViewerKey(options.cookies())];
-    if (!ref) return null;
+    if (!ref || currentScenario(options.cookies()) === 'session_expired') return null;
     const member = store.staff.find((m) => m.id === ref.id);
     return member?.status === 'active' && member.roles.includes('admin') ? ref : null;
   }
@@ -93,11 +94,12 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
     store.audit.push({ id: `audit-${store.seq}`, at: at(), actor, action, caseId: null, reason, changes });
   }
 
-  function consume(action: string, target: string): boolean {
-    const key = `${action}:${target}`;
-    const expires = store.grants.get(key);
-    store.grants.delete(key);
-    return expires !== undefined && expires > now().getTime();
+  function consume(action: string, target: string, parameters: readonly unknown[]): boolean {
+    const me = admin();
+    return (
+      me !== null &&
+      consumeGrant(store, me.id, options.cookies(), action, target, parameters, now().getTime())
+    );
   }
 
   const activeAdmins = () => store.staff.filter((s) => s.status === 'active' && s.roles.includes('admin'));
@@ -111,6 +113,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
   ) {
     const m = store.staff.find((s) => s.id === target);
     if (!m) return;
+    store.grants.clear();
     m.roles = action === 'grant' ? [...new Set([...m.roles, role])] : m.roles.filter((r) => r !== role);
   }
 
@@ -120,12 +123,21 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
   }
 
   return {
-    async verifyStepUp(action, targetId): Promise<PasskeyResult> {
+    async verifyStepUp(action, targetId, parameters = []): Promise<PasskeyResult> {
       await wait();
-      if (!admin() || currentScenario(options.cookies()) === 'session_expired')
-        return { kind: 'session_expired' };
+      const me = admin();
+      if (!me || currentScenario(options.cookies()) === 'session_expired') return { kind: 'session_expired' };
       const kind = currentPasskeyResult(options.cookies());
-      if (kind === 'verified') store.grants.set(`${action}:${targetId}`, now().getTime() + STEP_UP_TTL_MS);
+      if (kind === 'verified')
+        issueGrant(
+          store,
+          me.id,
+          options.cookies(),
+          action,
+          targetId,
+          parameters,
+          now().getTime() + STEP_UP_TTL_MS,
+        );
       return { kind };
     },
 
@@ -167,7 +179,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
           'This email may already belong to an account. Invitations are for new accounts only.',
         );
       }
-      if (!consume('staff.invite', 'new')) return stepUp;
+      if (!consume('staff.invite', 'new', [parsed.data])) return stepUp;
       const needsSecond = parsed.data.role === 'admin';
       const invitation = {
         id: nextId(store, 'INV'),
@@ -198,7 +210,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       if (inv.invitedBy.id === me.id) {
         return err('not_eligible', 'A second, different administrator must approve an admin invitation.');
       }
-      if (!consume('staff.invitation.approve', id)) return stepUp;
+      if (!consume('staff.invitation.approve', id, [id])) return stepUp;
       inv.state = 'issued';
       inv.approvedBy = me;
       record(me, 'staff_invitation_approved', null, [
@@ -216,7 +228,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       if (inv.state !== 'pending_approval' && inv.state !== 'issued') {
         return err('invalid_transition', 'Only pending or issued invitations can be revoked.');
       }
-      if (!consume('staff.invitation.revoke', id)) return stepUp;
+      if (!consume('staff.invitation.revoke', id, [id])) return stepUp;
       const from = inv.state;
       inv.state = 'revoked';
       record(me, 'staff_invitation_revoked', null, [{ field: 'invitation', from, to: 'revoked' }]);
@@ -246,7 +258,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       ) {
         return err('invalid_transition', 'A request for this role change is already waiting for approval.');
       }
-      if (!consume('staff.role', targetId)) return stepUp;
+      if (!consume('staff.role', targetId, [parsed.data])) return stepUp;
       const ref = { id: target.id, handle: target.handle };
       // Reductions take effect at once; removing another admin's role is an exception (identity §10.8).
       const immediate = action === 'revoke' && (role !== 'admin' || targetId === me.id);
@@ -294,7 +306,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       }
       if (req.target.id === me.id)
         return err('not_eligible', 'You cannot approve a role change for yourself.');
-      if (!consume('staff.role.approve', id)) return stepUp;
+      if (!consume('staff.role.approve', id, [id])) return stepUp;
       req.state = 'approved';
       req.approvedBy = me;
       applyRole(req.target.id, req.role, req.action);
@@ -336,7 +348,8 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
           'The last active administrator cannot be suspended here. Use the operator procedure.',
         );
       }
-      if (!consume('staff.suspend', id)) return stepUp;
+      if (!consume('staff.suspend', id, [id, parsed.data.reason])) return stepUp;
+      store.grants.clear();
       target.status = 'suspended';
       releaseCases(id);
       record(me, 'staff_suspended', parsed.data.reason, [
@@ -360,8 +373,9 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       if (target.roles.includes('admin') && activeAdmins().length <= 1) {
         return err('invalid_transition', 'At least one active administrator must remain.');
       }
-      if (!consume('staff.offboard', id)) return stepUp;
+      if (!consume('staff.offboard', id, [id, parsed.data.reason])) return stepUp;
       const from = target.status;
+      store.grants.clear();
       target.status = 'deactivated';
       target.roles = [];
       target.authenticators = 0;
@@ -390,7 +404,8 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       if (store.recoveries.some((r) => r.subject.id === staffId && r.state !== 'completed')) {
         return err('invalid_transition', 'A recovery case is already open for this person.');
       }
-      if (!consume('staff.recovery.open', staffId)) return stepUp;
+      if (!consume('staff.recovery.open', staffId, [staffId])) return stepUp;
+      store.grants.clear();
       subject.status = 'suspended';
       subject.authenticators = 0;
       releaseCases(staffId);
@@ -447,7 +462,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
           'Approval must come from a different administrator than the one who opened the case.',
         );
       }
-      if (!consume('staff.recovery.approve', id)) return stepUp;
+      if (!consume('staff.recovery.approve', id, [id])) return stepUp;
       r.approvedBy = me;
       r.state = 'objection_window';
       r.objectionWindowEndsAt = new Date(now().getTime() + OBJECTION_WINDOW_MS).toISOString();
@@ -515,7 +530,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       const m = store.members.find((x) => x.id === id);
       if (!m) return notFound;
       if (m.status === 'suspended') return err('invalid_transition', 'This member is already suspended.');
-      if (!consume('user.suspend', id)) return stepUp;
+      if (!consume('user.suspend', id, [id, parsed.data.reason])) return stepUp;
       m.status = 'suspended';
       m.suspensionReason = parsed.data.reason;
       record(me, 'user_suspended', parsed.data.reason, [
@@ -534,7 +549,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       const m = store.members.find((x) => x.id === id);
       if (!m) return notFound;
       if (m.status !== 'suspended') return err('invalid_transition', 'This member is not suspended.');
-      if (!consume('user.restore', id)) return stepUp;
+      if (!consume('user.restore', id, [id, parsed.data.reason])) return stepUp;
       m.status = 'active';
       m.suspensionReason = null;
       record(me, 'user_restored', parsed.data.reason, [{ field: m.handle, from: 'suspended', to: 'active' }]);
@@ -616,7 +631,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       if (!address.assessment.factors.some((f) => f.code === r.factorCode)) {
         return err('invalid_transition', 'This address has no active indicator with that code to suppress.');
       }
-      if (!consume('signal.suppress', 'new')) return stepUp;
+      if (!consume('signal.suppress', 'new', [parsed.data])) return stepUp;
       const removed = applySuppression(
         store,
         address.chain,
@@ -653,7 +668,7 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       const s = store.suppressions.find((x) => x.id === id);
       if (!s) return notFound;
       if (s.liftedAt !== null) return err('invalid_transition', 'This suppression was already lifted.');
-      if (!consume('signal.suppression.lift', id)) return stepUp;
+      if (!consume('signal.suppression.lift', id, [id, parsed.data.reason])) return stepUp;
       if (s.removed) liftSuppression(store, s.subject.chain, s.subject.address, s.removed, at());
       s.liftedAt = at();
       s.liftedBy = me;
