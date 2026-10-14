@@ -64,7 +64,10 @@ export interface VerificationReceipt {
   readonly fetchedAt: Date;
   /** SHA-256 (hex) over the canonical normalized fields named by the comparison spec. */
   readonly fieldsDigest: string;
+  /** Bounded normalized comparison fields, never the raw provider response. */
+  readonly normalizedFields: Readonly<Record<string, unknown>>;
   readonly decoderVersion: string;
+  readonly comparisonSpecVersion: string;
 }
 
 /** Where a piece of chain data came from. Attached to every result. */
@@ -75,7 +78,7 @@ export interface DataProvenance {
   readonly finality: Finality;
   readonly decoderVersion: string;
   readonly verification: VerificationResult;
-  /** Present when a second read was attempted (`crossVerify`). */
+  /** Bounded read receipts; required for every answer used in `crossVerify`. */
   readonly receipts?: readonly VerificationReceipt[];
   /** True when served from cache because providers were unavailable. */
   readonly degraded: boolean;
@@ -193,6 +196,8 @@ export interface Page<T> {
   readonly nextCursor: string | null;
   /** True when provider limits mean the window is incomplete. The UI must disclose this. */
   readonly truncated: boolean;
+  /** True when failover restarted from the recorded snapshot boundary. */
+  readonly restarted?: boolean;
 }
 
 // ---------------------------------------------------------------------------

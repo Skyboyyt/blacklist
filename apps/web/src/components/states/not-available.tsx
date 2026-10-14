@@ -5,15 +5,18 @@ import type { IconName } from '@/components/ui/icon';
 export function NotAvailableYet({
   feature,
   icon = 'info',
+  titleAs = 'p',
 }: {
   readonly feature: string;
   readonly icon?: IconName;
+  readonly titleAs?: 'h1' | 'h2' | 'p';
 }) {
   return (
     <EmptyState
       icon={icon}
+      titleAs={titleAs}
       title={`${feature} is not available in this preview`}
-      description="This page shows where the feature will live. It does not submit or store anything."
+      description="The live service for this feature is not available yet. No records have been loaded, and this page does not submit or store anything."
     />
   );
 }

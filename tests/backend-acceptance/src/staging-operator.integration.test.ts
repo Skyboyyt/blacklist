@@ -64,7 +64,7 @@ describe('operator catalog rehearsal on disposable PostgreSQL18 (TLS production 
       client.release();
     }
   });
-  it('provisions safe roles, rejects a provision restart and verifies seven repeatable migrations', async () => {
+  it('provisions safe roles, rejects a provision restart and verifies nine repeatable migrations', async () => {
     await provisionCloudRoles(adminUrl, passwords);
     const provisioner = await admin.connect();
     try {
@@ -77,7 +77,7 @@ describe('operator catalog rehearsal on disposable PostgreSQL18 (TLS production 
     await migrate(migrationUrl, 'blacklist_app');
     const client = await migrator.connect();
     try {
-      expect(await verifyOperatorMigrations(client)).toMatchObject({ migrations: 7, tables: 27 });
+      expect(await verifyOperatorMigrations(client)).toMatchObject({ migrations: 9, tables: 34 });
     } finally {
       client.release();
     }

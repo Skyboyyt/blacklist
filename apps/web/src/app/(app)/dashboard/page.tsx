@@ -7,6 +7,8 @@ import { ReportStatusBadge } from '@/components/app/report-status-badge';
 import { MySubmissions } from '@/components/submissions/my-submissions';
 import { SearchBar } from '@/components/search/search-bar';
 import { getResearchApi } from '@/lib/api/server';
+import { ApiNotConnectedError } from '@/lib/api/types';
+import { FoundationDashboard } from '@/components/research/foundation-dashboard';
 import { truncateMiddle } from '@/lib/format/address';
 import { formatDateTimeUtc, formatDateUtc } from '@/lib/format/date';
 import { searchHref } from '@/lib/search/search-input-state';
@@ -15,7 +17,11 @@ export const metadata: Metadata = { title: 'Dashboard' };
 
 /** The viewer's own activity only. No platform-wide statistics are shown or implied. */
 export default async function DashboardPage() {
-  const dashboard = await (await getResearchApi()).getDashboard();
+  const dashboard = await (await getResearchApi()).getDashboard().catch((error: unknown) => {
+    if (error instanceof ApiNotConnectedError) return null;
+    throw error;
+  });
+  if (dashboard === null) return <FoundationDashboard />;
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Dashboard" description="Your recent research, reports and notices." />

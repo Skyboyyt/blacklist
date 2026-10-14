@@ -1,5 +1,5 @@
 import { readApiConfig } from '@blacklist/config';
-import { createIdentity } from '@blacklist/domain';
+import { createIdentity, createResearch } from '@blacklist/domain';
 import { createServer } from './server.ts';
 const config = readApiConfig();
 const ctx = createIdentity(config.DATABASE_URL, {
@@ -9,7 +9,7 @@ const ctx = createIdentity(config.DATABASE_URL, {
   rpName: config.WEBAUTHN_RP_NAME,
   breakGlassEnabled: config.BREAK_GLASS_ENABLED === 'true',
 });
-const server = createServer(ctx, config);
+const server = createServer(ctx, config, true, createResearch(ctx.runtime, config));
 try {
   await ctx.runtime.start();
   await server.listen({ host: config.API_HOST, port: config.API_PORT });

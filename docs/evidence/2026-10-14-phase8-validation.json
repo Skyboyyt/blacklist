@@ -1,0 +1,440 @@
+{
+  "date": "2026-10-14",
+  "phase": 8,
+  "status": "local_implementation_for_review_not_complete_or_deployed",
+  "branch": "feat/phase8-chain-research",
+  "baseCommit": "5967afa6eee30c5359b9a9f26a1c6bd79f543772",
+  "validatedCodeFingerprint": "9c6fad3e96d018c60be397e8093475ea7e5778b7e2707ce432590f905484fded",
+  "authorization": {
+    "phase8": true,
+    "freeProviderDirectionApproved": true,
+    "merge": false,
+    "deploy": false,
+    "paidResources": false,
+    "claudeReviewPending": true
+  },
+  "repository": {
+    "mainVerified": "5967afa6eee30c5359b9a9f26a1c6bd79f543772",
+    "mergedPriorPRs": [
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "githubDefaultBranch": "chore/initial-repository",
+    "previousChangesAndStashPreserved": true
+  },
+  "tests": [
+    {
+      "command": "pnpm install --frozen-lockfile",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm check",
+      "status": "passed",
+      "scope": "Whole repository/frontend/provenance checkpoint; subsequent backend-only pin strengthening validated separately",
+      "unitAssertions": 588,
+      "packages": {
+        "chains": 56,
+        "contracts": 81,
+        "backendAcceptanceUnit": 46,
+        "web": 405
+      },
+      "format": true,
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true
+    },
+    {
+      "command": "pnpm build:backend",
+      "status": "passed",
+      "finalBackendOnlyChangesIncluded": true
+    },
+    {
+      "command": "pnpm test:backend",
+      "status": "passed",
+      "assertions": 55,
+      "scope": "Complete integration checkpoint; changed migration/storage/research paths rerun subsequently"
+    },
+    {
+      "command": "vitest run application-migrations.integration.test.ts chain-storage.integration.test.ts research.integration.test.ts",
+      "status": "passed",
+      "assertions": 5,
+      "scope": "Final full normalized receipt/pin binding"
+    },
+    {
+      "command": "vitest run chain-storage.integration.test.ts",
+      "status": "passed",
+      "assertions": 2,
+      "scope": "Final legitimate movement and altered/invented movement negatives"
+    },
+    {
+      "command": "pnpm --filter @blacklist/backend-acceptance test:chain-coverage",
+      "status": "passed",
+      "assertions": 56,
+      "branchPercent": 80.24,
+      "threshold": 75
+    },
+    {
+      "command": "pnpm --filter @blacklist/backend-acceptance test:coverage",
+      "status": "failed",
+      "assertionsPassed": 55,
+      "assertionsFailed": 0,
+      "reportedBranchPercent": 60.04,
+      "threshold": 75,
+      "measurementComplete": false,
+      "reason": "Security branch floors fail; five unimported TypeScript files fail parse/remap",
+      "automaticRunnerOmissions": [
+        "packages/config/src/staging-operator.ts",
+        "packages/db/src/staging-operator.ts",
+        "apps/api/src/main.ts",
+        "apps/worker/src/main.ts",
+        "apps/api/src/cli/staff.ts"
+      ],
+      "manualExclusionsOrThresholdChanges": false
+    },
+    {
+      "command": "pnpm --filter @blacklist/web build:mock",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm --filter @blacklist/web check:mock-exclusion",
+      "status": "passed",
+      "checks": 4,
+      "rpcCredentialNamesAddedToScanner": true
+    },
+    {
+      "command": "playwright test --config .cache/cloud-playwright.config.ts --workers=2",
+      "status": "passed",
+      "passed": 418,
+      "failed": 0,
+      "existingIntentionalSkips": 82,
+      "durationMinutes": 19.6,
+      "browser": "system Chromium154 desktop/mobile; mock UI only",
+      "assertionsOrTimeoutsChanged": false
+    },
+    {
+      "command": "focused non-mock research client/UI tests",
+      "status": "passed",
+      "assertions": 6
+    },
+    {
+      "command": "pnpm --filter @blacklist/db exec drizzle-kit generate",
+      "status": "passed",
+      "schemaDrift": false
+    },
+    {
+      "command": "pnpm audit --prod --json",
+      "status": "passed",
+      "vulnerabilities": 0
+    },
+    {
+      "command": "pnpm audit --json",
+      "status": "failed",
+      "high": 1,
+      "package": "braces@3.0.3",
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "developmentOnly": true,
+      "suppressed": false
+    },
+    {
+      "command": "node scripts/phase8-provider-smoke.mjs",
+      "status": "blocked",
+      "exitCode": 2,
+      "reason": "Both approved provider credential bindings unavailable",
+      "liveProviderSuccessClaimed": false
+    }
+  ],
+  "migrations": {
+    "oldSqlFilesByteIdentical": 7,
+    "newFiles": [
+      {
+        "path": "packages/db/migrations/generated/0005_violet_stardust.sql",
+        "sha256": "0a29d177b7cb422cdbc4669f2d91ff9efe7568f93e905c9db0b5b28c23a8fffe"
+      },
+      {
+        "path": "packages/db/migrations/0003_chain_research_foundation.sql",
+        "sha256": "bac2ce3aa9fc0a80cb249d0a8205f892f50b3d1ffb6caa75410a54646a6c0d7b"
+      }
+    ],
+    "disposablePGVersion": 18,
+    "ledgerEntries": 9,
+    "applicationTables": 34,
+    "newTables": 7,
+    "cloudApplied": false,
+    "destructiveDownMigration": false,
+    "restoration": "Disposable logical backup/restore tested; managed Neon disaster recovery untested"
+  },
+  "secrets": {
+    "sourceScan": {
+      "status": "passed",
+      "findings": 0,
+      "files": 112,
+      "finalDocumentationDeltaScanRequired": false
+    },
+    "historyScan": {
+      "rawStatus": "failed",
+      "rawExitCode": 1,
+      "commits": 37,
+      "findings": 4,
+      "identicalPreviouslyReviewedFictionalOrProseFindings": 4,
+      "newFindings": 0,
+      "items": [
+        {
+          "rule": "generic-api-key",
+          "file": "docs/phase7-acceptance.md",
+          "line": 52,
+          "commit": "baafe57220b5b42c4e457d92bbae43cf468ff5fd"
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+          "line": 18,
+          "commit": "baafe57220b5b42c4e457d92bbae43cf468ff5fd"
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "tests/backend-acceptance/src/runtime-security.test.ts",
+          "line": 18,
+          "commit": "b1800e89491e1eeec4a80c252d3c8a80c83a52a1"
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/reviews/2026-10-12-phase-2-codex-review.md",
+          "line": 42,
+          "commit": "9704983a416d8bb436dd6ba8c273f56af20768f6"
+        }
+      ]
+    },
+    "scannerImage": "zricethezav/gitleaks@sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9",
+    "network": "none",
+    "redactPercent": 100,
+    "rulesSuppressed": false,
+    "actualCredentialFound": false,
+    "protectedValueCheck": {
+      "values": 6,
+      "sourceAndBrowserFiles": 804,
+      "matches": 0,
+      "scope": "Read-only protected runtime settings checked without output/persistence of values"
+    },
+    "finalStagedScan": {
+      "status": "passed",
+      "files": 113,
+      "findings": 0,
+      "network": "none",
+      "redactPercent": 100
+    }
+  },
+  "cloudPreservation": {
+    "cloudMutations": false,
+    "privateRecordsRead": false,
+    "checks": [
+      {
+        "service": "srv-db72r4d9fdbs73erf1s0",
+        "branch": "main",
+        "plan": "free",
+        "region": "frankfurt",
+        "autoDeploy": "off",
+        "source": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+        "restrictedVerifiedTlsDatabase": true,
+        "phase8Inactive": true
+      },
+      {
+        "service": "srv-db72r5ou01pc73c32l5g",
+        "branch": "main",
+        "plan": "free",
+        "region": "frankfurt",
+        "autoDeploy": "off",
+        "source": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+        "restrictedVerifiedTlsDatabase": true,
+        "phase8Inactive": true
+      },
+      {
+        "canonicalDeployment": "dpl_BY3Y72aGYUP7At1niBLCoa9fag4R",
+        "unchanged": true
+      }
+    ],
+    "credentialIsolation": {
+      "distinctProtectedValuesChecked": 6,
+      "sourceAndBrowserFilesChecked": 804,
+      "matches": 0,
+      "valuesOrPrivateIpsRecorded": false
+    },
+    "status": "passed"
+  },
+  "providerEvidence": {
+    "helius": {
+      "officialPricingHttp": 200,
+      "officialRpcDocsHttp": 200,
+      "freeUsdPerMonth": 0,
+      "creditsPerMonth": 1000000,
+      "rps": 10,
+      "actualCredentialAndHistoryUnverified": true
+    },
+    "alchemy": {
+      "pricingAndDocsHttp": 403,
+      "officialGithubSdkProtocolVerified": true,
+      "freeAccountEntitlementQuotaArchiveTermsUnverified": true
+    },
+    "solanaOfficialEvaluation": {
+      "genesisProbeHttp": 200,
+      "selectedProductionProvider": false
+    },
+    "independentSecondary": "unavailable_unknown_upstream",
+    "keysMissing": [
+      "ALCHEMY_ETHEREUM_API_KEY",
+      "HELIUS_RPC_API_KEY"
+    ],
+    "runtimeActivated": false,
+    "paidResourceCreated": false
+  },
+  "limits": [
+    "Incomplete bounded indexed/directional/address/token histories and balances",
+    "Token2022 extensions/NFT/explorer/trace/deployment/proxy reads unavailable",
+    "Automatic post-finality pinned-fact reconciliation not implemented; no auto-pin or risk use enabled",
+    "SSR gateway shares request prefix until trusted client propagation validated",
+    "Per-process quotas reset on restart; not a monthly billing guarantee",
+    "Phase7 hosted valid-token/session/idle-cycle/log/managed-recovery/security/retention/legal/monitoring/ADR0013/O6/P13 gates open"
+  ],
+  "notTested": [
+    "Live Alchemy/Helius adapter reads or independent-source/same-slot/archival proofs",
+    "Hosted valid-token identity/session/idle cycle and live logs",
+    "Managed Neon disaster recovery",
+    "Firefox/WebKit/live-browser/manual assistive devices",
+    "Phase8 hosted deployment/smoke tests"
+  ],
+  "resolvedFailures": [
+    "Missing modules/dependency links and branded fixture/type/lint/format errors corrected",
+    "Exact migration expectations7/27 updated9/34 and immutable operator grant expectations corrected",
+    "Established persistence failure503 assertion corrected",
+    "Finalized Ethereum receipt now records finalized head proof and requested commitment separately",
+    "Coverage directory-lock overlap and resource-contention/stale-load assertion rerun sequentially"
+  ],
+  "reusableEnvironment": {
+    "startSkillSaved": true,
+    "providerSecretRequirementsSaved": true,
+    "valuesMissing": true,
+    "published": false
+  },
+  "filesChanged": [
+    ".env.example",
+    "AGENTS.md",
+    "AI_HANDOFF.md",
+    "ARCHITECTURE-ESSENTIALS.md",
+    "ARCHITECTURE.md",
+    "THREAT-MODEL.md",
+    "apps/api/src/main.ts",
+    "apps/api/src/presenters/chain-reads.ts",
+    "apps/api/src/presenters/research.ts",
+    "apps/api/src/presenters/search.ts",
+    "apps/api/src/presenters/source.ts",
+    "apps/api/src/routes/research.ts",
+    "apps/api/src/server.ts",
+    "apps/web/scripts/check-mock-exclusion.mjs",
+    "apps/web/src/app/(app)/dashboard/page.tsx",
+    "apps/web/src/app/(app)/reports/page.tsx",
+    "apps/web/src/app/(public)/address/[chain]/[address]/page.tsx",
+    "apps/web/src/app/(public)/project/[slug]/page.tsx",
+    "apps/web/src/app/(public)/projects/page.tsx",
+    "apps/web/src/app/(public)/scoreboard/page.tsx",
+    "apps/web/src/components/research/address-research-view.tsx",
+    "apps/web/src/components/research/availability.test.tsx",
+    "apps/web/src/components/research/chain-details.test.tsx",
+    "apps/web/src/components/research/chain-details.tsx",
+    "apps/web/src/components/research/chain-provenance.tsx",
+    "apps/web/src/components/research/foundation-dashboard.tsx",
+    "apps/web/src/components/research/research-unavailable.tsx",
+    "apps/web/src/components/research/transaction-research-view.tsx",
+    "apps/web/src/components/research/transfers-table.tsx",
+    "apps/web/src/components/states/not-available.tsx",
+    "apps/web/src/lib/api/availability.test.ts",
+    "apps/web/src/lib/api/availability.ts",
+    "apps/web/src/lib/api/live/research.test.ts",
+    "apps/web/src/lib/api/live/research.ts",
+    "apps/web/src/lib/api/server.ts",
+    "apps/web/src/lib/api/types.ts",
+    "apps/web/vercel.json",
+    "docs/adr/0018-phase8-provider-selection.md",
+    "docs/adr/README.md",
+    "docs/data-model.md",
+    "docs/dependency-policy.md",
+    "docs/design/api-integration-contracts.md",
+    "docs/evidence/2026-10-13-menu-feature-audit.json",
+    "docs/operations/phase8-research.md",
+    "docs/reviews/2026-10-13-menu-feature-audit.md",
+    "docs/reviews/2026-10-14-phase8-implementation.md",
+    "infrastructure/local/scripts/run.mjs",
+    "infrastructure/render/runtime.ts",
+    "packages/chains/README.md",
+    "packages/chains/package.json",
+    "packages/chains/src/adapters/evm-transaction.test.ts",
+    "packages/chains/src/adapters/evm-transaction.ts",
+    "packages/chains/src/adapters/identity.ts",
+    "packages/chains/src/adapters/solana-transaction.test.ts",
+    "packages/chains/src/adapters/solana-transaction.ts",
+    "packages/chains/src/cursor.test.ts",
+    "packages/chains/src/cursor.ts",
+    "packages/chains/src/index.ts",
+    "packages/chains/src/providers/alchemy-balances.test.ts",
+    "packages/chains/src/providers/alchemy-balances.ts",
+    "packages/chains/src/providers/alchemy-history.test.ts",
+    "packages/chains/src/providers/alchemy-history.ts",
+    "packages/chains/src/providers/capabilities.test.ts",
+    "packages/chains/src/providers/evm-metadata.ts",
+    "packages/chains/src/providers/evm-rpc.ts",
+    "packages/chains/src/providers/evm-state.ts",
+    "packages/chains/src/providers/policy.test.ts",
+    "packages/chains/src/providers/policy.ts",
+    "packages/chains/src/providers/read-receipt.ts",
+    "packages/chains/src/providers/rpc-transport.test.ts",
+    "packages/chains/src/providers/rpc-transport.ts",
+    "packages/chains/src/providers/solana-rpc.ts",
+    "packages/chains/src/providers/sources.test.ts",
+    "packages/chains/src/registry.test.ts",
+    "packages/chains/src/registry.ts",
+    "packages/chains/src/router.test.ts",
+    "packages/chains/src/router.ts",
+    "packages/chains/src/types.ts",
+    "packages/chains/src/verification.test.ts",
+    "packages/chains/src/verification.ts",
+    "packages/config/src/index.ts",
+    "packages/contracts/src/chain-reads.ts",
+    "packages/contracts/src/index.ts",
+    "packages/contracts/src/research.test.ts",
+    "packages/contracts/src/research.ts",
+    "packages/db/README.md",
+    "packages/db/migrations/0003_chain_research_foundation.sql",
+    "packages/db/migrations/generated/0005_violet_stardust.sql",
+    "packages/db/migrations/generated/meta/0005_snapshot.json",
+    "packages/db/migrations/generated/meta/_journal.json",
+    "packages/db/src/migrate.ts",
+    "packages/db/src/schema/chain-facts.ts",
+    "packages/db/src/schema/chain-verification.ts",
+    "packages/db/src/schema/index.ts",
+    "packages/db/src/staging-operator.ts",
+    "packages/domain/src/chaindata/index.ts",
+    "packages/domain/src/chaindata/repository.ts",
+    "packages/domain/src/index.ts",
+    "packages/domain/src/research/index.ts",
+    "packages/domain/src/research/runtime.ts",
+    "packages/domain/src/research/service.ts",
+    "packages/domain/src/shared/errors.ts",
+    "pnpm-lock.yaml",
+    "scripts/phase8-provider-smoke.mjs",
+    "tests/backend-acceptance/package.json",
+    "tests/backend-acceptance/src/application-migrations.integration.test.ts",
+    "tests/backend-acceptance/src/chain-storage.integration.test.ts",
+    "tests/backend-acceptance/src/render-deployment.integration.test.ts",
+    "tests/backend-acceptance/src/render-deployment.test.ts",
+    "tests/backend-acceptance/src/research.integration.test.ts",
+    "tests/backend-acceptance/src/staging-operator.integration.test.ts",
+    "vercel.json"
+  ],
+  "publication": {
+    "status": "pending_commit_push_and_draft_pr",
+    "base": "main",
+    "merge": false,
+    "deployment": false
+  }
+}

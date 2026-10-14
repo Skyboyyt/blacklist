@@ -46,3 +46,4 @@ No ADR status authorizes starting a phase. Phase authorization is always a separ
 | [0011](0011-additional-evm-networks.md) | Additional EVM networks (Base, Arbitrum, BNB Chain, Polygon) | **Proposed** |
 | [0012](0012-public-project-scoreboard.md) | Public project scoreboard | **Accepted (band-only variant)** |
 | [0015](0015-staging-database-operator-execution.md) | Render-only staging database operator execution | **Accepted by owner; Claude independent review pending** |
+| [0018](0018-phase8-provider-selection.md) | Phase8 blockchain provider selection (O-3) | **Proposed; owner Free-provider direction approved, Claude/capability/plan evidence pending** |

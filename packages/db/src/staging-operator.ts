@@ -110,7 +110,7 @@ export async function operatorMigrationManifest() {
       .sort()
       .map((f) => new URL(f, root)),
   ];
-  if (files.length !== 7) throw new Error('operator_migration_count_invalid');
+  if (files.length !== 9) throw new Error('operator_migration_count_invalid');
   return Promise.all(
     files.map(async (file) => ({
       name: file.pathname.split('/').pop(),
@@ -136,7 +136,7 @@ export async function verifyOperatorMigrations(client: PoolClient) {
      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
      JOIN pg_roles r ON r.oid=c.relowner WHERE n.nspname='blacklist' AND c.relkind IN ('r','p')`,
   );
-  if (tables.rows[0]?.n !== 27 || !tables.rows[0]?.owned) throw new Error('operator_schema_invalid');
+  if (tables.rows[0]?.n !== 34 || !tables.rows[0]?.owned) throw new Error('operator_schema_invalid');
   const queues = await client.query<{ name: string }>('SELECT name FROM pgboss.queue');
   if (
     identityQueues.some(
@@ -159,6 +159,10 @@ export async function verifyOperatorRuntime(client: PoolClient) {
      AND NOT has_table_privilege(current_user,'blacklist.auth_verifications','SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
      AND NOT has_table_privilege(current_user,'blacklist.audit_log','INSERT,UPDATE,DELETE,TRUNCATE')
      AND NOT has_table_privilege(current_user,'blacklist.security_email_deliveries','UPDATE,DELETE,TRUNCATE')
+     AND NOT has_table_privilege(current_user,'blacklist.chains','INSERT,UPDATE,DELETE,TRUNCATE')
+     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+       WHERE n.nspname='blacklist' AND c.relname IN ('verification_receipts','chain_fact_verifications','chain_transactions','asset_transfers','chain_fact_invalidations')
+       AND has_table_privilege(current_user,c.oid,'UPDATE,DELETE,TRUNCATE'))
      AND has_table_privilege(current_user,'blacklist.auth_users','SELECT,INSERT,UPDATE,DELETE')
      AND has_table_privilege(current_user,'pgboss.job','SELECT,INSERT,UPDATE,DELETE')
      AND has_function_privilege(current_user,'blacklist.append_audit(jsonb)','EXECUTE') AS safe`,
@@ -170,7 +174,9 @@ export async function verifyOperatorRuntime(client: PoolClient) {
      WHERE n.nspname IN ('blacklist','pgboss') AND c.relkind IN ('r','p')
      AND NOT (n.nspname='blacklist' AND (c.relname='auth_verifications'
        OR (c.relname='audit_log' AND p.permission<>'SELECT')
-       OR (c.relname='security_email_deliveries' AND p.permission IN ('UPDATE','DELETE'))))
+       OR (c.relname='security_email_deliveries' AND p.permission IN ('UPDATE','DELETE'))
+       OR (c.relname='chains' AND p.permission<>'SELECT')
+       OR (c.relname IN ('verification_receipts','chain_fact_verifications','chain_transactions','asset_transfers','chain_fact_invalidations') AND p.permission IN ('UPDATE','DELETE'))))
      AND NOT has_table_privilege(current_user,c.oid,p.permission)`,
   );
   if (permissions.rows[0]?.n !== 0) throw new Error('operator_runtime_permissions_missing');
@@ -180,6 +186,9 @@ export async function verifyOperatorRuntime(client: PoolClient) {
     'SELECT * FROM blacklist.auth_verifications LIMIT 0',
     'DELETE FROM blacklist.audit_log WHERE false',
     'DELETE FROM blacklist.security_email_deliveries WHERE false',
+    'UPDATE blacklist.chains SET enabled=enabled WHERE false',
+    'DELETE FROM blacklist.verification_receipts WHERE false',
+    'UPDATE blacklist.chain_transactions SET pinned_reason=pinned_reason WHERE false',
   ]) {
     await client.query('BEGIN');
     let denied = false;

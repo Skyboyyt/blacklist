@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { getResearchApi } from '@/lib/api/server';
+import { optionalFeature } from '@/lib/api/availability';
+import { NotAvailableYet } from '@/components/states/not-available';
 
 export const metadata: Metadata = { title: 'Project risk ranking' };
 
@@ -23,7 +25,9 @@ export default async function ScoreboardPage({ searchParams }: PageProps) {
   const value = typeof raw === 'string' ? raw : '';
   const chain = (CHAIN_SLUGS as readonly string[]).includes(value) ? (value as ChainSlugDto) : undefined;
   const unsupported = value !== '' && !chain;
-  const data = unsupported ? null : await (await getResearchApi()).getScoreboard(chain ? { chain } : {});
+  const api = await getResearchApi(),
+    data = unsupported ? null : await optionalFeature(() => api.getScoreboard(chain ? { chain } : {}));
+  if (!unsupported && !data) return <NotAvailableYet feature="Project risk ranking" titleAs="h1" />;
 
   return (
     <div className="flex flex-col gap-6">

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import Fastify from 'fastify';
 import type { ApiConfig } from '@blacklist/config';
-import type { IdentityContext } from '@blacklist/domain';
+import type { IdentityContext, ResearchContext } from '@blacklist/domain';
 import { installSecurity } from './plugins/security.ts';
 import { installStagingAccess } from './plugins/staging-access.ts';
 import { installErrors } from './plugins/errors.ts';
@@ -10,7 +10,13 @@ import { installMailWorkerWake } from './plugins/mail-worker-wake.ts';
 import { authRoutes } from './routes/auth.ts';
 import { accountRoutes } from './routes/account.ts';
 import { staffRoutes } from './routes/staff.ts';
-export function createServer(ctx: IdentityContext, config: ApiConfig, logging = true) {
+import { researchRoutes } from './routes/research.ts';
+export function createServer(
+  ctx: IdentityContext,
+  config: ApiConfig,
+  logging = true,
+  research?: ResearchContext,
+) {
   const app = Fastify({
     bodyLimit: 65536,
     requestTimeout: 30000,
@@ -38,6 +44,7 @@ export function createServer(ctx: IdentityContext, config: ApiConfig, logging = 
   authRoutes(app, ctx);
   accountRoutes(app, ctx);
   staffRoutes(app, ctx);
+  researchRoutes(app, research);
   app.get('/healthz', { config: { security: { auth: 'public', mutation: false } } }, async () => {
     await ctx.runtime.checkConnection();
     return { status: 'ok' };

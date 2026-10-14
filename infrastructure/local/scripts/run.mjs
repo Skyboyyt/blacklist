@@ -12,6 +12,14 @@ const fields = {
     'INTERNAL_API_TOKEN',
     'TRUSTED_PROXY_CIDRS',
     'BREAK_GLASS_ENABLED',
+    'RESEARCH_ENABLED',
+    'RPC_PLAN_VERIFIED',
+    'ALCHEMY_INDEXED_HISTORY_VERIFIED',
+    'ALCHEMY_TOKEN_BALANCES_VERIFIED',
+    'ALCHEMY_ETHEREUM_API_KEY',
+    'HELIUS_RPC_API_KEY',
+    'RPC_API_REQUESTS_PER_MINUTE',
+    'RPC_API_TOTAL_REQUEST_BUDGET',
   ],
   worker: [
     ...common,
@@ -30,7 +38,7 @@ if (!Object.hasOwn(fields, mode ?? '')) throw new Error('Choose api or worker');
 const values = parseEnv(await readFile(new URL('../.env', import.meta.url), 'utf8'));
 const selected = Object.fromEntries(
   fields[mode]
-    .filter((key) => values[key] !== undefined)
+    .filter((key) => values[key] !== undefined || process.env[key] !== undefined)
     .map((key) => [key, process.env[key] ?? values[key]]),
 );
 // Runtime processes receive neither the bootstrap database password nor the

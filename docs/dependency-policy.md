@@ -113,6 +113,10 @@ The owner approved **only esbuild@0.18.20, @0.25.12 and @0.28.2 build scripts** 
 
 ### Considered and rejected (for now)
 
+### Phase8 chains additions (2026-10-14)
+
+`viem@2.57.3` (published 2026-10-04) supplies the approved EIP55/Keccak/ABI utilities; `@solana/kit@8.4.0` (2026-09-28) supplies approved case-preserving Base58 codecs. Both remain server-only in `@blacklist/chains`; no SDK is added to the web bundle. Existing `zod@4.6.5`, `vitest@5.0.2`, Node24 types and TypeScript6 are reused. The lockfile adds 60 transitive packages, notably modular Solana codecs/RPC interfaces and viem cryptographic utilities. This is larger than handwritten codecs but avoids inventing checksum/ABI/encoding implementations and follows the selected architecture; imports are limited to necessary functions. No new install-script approvals, trust/release-age/TLS exceptions, Alchemy SDK, Redis, language, service or paid subscription is introduced. Newer releases inside the seven-day age window were deliberately not selected. Frozen installation, chain fixtures and full audit are required; actual final outcomes are in the Phase8 report.
+
 | Package | Reason |
 |---|---|
 | `next-auth`/Auth.js, hosted auth SDKs, Ory Kratos | See ADR 0001 comparison |

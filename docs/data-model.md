@@ -14,6 +14,14 @@ The isolated [backend acceptance package](../tests/backend-acceptance/README.md)
 
 ## 1. Conventions
 
+### Phase8 additive implementation (2026-10-14, not deployed)
+
+The feature branch adds seven normative chain-data tables: `chains`, `verification_receipts`, `chain_fact_verifications`, `chain_transactions`, `asset_transfers`, `chain_fact_invalidations`, and `research_cache`. Generated migration `0005_violet_stardust.sql` creates these tables, indexes and foreign keys; hand migration `0003_chain_research_foundation.sql` seeds only the two approved mainnets and adds guards. All seven previously applied migrations are byte-identical to main. Nine migration-ledger entries and 34 application tables are expected after local application; the cloud database still has its original seven entries/27 tables.
+
+Receipts store provider identity/independence, query method/allowlisted parameters, exact snapshot, commitment/finality, requested/fetched times, decoder/comparison versions, normalized comparison fields and their SHA256 digest. Receipt keys make retries idempotent; independent same-snapshot finalized agreement is required for an `agree` verification. Pending/mismatched/shared/unknown-upstream receipts cannot authorize pinned facts. Pinned transaction execution/hash/height/fee/status/decoder fields must match the verified receipt. Immutable tables deny UPDATE/DELETE/TRUNCATE to the runtime and reject owner UPDATE/DELETE through triggers. Runtime cannot mutate the chain registry or run DDL/TEMP operations. Cryptographic provider authenticity and privileged-operator tamper resistance are not claimed.
+
+The bounded shared research cache contains public chain facts only, without user/session/email/handle/search-to-account associations. Its key includes network, capability, canonical subject, history page/direction/limit, finality, verification and decoder version; expiry is indexed. It is a persistence record, not yet a cross-process read-through cache. Domain writes receipts/verification/cache in one transaction; persistence failure cannot return successful research data. No automatic permanent pin, finding, score, moderation decision or private research history is created by a lookup. See [Phase8 operations](operations/phase8-research.md) for migration review/recovery and [Phase8 report](reviews/2026-10-14-phase8-implementation.md) for actual evidence and limits.
+
 | Topic | Rule |
 |---|---|
 | Naming | `snake_case`, plural tables, `<table>_id` FKs. Better Auth models are mapped to `auth_*` names |

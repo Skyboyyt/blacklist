@@ -1,6 +1,6 @@
 # @blacklist/db
 
-Database schema, migrations and client. **Status:** empty. The first migrations (identity incl. Better Auth tables, access, audit) arrive in Phase 7, **after** acceptance checks D1–D9 ([ADR 0007](../../docs/adr/0007-toolchain-and-foundation-acceptance.md)) pass.
+Database schema, migrations and client. **Status:** Phase7 identity/access/audit/staff application migrations are merged and deployed to Neon staging. Phase8 adds two reviewed-candidate forward migrations for seven chain-data tables; they are validated locally only and have not been applied to cloud. Existing migration bytes remain unchanged. See [operations](../../docs/operations/phase8-research.md) and [data model](../../docs/data-model.md). Required coverage, full audit and hosted identity gates remain open; no production-readiness claim.
 
 ## Responsibilities
 

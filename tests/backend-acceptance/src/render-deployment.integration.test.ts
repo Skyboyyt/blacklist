@@ -56,7 +56,7 @@ afterAll(async () => {
 });
 
 describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)', () => {
-  it('provisions with a non-superuser owner, preserves credentials and applies seven existing migrations', async () => {
+  it('provisions with a non-superuser owner, preserves credentials and applies nine forward migrations', async () => {
     await provisionCloudRoles(adminUrl, { runtime: runtimePassword, migrator: migratorPassword });
     await provisionCloudRoles(adminUrl, {
       runtime: randomBytes(32).toString('base64url'),
@@ -68,14 +68,14 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
     try {
       expect(
         (await migrator.query('SELECT count(*)::int AS n FROM blacklist_migrations.applied')).rows[0]?.n,
-      ).toBe(7);
+      ).toBe(9);
       expect(
         (
           await migrator.query(
             "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema='blacklist'",
           )
         ).rows[0]?.n,
-      ).toBe(27);
+      ).toBe(34);
     } finally {
       await migrator.end();
     }

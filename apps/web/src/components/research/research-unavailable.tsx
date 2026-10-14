@@ -47,8 +47,16 @@ export function ResearchProblem({
             Blockchain data is temporarily unavailable
           </h1>
           <Notice tone="warning">
-            Our blockchain data providers are not responding. Try again in about {problem.retryAfterSeconds}{' '}
-            seconds. No assessment was made.
+            {problem.reason === 'unconfigured'
+              ? 'Blockchain research is not available here yet.'
+              : problem.reason === 'history_pruned'
+                ? 'Historical data is unavailable. This does not show that the transaction never existed.'
+                : problem.reason === 'not_supported'
+                  ? 'This type of blockchain data is not available yet.'
+                  : problem.reason === 'under_verification'
+                    ? 'Data is under verification because providers disagreed.'
+                    : `Our blockchain data providers are not responding. Try again in about ${problem.retryAfterSeconds} seconds.`}{' '}
+            No assessment was made.
           </Notice>
         </>
       );

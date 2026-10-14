@@ -14,6 +14,7 @@
  * Strict objects reject unknown fields.
  */
 import { z } from './zod.ts';
+import { chainReadSourceSchema } from './chain-reads.ts';
 import {
   assessmentBandSchema,
   chainSlugSchema,
@@ -28,6 +29,37 @@ import {
   transferEvidenceLevelSchema,
   untrustedTextSchema,
 } from './common.ts';
+export const researchUnavailableReasonSchema = z.enum([
+  'unconfigured',
+  'rate_limited',
+  'history_pruned',
+  'not_supported',
+  'timeout',
+  'unavailable',
+  'under_verification',
+]);
+export const researchResultSchema = <S extends z.ZodType>(data: S) =>
+  z.discriminatedUnion('kind', [
+    z.strictObject({ kind: z.literal('found'), data }),
+    z.strictObject({ kind: z.literal('not_found') }),
+    z.strictObject({ kind: z.literal('invalid_identifier'), reason: z.string().max(200) }),
+    z.strictObject({
+      kind: z.literal('provider_unavailable'),
+      retryAfterSeconds: z.number().int().positive(),
+      reason: researchUnavailableReasonSchema.optional(),
+    }),
+  ]);
+const sectionState = z.enum(['available', 'unavailable', 'incomplete']);
+export const researchAvailabilitySchema = z.strictObject({
+  assessment: sectionState,
+  findings: sectionState,
+  labels: sectionState,
+  responses: sectionState,
+  transfers: sectionState,
+  evidence: sectionState,
+  history: sectionState,
+  disclosures: sectionState,
+});
 
 /**
  * Factors the approved V1 ruleset may use (ARCHITECTURE §15.3), with the only
@@ -175,6 +207,10 @@ export type FindingSummary = z.infer<typeof findingSummarySchema>;
 
 export const transferSchema = z.strictObject({
   id: z.string(),
+  /** Explicit endpoints for transaction-wide views; direction never substitutes for authorization. */
+  from: z.string().max(90).optional(),
+  to: z.string().max(90).optional(),
+  authority: z.string().max(90).nullable().optional(),
   direction: z.enum(['in', 'out']),
   counterparty: z.string(),
   amount: z.string(),
@@ -222,31 +258,69 @@ export const timelineEventSchema = z.strictObject({
 });
 export type TimelineEvent = z.infer<typeof timelineEventSchema>;
 
-export const addressResearchSchema = z.strictObject({
-  chain: chainSlugSchema,
-  /** Canonical form: lowercase hex for EVM; case-preserved base58 for Solana. */
-  address: z.string(),
-  /** Display form: EIP-55 checksum for EVM; unchanged for Solana. */
-  displayAddress: z.string(),
-  kind: z.enum(['wallet', 'contract', 'token', 'unknown']),
-  /** Untrusted self-description, e.g. an on-chain token name. */
-  untrustedLabel: untrustedTextSchema.nullable(),
-  assessment: publicAssessmentSchema,
-  facts: z.array(chainFactSchema),
-  /** Capability context. Never part of `assessment.factors`. */
-  disclosures: z.array(disclosureSchema),
-  /** Staff-managed identification labels (never risk factors). */
-  labels: z.array(publicLabelSchema),
-  findings: z.array(findingSummarySchema),
-  /** Published right-of-reply responses from parties with standing. */
-  responses: z.array(subjectResponseSchema),
-  transfers: z.array(transferSchema),
-  evidence: z.array(evidenceItemSchema),
-  timeline: z.array(timelineEventSchema),
-});
+export const addressResearchSchema = z
+  .strictObject({
+    provenance: chainReadSourceSchema.optional(),
+    degraded: z.boolean().optional(),
+    /** Optional for existing mock contracts; live reads explicitly distinguish unknown sections from empty data. */
+    availability: researchAvailabilitySchema.optional(),
+    chain: chainSlugSchema,
+    /** Canonical form: lowercase hex for EVM; case-preserved base58 for Solana. */
+    address: z.string(),
+    /** Display form: EIP-55 checksum for EVM; unchanged for Solana. */
+    displayAddress: z.string(),
+    kind: z.enum(['wallet', 'contract', 'token', 'unknown']),
+    /** Untrusted self-description, e.g. an on-chain token name. */
+    untrustedLabel: untrustedTextSchema.nullable(),
+    assessment: publicAssessmentSchema,
+    facts: z.array(chainFactSchema),
+    /** Capability context. Never part of `assessment.factors`. */
+    disclosures: z.array(disclosureSchema),
+    /** Staff-managed identification labels (never risk factors). */
+    labels: z.array(publicLabelSchema),
+    findings: z.array(findingSummarySchema),
+    /** Published right-of-reply responses from parties with standing. */
+    responses: z.array(subjectResponseSchema),
+    transfers: z.array(transferSchema),
+    evidence: z.array(evidenceItemSchema),
+    timeline: z.array(timelineEventSchema),
+  })
+  .superRefine((data, ctx) => {
+    const availability = data.availability;
+    if (!availability) return;
+    if (
+      availability.assessment === 'unavailable' &&
+      (data.assessment.band !== 'not_assessed' ||
+        data.assessment.factors.length > 0 ||
+        data.assessment.suppressions.length > 0)
+    )
+      ctx.addIssue({
+        code: 'custom',
+        path: ['assessment'],
+        message: 'An unavailable assessment cannot carry a risk verdict or factors.',
+      });
+    for (const [section, items] of [
+      ['findings', data.findings],
+      ['labels', data.labels],
+      ['responses', data.responses],
+      ['transfers', data.transfers],
+      ['evidence', data.evidence],
+      ['history', data.timeline],
+      ['disclosures', data.disclosures],
+    ] as const)
+      if (availability[section] === 'unavailable' && items.length > 0)
+        ctx.addIssue({
+          code: 'custom',
+          path: [section],
+          message: 'An unavailable section cannot carry records.',
+        });
+  });
 export type AddressResearch = z.infer<typeof addressResearchSchema>;
 
 export const transactionResearchSchema = z.strictObject({
+  provenance: chainReadSourceSchema.optional(),
+  degraded: z.boolean().optional(),
+  transferCoverage: z.enum(['complete', 'incomplete']).optional(),
   chain: chainSlugSchema,
   hash: z.string(),
   finality: finalitySchema,

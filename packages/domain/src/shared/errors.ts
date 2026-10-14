@@ -1,4 +1,5 @@
 export type ErrorCode =
+  | 'invalid_request'
   | 'invalid_credentials'
   | 'token_invalid'
   | 'password_policy_rejected'

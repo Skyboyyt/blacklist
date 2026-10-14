@@ -1,2 +1,10 @@
 export type * from './ports.ts';
 export type * from './types.ts';
+export { registry } from './registry.ts';
+export { evmAdapter, solanaAdapter } from './adapters/identity.ts';
+export { compareReceipts, fieldsDigest, canonicalFields, eligibleForPinning } from './verification.ts';
+export { createChainDataService, type ChainProvider } from './router.ts';
+export { createEvmRpcSource } from './providers/evm-rpc.ts';
+export { createSolanaRpcSource } from './providers/solana-rpc.ts';
+export { createRpcTransport, ProviderFault } from './providers/rpc-transport.ts';
+export { budgetedTransport, retryingTransport } from './providers/policy.ts';

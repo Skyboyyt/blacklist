@@ -6,6 +6,7 @@ export * from './member.ts';
 export * from './moderation.ts';
 export * from './project.ts';
 export * from './research.ts';
+export * from './chain-reads.ts';
 export * from './search.ts';
 export * from './session.ts';
 export * from './submissions.ts';

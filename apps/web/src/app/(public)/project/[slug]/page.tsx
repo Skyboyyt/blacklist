@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import { ProjectDetailView } from '@/components/projects/project-detail-view';
 import { ResearchProblem } from '@/components/research/research-unavailable';
 import { getResearchApi } from '@/lib/api/server';
+import { optionalFeature } from '@/lib/api/availability';
+import { NotAvailableYet } from '@/components/states/not-available';
 import { safeDecodeSegment } from '@/lib/format/address';
 
 interface ProjectPageProps {
@@ -27,7 +29,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     );
   }
   const api = await getResearchApi();
-  const [result, viewer] = await Promise.all([api.getProject(parsed.data), api.getViewer()]);
+  const [result, viewer] = await Promise.all([
+    optionalFeature(() => api.getProject(parsed.data)),
+    api.getViewer(),
+  ]);
+  if (!result) return <NotAvailableYet feature="Project profiles" titleAs="h1" />;
   if (result.kind !== 'found') return <ResearchProblem problem={result} subject="project" />;
   return <ProjectDetailView project={result.data} viewer={viewer} />;
 }
