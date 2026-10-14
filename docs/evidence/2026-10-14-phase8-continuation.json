@@ -300,7 +300,8 @@
       "chains": 61,
       "backendUnit": 49,
       "web": 405,
-      "includes": ["format", "lint", "all_workspace_types", "unit_tests", "next_production_build"]
+      "includes": ["format", "lint", "all_workspace_types", "unit_tests", "next_production_build"],
+      "finalSourceRerun": "passed_after_atomic_reconciliation_and_fixture_repairs"
     },
     "backendBuild": "passed",
     "mockBuild": "passed",
@@ -502,10 +503,11 @@
     "historyScanner": {
       "status": "failed_known_findings",
       "exitCode": 1,
-      "commits": 39,
+      "commits": 40,
       "findings": 4,
       "newFindings": 0,
-      "valuesRedacted": true
+      "valuesRedacted": true,
+      "checkpoint": "after_813fccc_implementation_push_before_documentation_receipt"
     },
     "stagedScanner": {
       "status": "passed",
@@ -602,11 +604,39 @@
     "url": "https://github.com/Skyboyyt/blacklist/pull/12",
     "status": "draft_open",
     "base": "main",
-    "sourceChangesPublished": "pending",
+    "sourceChangesPublished": "passed",
     "merged": false,
     "deployed": false,
     "productionUserRecordsChanged": false,
-    "phase9Started": false
+    "phase9Started": false,
+    "implementationCommit": "813fccc3b6e894634e26b7a3e56615d07f54353b",
+    "remoteImplementationHeadVerified": true,
+    "mainCommit": "5967afa6eee30c5359b9a9f26a1c6bd79f543772",
+    "prHeadVerified": true,
+    "postPushCloud": {
+      "api": {
+        "branch": "main",
+        "autoDeploy": "no",
+        "suspended": "not_suspended",
+        "deployedCommit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+        "deployStatus": "live"
+      },
+      "worker": {
+        "branch": "main",
+        "autoDeploy": "no",
+        "suspended": "not_suspended",
+        "deployedCommit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+        "deployStatus": "live"
+      },
+      "vercelAlias": {
+        "deploymentId": "dpl_BY3Y72aGYUP7At1niBLCoa9fag4R",
+        "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8"
+      },
+      "vercelRecentDeployments": 20,
+      "phase8BranchDeployments": [],
+      "readFailures": {}
+    },
+    "documentationReceipt": "subsequent_documentation_only_commit_on_same_review_branch"
   },
   "earlierFailures": [
     {

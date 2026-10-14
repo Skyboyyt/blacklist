@@ -36,7 +36,7 @@ Independent reviewer separately ran15focused tests, all passing, and reviewed th
 | Check | Result |
 | --- | --- |
 | Frozen install/toolchain | PASS; Node24.21/pnpm12.7 and existing supply-chain settings retained |
-| `pnpm check` | PASS: format, lint, workspace types,596unit tests (61chains/81contracts/49backend unit/405web), Next production build |
+| `pnpm check` | PASS final source rerun: format, lint, workspace types,596unit tests (61chains/81contracts/49backend unit/405web), Next production build |
 | `pnpm build:backend` | PASS |
 | Mock production build | PASS |
 | Browser/static mock and server-variable exclusion | PASS;4checks |
@@ -49,7 +49,7 @@ Independent reviewer separately ran15focused tests, all passing, and reviewed th
 | Production dependency audit |PASS,0vulnerabilities |
 | Full dependency audit |FAIL,1high dev`braces@3.0.3`, GHSA-vfj7-8cjw-p6xm; official GitHub advisory still reports no patched version. No suppression/security policy change |
 | Actual credential-value scan |PASS:9distinct saved runtime/provider values checked against3812source/browser files,0matches; no values emitted/persisted |
-| Git history scanner |Raw FAIL:39commits,4exactly matching previous fictional/prose findings,0new. No actual exposed credential found; this is not a raw scanner pass |
+| Git history scanner |Raw FAIL:40scanned commits,4exactly matching previous fictional/prose findings,0new. No actual exposed credential found; this is not a raw scanner pass |
 | Staged publication scanner |PASS35files/0findings, network-disabled pinned scanner, full redaction |
 | Render API and worker `/healthz` |200/`status:ok` each. Early probes used incorrect health paths and one timed out; corrected configured-path checks are the health evidence |
 | Direct Neon verified-TLS catalog probe |BLOCKED,exit2; no private rows read. No TLS/driver workaround; live migration ledger unverified |
@@ -88,3 +88,7 @@ Required next work:
 6. Review the exact commit/migration/provider settings before any authorized staging rollout. Do not link privileged migration storage to runtime. Reports remain a later-phase dependency.
 
 No Phase8 closure approval requested: required gates still fail. No Phase9, merge, cloud migration, infrastructure purchase or deployment is authorized by this continuation. Publication is review-branch/draft-PR only; actual commit/push readback is recorded in the latest handoff.
+
+## Actual review publication
+
+Fixes/evidence commit `813fccc3b6e894634e26b7a3e56615d07f54353b` pushed to the existing Phase8 review branch; remote head verified. PR12 updated and read back OPEN/draft/base main, source head correct; main remains5967afa. Post-push read-only cloud metadata confirms existing API/worker/main/auto-deployoff/source038ed7f and canonical Vercel deployment/source038ed7f unchanged. No matching Phase8 branch deployment among20recent Vercel deployments. This receipt is a documentation-only follow-up; no automatic merge/deployment.
