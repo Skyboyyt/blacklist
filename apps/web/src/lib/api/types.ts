@@ -33,6 +33,10 @@ import type {
   AccountError,
   AccountSecurityResult,
   AddressResearch,
+  AddressHistory,
+  tokenResearchSchema,
+  contractResearchSchema,
+  tokenBalancesSchema,
   AppealRequest,
   AppealTarget,
   AuditEntry,
@@ -83,11 +87,23 @@ import type {
   TransactionResearch,
   Viewer,
 } from '@blacklist/contracts';
+import type { z } from 'zod';
 
 export type ResearchResult<T> =
   | { readonly kind: 'found'; readonly data: T }
   | { readonly kind: 'not_found' }
-  | { readonly kind: 'provider_unavailable'; readonly retryAfterSeconds: number }
+  | {
+      readonly kind: 'provider_unavailable';
+      readonly retryAfterSeconds: number;
+      readonly reason?:
+        | 'unconfigured'
+        | 'rate_limited'
+        | 'history_pruned'
+        | 'not_supported'
+        | 'timeout'
+        | 'unavailable'
+        | 'under_verification';
+    }
   | { readonly kind: 'invalid_identifier'; readonly reason: string };
 
 /** Read-side API used by server components. */
@@ -96,6 +112,24 @@ export interface ResearchApi {
   search(request: SearchRequest): Promise<SearchResponse>;
   getAddressResearch(chain: ChainSlugDto, address: string): Promise<ResearchResult<AddressResearch>>;
   getTransactionResearch(chain: ChainSlugDto, hash: string): Promise<ResearchResult<TransactionResearch>>;
+  /** Optional capability reads. Mock adapters do not fabricate these backend results. */
+  getAddressHistory?(
+    chain: ChainSlugDto,
+    address: string,
+    query: { readonly cursor?: string; readonly direction: 'in' | 'out' | 'all' },
+  ): Promise<ResearchResult<AddressHistory>>;
+  getTokenResearch?(
+    chain: ChainSlugDto,
+    address: string,
+  ): Promise<ResearchResult<z.infer<typeof tokenResearchSchema>>>;
+  getContractResearch?(
+    chain: ChainSlugDto,
+    address: string,
+  ): Promise<ResearchResult<z.infer<typeof contractResearchSchema>>>;
+  getTokenBalances?(
+    chain: ChainSlugDto,
+    address: string,
+  ): Promise<ResearchResult<z.infer<typeof tokenBalancesSchema>>>;
   /** The signed-in viewer's own activity. */
   getDashboard(): Promise<Dashboard>;
   /** Staff-created project profiles (PRD §5.10). Address queries are network-scoped. */

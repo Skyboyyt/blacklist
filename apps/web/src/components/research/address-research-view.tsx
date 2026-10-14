@@ -4,6 +4,7 @@ import { CopyableValue } from '@/components/app/copyable-value';
 import { DataCard } from '@/components/app/data-card';
 import { EvidenceThumbnail } from '@/components/app/evidence-thumbnail';
 import { PageHeader } from '@/components/app/page-header';
+import { Notice } from '@/components/app/notice';
 import { StatusTimeline } from '@/components/app/status-timeline';
 import { UntrustedText } from '@/components/app/untrusted-text';
 import { ButtonLink } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { FindingsList } from './findings-list';
 import { LabelsList } from './labels-list';
 import { ResponsesList } from './responses-list';
 import { TransfersTable } from './transfers-table';
+import { ChainProvenance } from './chain-provenance';
 
 const KIND_LABEL: Record<AddressResearch['kind'], string> = {
   wallet: 'Wallet',
@@ -56,45 +58,103 @@ export function AddressResearchView({ data }: { readonly data: AddressResearch }
         }
       />
 
+      {data.degraded ? (
+        <Notice tone="warning">
+          Cached blockchain data is shown with its original observation time. Current providers are
+          unavailable.
+        </Notice>
+      ) : null}
+      {data.provenance ? <ChainProvenance data={data.provenance} /> : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <AssessmentPanel assessment={data.assessment} />
+        {data.availability?.assessment === 'unavailable' ? (
+          <DataCard title="Risk assessment">
+            <Notice tone="info">
+              Risk assessment is unavailable. These blockchain reads are not an assessment or a statement of
+              safety.
+            </Notice>
+          </DataCard>
+        ) : (
+          <AssessmentPanel assessment={data.assessment} />
+        )}
         <div className="flex min-w-0 flex-col gap-6">
           <DataCard title="Blockchain facts" id="facts">
             <FactsList facts={data.facts} />
           </DataCard>
           {/* Disclosures are context with zero contribution, kept apart from the assessment's factors. */}
           <DataCard title={DISCLOSURE_COPY.heading} id="disclosures">
-            <DisclosuresList disclosures={data.disclosures} />
+            {data.availability?.disclosures === 'unavailable' ? (
+              <p className="text-sm text-muted">Disclosure data is unavailable.</p>
+            ) : (
+              <DisclosuresList disclosures={data.disclosures} />
+            )}
           </DataCard>
           <DataCard
             title="Public labels"
             id="labels"
             description="Identification added by staff. Labels never change the risk band."
           >
-            <LabelsList labels={data.labels} />
+            {data.availability?.labels === 'unavailable' ? (
+              <p className="text-sm text-muted">Public label data is unavailable.</p>
+            ) : (
+              <LabelsList labels={data.labels} />
+            )}
           </DataCard>
         </div>
       </div>
 
       <Tabs defaultValue="findings">
         <TabsList aria-label="Research details">
-          <TabsTrigger value="findings">Findings ({data.findings.length})</TabsTrigger>
-          <TabsTrigger value="responses">Responses ({data.responses.length})</TabsTrigger>
-          <TabsTrigger value="transfers">Transfers ({data.transfers.length})</TabsTrigger>
-          <TabsTrigger value="evidence">Evidence ({data.evidence.length})</TabsTrigger>
+          <TabsTrigger value="findings">
+            {data.availability?.findings === 'unavailable'
+              ? 'Findings'
+              : `Findings (${data.findings.length})`}
+          </TabsTrigger>
+          <TabsTrigger value="responses">
+            {data.availability?.responses === 'unavailable'
+              ? 'Responses'
+              : `Responses (${data.responses.length})`}
+          </TabsTrigger>
+          <TabsTrigger value="transfers">
+            {data.availability?.transfers === 'unavailable'
+              ? 'Transfers'
+              : `Transfers (${data.transfers.length})`}
+          </TabsTrigger>
+          <TabsTrigger value="evidence">
+            {data.availability?.evidence === 'unavailable'
+              ? 'Evidence'
+              : `Evidence (${data.evidence.length})`}
+          </TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
         <TabsContent value="findings">
-          <FindingsList findings={data.findings} />
+          {data.availability?.findings === 'unavailable' ? (
+            <p className="text-sm text-muted">
+              Published finding data is unavailable. No conclusion about findings has been made.
+            </p>
+          ) : (
+            <FindingsList findings={data.findings} />
+          )}
         </TabsContent>
         <TabsContent value="responses">
-          <ResponsesList responses={data.responses} subject="address" />
+          {data.availability?.responses === 'unavailable' ? (
+            <p className="text-sm text-muted">Published responses are unavailable.</p>
+          ) : (
+            <ResponsesList responses={data.responses} subject="address" />
+          )}
         </TabsContent>
         <TabsContent value="transfers">
-          <TransfersTable chain={data.chain} transfers={data.transfers} />
+          {data.availability?.transfers === 'unavailable' ? (
+            <p className="text-sm text-muted">
+              Transfer history is unavailable; a balance read does not establish activity.
+            </p>
+          ) : (
+            <TransfersTable chain={data.chain} transfers={data.transfers} />
+          )}
         </TabsContent>
         <TabsContent value="evidence">
-          {data.evidence.length === 0 ? (
+          {data.availability?.evidence === 'unavailable' ? (
+            <p className="text-sm text-muted">Published evidence is unavailable.</p>
+          ) : data.evidence.length === 0 ? (
             <p className="text-sm text-muted">No published evidence.</p>
           ) : (
             <div className="flex flex-wrap gap-4">
@@ -105,7 +165,11 @@ export function AddressResearchView({ data }: { readonly data: AddressResearch }
           )}
         </TabsContent>
         <TabsContent value="history">
-          <StatusTimeline events={data.timeline} />
+          {data.availability?.history === 'unavailable' ? (
+            <p className="text-sm text-muted">Published finding history is unavailable.</p>
+          ) : (
+            <StatusTimeline events={data.timeline} />
+          )}
         </TabsContent>
       </Tabs>
     </div>

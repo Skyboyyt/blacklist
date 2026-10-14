@@ -10,6 +10,22 @@ The frontend talks to seven interfaces (`AdminApi` added by the Phase 5 follow-u
 
 ## 1. Conventions the adapter maps
 
+### Phase8 public research adapter (2026-10-14, local review only)
+
+The non-mock server client implements `getViewer`, explicit-network `search`, address and transaction research using `/api/internal/v1` and the existing trusted peer/internal/staging gates. Optional typed `getAddressHistory`, `getTokenResearch`, `getContractResearch`, and `getTokenBalances` expose only capability-ready public chain DTOs, not invented mock responses. GET/HEAD equivalents under `/api/v1` are public chain reads with existing staging ingress and abuse controls; no actor's private activity is returned or recorded. Failed/malformed/unconfigured reads remain provider-unavailable, never `not_found` or successful empty lists. New `chain-reads.ts` DTOs contain snapshot/finality/freshness/coverage; unavailable address sections cannot carry findings or risk verdicts. History cursors bind provider/network/address/direction/page size/snapshot and are encrypted/authenticated, not page-number translation.
+
+| Route suffix (both prefixes) | Policy / validation | Public output |
+| --- | --- | --- |
+| `/search` | Public or internal GET/HEAD; explicit network and strict `searchRequestSchema` | Existing `searchResponseSchema`, chain-only hits, no computed band |
+| `/addresses/:chain/:identifier` | Public or internal GET/HEAD; chain enum, family checksum/Base58 validation, bounded options | `researchResultSchema(addressResearchSchema)`; assessment/publication sections explicitly unavailable |
+| `/transactions/:chain/:identifier` | Same; family hash/signature validation | `researchResultSchema(transactionResearchSchema)`; real status/fees and separate transfer evidence/authorization |
+| `/addresses/:chain/:identifier/transactions` | Same; bounded1–100 limit, scoped cursor, direction; Ethereum provider max25/in-or-out | `researchResultSchema(addressHistorySchema)`; incomplete coverage, optional failover restart |
+| `/addresses/:chain/:identifier/token` | Same; bounded finality/verify options | `researchResultSchema(tokenResearchSchema)`; untrusted on-chain text, raw integer supply |
+| `/addresses/:chain/:identifier/contract` | Same | `researchResultSchema(contractResearchSchema)`; bytecode hash, explorer verification unknown |
+| `/addresses/:chain/:identifier/balances` | Same | `researchResultSchema(tokenBalancesSchema)`; classic SPL supported; separately gated Ethereum discovery plus same-block calls, bounded/incomplete inventory |
+
+Unknown fields never become output; no provider ID/key/URL, account/session, private submission, numeric score or unreviewed allegation appears. API route matrix includes both prefixes and methods; negative ingress/private/input/rate/persistence tests are in `research.integration.test.ts`. The preserved project-directory pagination decision below remains open; no live project/catalog/ranking adapter is introduced. Live dashboard uses an honest search/account fallback; reports/projects/scoreboard unavailable states cannot confer submission or publication success. Supported mock journeys remain unchanged. See [operations](../operations/phase8-research.md) and the [report](../reviews/2026-10-14-phase8-implementation.md).
+
 | Topic | API (ARCHITECTURE §7.1, §7.3) | Frontend result type |
 |---|---|---|
 | Transport | REST + JSON under `/api/v1`, cookie session, exact-Origin check on every mutation, `no-store` on private responses | Adapter-internal |

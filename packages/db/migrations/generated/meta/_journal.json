@@ -36,6 +36,13 @@
       "when": 1791866154338,
       "tag": "0004_harsh_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791935134649,
+      "tag": "0005_violet_stardust",
+      "breakpoints": true
     }
   ]
 }

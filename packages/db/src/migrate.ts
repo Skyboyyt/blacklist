@@ -85,7 +85,11 @@ export async function migrate(connectionString: string, runtimeRole: string) {
       REVOKE INSERT,UPDATE,DELETE,TRUNCATE ON blacklist.audit_log FROM ${runtimeRole};
       REVOKE UPDATE,DELETE,TRUNCATE ON blacklist.security_email_deliveries FROM ${runtimeRole};
       REVOKE ALL ON blacklist.auth_verifications FROM ${runtimeRole};
+      REVOKE INSERT,UPDATE,DELETE,TRUNCATE ON blacklist.chains FROM ${runtimeRole};
+      REVOKE UPDATE,DELETE,TRUNCATE ON blacklist.verification_receipts,blacklist.chain_fact_verifications,
+        blacklist.chain_transactions,blacklist.asset_transfers,blacklist.chain_fact_invalidations FROM ${runtimeRole};
       GRANT EXECUTE ON FUNCTION blacklist.append_audit(jsonb) TO ${runtimeRole};
+      GRANT EXECUTE ON FUNCTION blacklist.canonical_json(jsonb) TO ${runtimeRole};
       GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA pgboss TO ${runtimeRole}`);
   } finally {
     await client.query('SELECT pg_advisory_unlock(730025)');

@@ -11,7 +11,7 @@
 | Normative design docs | [docs/design/identity.md](docs/design/identity.md) · [docs/design/moderation.md](docs/design/moderation.md) · [docs/design/chain-data.md](docs/design/chain-data.md) |
 | Decisions | §34 (D-001…D-052) · [docs/adr/](docs/adr/README.md) (ADR 0001–0008) |
 
-> Nothing in this document is implemented. Where a section says "Normative detail: docs/design/…", that design document is the single source of truth and this section only summarizes it.
+> This document specifies the approved architecture, not a completion inventory. Phase7 implementation is merged; Phase8 is owner-authorized on a separate review branch and remains undeployed/provider-validation-blocked. Latest [AI_HANDOFF.md](AI_HANDOFF.md) and [Phase8 report](docs/reviews/2026-10-14-phase8-implementation.md) record actual results. Where a section says "Normative detail: docs/design/…", that design document is the single source of truth and this section only summarizes it.
 
 ### Revision history
 

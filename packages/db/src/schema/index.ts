@@ -4,3 +4,5 @@ export * from './identity.ts';
 export * from './staff.ts';
 export * from './audit.ts';
 export * from './credential-intents.ts';
+export * from './chain-verification.ts';
+export * from './chain-facts.ts';

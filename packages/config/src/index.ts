@@ -48,6 +48,24 @@ const apiSchema = shared.extend({
   API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).default('127.0.0.1'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4107),
   INTERNAL_API_TOKEN: z.string().min(32),
+  RESEARCH_ENABLED: z.enum(['true', 'false']).default('false'),
+  RPC_PLAN_VERIFIED: z.enum(['true', 'false']).default('false'),
+  ALCHEMY_INDEXED_HISTORY_VERIFIED: z.enum(['true', 'false']).default('false'),
+  ALCHEMY_TOKEN_BALANCES_VERIFIED: z.enum(['true', 'false']).default('false'),
+  ALCHEMY_ETHEREUM_API_KEY: z
+    .string()
+    .min(8)
+    .max(512)
+    .regex(/^[A-Za-z0-9_-]+$/u)
+    .optional(),
+  HELIUS_RPC_API_KEY: z
+    .string()
+    .min(8)
+    .max(512)
+    .regex(/^[A-Za-z0-9_-]+$/u)
+    .optional(),
+  RPC_API_REQUESTS_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(30),
+  RPC_API_TOTAL_REQUEST_BUDGET: z.coerce.number().int().min(1).max(10000).default(100),
   MAIL_WORKER_HEALTH_URL: z
     .string()
     .url()
@@ -122,6 +140,11 @@ function parse<S extends z.ZodType>(
 }
 export const readApiConfig = (env = process.env) => {
   const config = parse(apiSchema, env);
+  if (
+    config.RESEARCH_ENABLED === 'true' &&
+    (config.RPC_PLAN_VERIFIED !== 'true' || !config.ALCHEMY_ETHEREUM_API_KEY || !config.HELIUS_RPC_API_KEY)
+  )
+    throw new Error('Research requires verified provider plans and both RPC credential fields');
   if (config.MAIL_WORKER_HEALTH_URL && config.DEPLOYMENT_ENV !== 'staging')
     throw new Error('MAIL_WORKER_HEALTH_URL staging only');
   if (

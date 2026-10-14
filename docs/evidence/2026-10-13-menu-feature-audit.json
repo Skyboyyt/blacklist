@@ -1,0 +1,345 @@
+{
+  "date": "2026-10-13 UTC",
+  "task": "Audit owner-reported menu and dashboard failures",
+  "scope": "Anonymous hosted checks and source review; no private user sessions",
+  "branch": "docs/menu-feature-audit",
+  "mainCommit": "5967afa6eee30c5359b9a9f26a1c6bd79f543772",
+  "mergedPR": 11,
+  "applicationTreeMatchesDeployedSource": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.78,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/search",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.67,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": true
+    },
+    {
+      "path": "/search?q=0x0000000000000000000000000000000000000001&chain=ethereum",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.67,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": true,
+      "containsGenericError": false,
+      "containsLoadingText": true
+    },
+    {
+      "path": "/projects",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.53,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": true,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/scoreboard",
+      "status": 500,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.48,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": true,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/dashboard",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.59,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": true,
+      "containsGenericError": false,
+      "containsLoadingText": true
+    },
+    {
+      "path": "/reports",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.51,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": true,
+      "containsGenericError": false,
+      "containsLoadingText": true
+    },
+    {
+      "path": "/reports/new",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.78,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": true
+    },
+    {
+      "path": "/appeals/new",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.59,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/responses/new",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.63,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/corrections/new",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.64,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/projects/suggest",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.49,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/notifications",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.66,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/settings/profile",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.39,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/settings/security",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.67,
+      "containsSignInRequired": true,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/methodology",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.62,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.26,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/security",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.43,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    },
+    {
+      "path": "/terms",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "seconds": 0.42,
+      "containsSignInRequired": false,
+      "containsServerErrorDigest": false,
+      "containsGenericError": false,
+      "containsLoadingText": false
+    }
+  ],
+  "documentResults": {
+    "requests": 19,
+    "http200": 18,
+    "http500": 1,
+    "serverErrorMarkerResponses": 5,
+    "http200DoesNotProveFeatureWorks": true
+  },
+  "liveNegativeSmoke": [
+    {
+      "check": "directPrivateDenied",
+      "status": 404,
+      "expected": 404,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "unauthenticatedPrivateDenied",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "anonymousStaffDenied",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "viewerAllowlist",
+      "status": 200,
+      "expected": 200,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8",
+      "anonymousAllowlistedViewer": true
+    },
+    {
+      "check": "foreignOriginDenied",
+      "status": 403,
+      "expected": 403,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/problem+json; charset=utf-8"
+    },
+    {
+      "check": "invalidInputDenied",
+      "status": 400,
+      "expected": 400,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/problem+json; charset=utf-8"
+    },
+    {
+      "check": "headlessHandlerAbsent",
+      "status": 404,
+      "expected": 404,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "frontendViewerProxy",
+      "status": 200,
+      "expected": 200,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8",
+      "anonymousAllowlistedViewer": true
+    },
+    {
+      "check": "frontendPrivateProxyDenied",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "frontendForgedGatewayOverwritten",
+      "status": 401,
+      "expected": 401,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "check": "internalSsrViewer",
+      "status": 200,
+      "expected": 200,
+      "passed": true,
+      "privateCredentialsInResponse": false,
+      "contentType": "application/json; charset=utf-8"
+    }
+  ],
+  "health": {
+    "api": {
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    "worker": {
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    }
+  },
+  "unitTests": {
+    "focusedNavigationAndLiveAdapters": {
+      "passed": 10,
+      "files": 2
+    },
+    "fullWeb": {
+      "passed": 398,
+      "files": 42
+    },
+    "focusedTestsIncludedInFullCount": true
+  },
+  "sourceFindings": [
+    "Non-mock research reads deliberately reject ApiNotConnectedError; only viewer is live",
+    "Member adapter implements profile only; submissions/redress/notifications remain unavailable",
+    "5second SSR viewer timeout may classify a sleeping-backend transport error as anonymous; not reproduced during this audit"
+  ],
+  "notRun": [
+    "Signed-in hosted product navigation",
+    "Live mobile JavaScript clicks",
+    "Real idle-cycle authentication test",
+    "Backend integration/build/coverage/dependency audit reruns"
+  ],
+  "changes": {
+    "application": false,
+    "database": false,
+    "cloudSettings": false,
+    "deployment": false,
+    "newPhaseStarted": false,
+    "published": false
+  },
+  "conclusion": "Foundation hosting is reachable; most product-data menu features have no live backend yet. No complete-product readiness claim."
+}

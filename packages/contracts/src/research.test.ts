@@ -12,6 +12,7 @@ import {
   V1_RISK_FACTOR_PROVENANCE,
 } from './research.ts';
 import { searchResponseSchema } from './search.ts';
+import { chainReadSourceSchema } from './chain-reads.ts';
 
 const at = '2026-09-28T10:15:00Z';
 
@@ -56,6 +57,45 @@ const research = {
 describe('CSP compatibility', () => {
   it('runs Zod jitless so parsing never needs eval (no unsafe-eval in the CSP)', () => {
     expect(z.config().jitless).toBe(true);
+  });
+});
+describe('explicit live availability boundaries', () => {
+  it('rejects wrong-network snapshot metadata and private provenance fields', () => {
+    const source = {
+      chain: 'ethereum',
+      source: 'Ethereum RPC',
+      fetchedAt: at,
+      finality: 'final',
+      snapshot: { kind: 'evm_block', blockNumber: '10', blockHash: '0x' + 'a'.repeat(64) },
+      verification: 'single_source',
+      degraded: false,
+    };
+    expect(chainReadSourceSchema.safeParse(source).success).toBe(true);
+    expect(chainReadSourceSchema.safeParse({ ...source, chain: 'solana' }).success).toBe(false);
+    expect(chainReadSourceSchema.safeParse({ ...source, providerCredential: 'must-not-pass' }).success).toBe(
+      false,
+    );
+  });
+  it('rejects risk verdicts or records presented alongside unavailable sections', () => {
+    const availability = {
+      assessment: 'unavailable',
+      findings: 'unavailable',
+      labels: 'unavailable',
+      responses: 'unavailable',
+      transfers: 'unavailable',
+      evidence: 'unavailable',
+      history: 'unavailable',
+      disclosures: 'unavailable',
+    };
+    const live = { ...research, availability, assessment: { ...assessment, band: 'not_assessed' } };
+    expect(addressResearchSchema.safeParse(live).success).toBe(true);
+    expect(addressResearchSchema.safeParse({ ...live, assessment }).success).toBe(false);
+    expect(
+      addressResearchSchema.safeParse({
+        ...live,
+        labels: [{ id: 'a', text: 'label', provenance: 'moderator_finding', sourceName: null, addedAt: at }],
+      }).success,
+    ).toBe(false);
   });
 });
 

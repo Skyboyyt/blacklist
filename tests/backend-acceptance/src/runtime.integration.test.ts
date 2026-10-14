@@ -371,6 +371,28 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
     const result = await post('/api/v1/auth/register/complete', { token, form });
     expect(result.statusCode).toBe(200);
     const cookie = cookieOf(result.headers);
+    for (const url of ['/api/v1/me', '/api/v1/viewer'])
+      expect((await app.inject({ method: 'GET', url, headers: { cookie } })).statusCode).toBe(200);
+    expect(
+      (
+        await app.inject({
+          method: 'PATCH',
+          url: '/api/v1/me',
+          headers: { cookie, origin, 'content-type': 'application/json' },
+          payload: { displayName: 'Synthetic member' },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await app.inject({
+          method: 'PATCH',
+          url: '/api/v1/me',
+          headers: { cookie, origin, 'content-type': 'application/json' },
+          payload: { displayName: null },
+        })
+      ).statusCode,
+    ).toBe(400);
     expect((await post('/api/v1/auth/register/complete', { token, form })).statusCode).toBe(400);
     expect((await post('/api/v1/auth/login', { email, password })).statusCode).toBe(200);
     expect((await post('/api/v1/auth/password/forgot', { email })).statusCode).toBe(202);
@@ -656,6 +678,29 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
         ).toBe(400);
         const assured = await resolveSession(ctx.runtime, ctx.auth, new Headers({ cookie }));
         if (!assured) throw new Error('test_assured_actor_missing');
+        const viewer = await app.inject({ method: 'GET', url: '/api/v1/viewer', headers: { cookie } });
+        expect(viewer.statusCode).toBe(200);
+        expect(viewer.json().kind).toBe('signed_in');
+        expect(viewer.body).not.toContain(email);
+        for (const url of [
+          '/api/v1/me/security',
+          '/api/v1/me/staff-security',
+          '/api/v1/me/staff-recovery',
+          '/api/v1/mod/recoveries',
+        ])
+          expect((await app.inject({ method: 'GET', url, headers: { cookie } })).statusCode).toBe(200);
+        for (const url of [
+          '/api/v1/admin/staff',
+          '/api/v1/admin/invitations',
+          '/api/v1/admin/overview',
+          '/api/v1/admin/roles',
+          '/api/v1/admin/recoveries',
+          '/api/v1/admin/members',
+        ]) {
+          const result = await app.inject({ method: 'GET', url, headers: { cookie } });
+          expect(result.statusCode).toBe(assured.roles.includes('admin') ? 200 : 403);
+          expect(result.body).not.toContain(email);
+        }
         return { actor: assured, cookie };
       }
       async function proof(actor: UserActor, action: StaffAction, credentialId?: string) {

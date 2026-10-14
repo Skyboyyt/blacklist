@@ -28,6 +28,7 @@ import type {
   TokenBalance,
   TokenInfo,
   TransactionSummary,
+  VerificationReceipt,
 } from './types.ts';
 
 // ---------------------------------------------------------------------------
@@ -117,6 +118,8 @@ export interface ChainDataFailure {
   /** Providers attempted, in order. */
   readonly providerIds: readonly string[];
   readonly retryAfterMs?: number;
+  /** Internal conflicting finalized answers; never serialize into public errors. */
+  readonly receipts?: readonly [VerificationReceipt, VerificationReceipt];
 }
 
 /**

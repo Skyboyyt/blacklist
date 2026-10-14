@@ -10,6 +10,7 @@ import { truncateMiddle } from '@/lib/format/address';
 import { formatDateTimeUtc } from '@/lib/format/date';
 import { FactsList } from './facts-list';
 import { TransfersTable } from './transfers-table';
+import { ChainProvenance } from './chain-provenance';
 
 function AddressLink({ chain, address }: { readonly chain: string; readonly address: string }) {
   return (
@@ -36,6 +37,13 @@ export function TransactionResearchView({ data }: { readonly data: TransactionRe
         description={<CopyableValue value={data.hash} kind="transaction hash" full />}
       />
 
+      {data.degraded ? (
+        <Notice tone="warning">
+          Cached blockchain data is shown with its original observation time. Current providers are
+          unavailable.
+        </Notice>
+      ) : null}
+      {data.provenance ? <ChainProvenance data={data.provenance} /> : null}
       {data.finality === 'pending' ? (
         <Notice tone="warning" title="Not final yet">
           This transaction is not finalized. Its details can still change, and it is not used in any
@@ -70,7 +78,7 @@ export function TransactionResearchView({ data }: { readonly data: TransactionRe
               </dd>
             </div>
             <div className="flex justify-between gap-3">
-              <dt className="text-muted">From</dt>
+              <dt className="text-muted">{data.chain === 'solana' ? 'Fee payer' : 'Transaction sender'}</dt>
               <dd>
                 <AddressLink chain={data.chain} address={data.from} />
               </dd>
@@ -81,7 +89,9 @@ export function TransactionResearchView({ data }: { readonly data: TransactionRe
                 {data.to ? (
                   <AddressLink chain={data.chain} address={data.to} />
                 ) : (
-                  <span className="text-muted">Contract creation</span>
+                  <span className="text-muted">
+                    {data.chain === 'solana' ? 'No single transaction recipient' : 'Contract creation'}
+                  </span>
                 )}
               </dd>
             </div>
@@ -97,7 +107,19 @@ export function TransactionResearchView({ data }: { readonly data: TransactionRe
       </div>
 
       <DataCard title="Transfers" id="transfers">
-        <TransfersTable chain={data.chain} transfers={data.transfers} />
+        {data.transferCoverage === 'incomplete' ? (
+          <Notice tone="info">
+            Only supported transfer records are shown. Other activity may be omitted; the fee payer is not
+            necessarily a transfer authority.
+          </Notice>
+        ) : null}
+        {data.transferCoverage === 'incomplete' && data.transfers.length === 0 ? (
+          <p className="text-sm text-muted">
+            No supported transfer records were decoded. Other activity may exist.
+          </p>
+        ) : (
+          <TransfersTable chain={data.chain} transfers={data.transfers} />
+        )}
       </DataCard>
     </div>
   );

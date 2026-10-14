@@ -7,6 +7,8 @@ import { ProjectFilters } from '@/components/projects/project-filters';
 import { UnsupportedNetwork } from '@/components/research/research-unavailable';
 import { ResultsSkeleton } from '@/components/states/skeletons';
 import { getResearchApi } from '@/lib/api/server';
+import { optionalFeature } from '@/lib/api/availability';
+import { NotAvailableYet } from '@/components/states/not-available';
 import { NAME_WARNING, PROFILE_DISCLAIMER } from '@/lib/projects/copy';
 import { parseDirectoryParams } from '@/lib/projects/directory-params';
 import type { ProjectDirectoryQuery } from '@blacklist/contracts';
@@ -18,7 +20,9 @@ interface ProjectsPageProps {
 }
 
 async function Results({ query }: { readonly query: ProjectDirectoryQuery }) {
-  const response = await (await getResearchApi()).listProjects(query);
+  const api = await getResearchApi(),
+    response = await optionalFeature(() => api.listProjects(query));
+  if (!response) return <NotAvailableYet feature="Project directory" />;
   return <ProjectDirectoryResults query={query} response={response} />;
 }
 

@@ -17,6 +17,27 @@ const env = {
   PORT: '10000',
 };
 describe('Render deployment security boundaries', () => {
+  it('keeps provider credentials API-only and research disabled until plan/key prerequisites pass', () => {
+    const keys = {
+      ALCHEMY_ETHEREUM_API_KEY: randomBytes(32).toString('hex'),
+      HELIUS_RPC_API_KEY: randomBytes(32).toString('hex'),
+    };
+    expect(readApiConfig(env).RESEARCH_ENABLED).toBe('false');
+    for (const missing of [{}, { RPC_PLAN_VERIFIED: 'true' }, { ...keys }])
+      expect(() => readApiConfig({ ...env, ...missing, RESEARCH_ENABLED: 'true' })).toThrow(
+        'Research requires',
+      );
+    expect(
+      readApiConfig({ ...env, ...keys, RESEARCH_ENABLED: 'true', RPC_PLAN_VERIFIED: 'true' })
+        .ALCHEMY_INDEXED_HISTORY_VERIFIED,
+    ).toBe('false');
+    const api = renderRuntimeEnvironment('api', { ...env, ...keys }),
+      worker = renderRuntimeEnvironment('worker', { ...env, ...keys });
+    for (const key of Object.keys(keys)) {
+      expect(api).toHaveProperty(key);
+      expect(worker).not.toHaveProperty(key);
+    }
+  });
   it('maps the Render port and withholds operator credentials and unrelated environment', () => {
     const api = renderRuntimeEnvironment('api', {
       ...env,

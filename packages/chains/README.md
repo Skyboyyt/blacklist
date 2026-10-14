@@ -1,6 +1,6 @@
 # @blacklist/chains
 
-Server-only blockchain abstraction. **Status:** contract types only ([src/ports.ts](src/ports.ts), [src/types.ts](src/types.ts), revision 3); implementation starts in Phase 8 (research UI phases use mocks of these contracts).
+Server-only blockchain abstraction. **Status:** Phase8 registry, family normalization/decoders, RPC clients, bounded router, cursor and receipt implementation exists locally on the review branch. O-3 and live provider validation remain blocked; runtime disabled by default. See [Phase8 report](../../docs/reviews/2026-10-14-phase8-implementation.md) and [operations](../../docs/operations/phase8-research.md). Types and ports preserve normative revision3 semantics.
 
 Normative semantics: [docs/design/chain-data.md](../../docs/design/chain-data.md) (ADR 0003).
 
@@ -29,14 +29,14 @@ Normative semantics: [docs/design/chain-data.md](../../docs/design/chain-data.md
 - Cursors are provider-scoped; cache keys include finality, `crossVerify` and decoder version.
 - May import: `@blacklist/core`. Must not import: `db`, `domain`, apps.
 
-## Planned layout (Phase 8)
+## Implemented layout (Phase 8 review branch)
 
 ```
 src/
-  ports.ts, types.ts          contracts (exist now)
+  ports.ts, types.ts          normative contracts
   registry.ts                 chain definitions → ChainId/ChainSlug brands
-  families/evm/               adapter, decoders, authorization-basis rules (viem)
-  families/solana/            adapter, decoders, authorization-basis rules (@solana/kit)
-  providers/<provider>/       one folder per provider client
-  router/                     ChainDataService, verification (receipts, comparison specs)
+  adapters/                   family normalization and transaction decoding
+  providers/                  bounded RPC transport, policy and capability sources
+  router.ts                   ChainDataService, cache, failover and circuits
+  verification.ts, cursor.ts  receipts/comparison and encrypted provider cursors
 ```

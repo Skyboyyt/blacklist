@@ -6,12 +6,17 @@ import { PageHeader } from '@/components/app/page-header';
 import { ReportStatusBadge } from '@/components/app/report-status-badge';
 import { ButtonLink } from '@/components/ui/button';
 import { getResearchApi } from '@/lib/api/server';
+import { optionalFeature } from '@/lib/api/availability';
+import { NotAvailableYet } from '@/components/states/not-available';
 import { formatDateUtc } from '@/lib/format/date';
 
 export const metadata: Metadata = { title: 'Reports' };
 
 export default async function ReportsPage() {
-  const { myReports } = await (await getResearchApi()).getDashboard();
+  const api = await getResearchApi(),
+    dashboard = await optionalFeature(() => api.getDashboard());
+  if (!dashboard) return <NotAvailableYet feature="Reports" icon="reports" titleAs="h1" />;
+  const { myReports } = dashboard;
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
