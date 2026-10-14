@@ -14,11 +14,13 @@ Read this first at the start of every session. Update it at the end of every ses
 | Authorized phase | Owner explicitly authorized Phase8 chain data/research implementation on a separate main-based branch, commit and review PR; no automatic merge/live deployment, paid provider or infrastructure purchase, Phase9/10 or activity streams. |
 | **Primary Engineer** | **Claude** |
 | **Secondary/Review Engineer** | **Codex** |
-| Last agent | Codex: local Phase8 implementation/security review/validation complete; preparing authorized branch push and draft review PR. O-3/provider bindings/Claude and required security gates remain open |
+| Last agent | Codex: local Phase8 implementation/security review/validation published on feature branch; draftPR12 targets main. O-3/provider bindings/Claude, reconciliation and required security gates remain open; no merge/deploy |
 | Last updated | 2026-10-14 (Europe/London) |
 
 
 ## Phase8 validation and review handoff — 2026-10-14
+
+**Actual GitHub publication:** implementation commit `e5cfaec8ee7fc01bd1e96ab95526fe805032af84` committed/pushed to `feat/phase8-chain-research`; [draftPR12](https://github.com/Skyboyyt/blacklist/pull/12) OPEN, base main, correct head verified. No GitHub status checks/workflow runs are present; local results are not a CI-pass claim. No merge or main push. Post-push Vercel readback found0matching recent review-branch deployments; successful Phase8 deployment false, prior canonical deployment retained. Render auto-deploy off and original sources/settings unchanged. Publication handoff/evidence follow-up is documentation only, scoped to this same branch. No provider activation, cloud migration or paid operation.
 
 **Scope/state:** implemented on `feat/phase8-chain-research` from current main5967afa, confirmed unchanged through final Git readback. Owner approved Helius/Alchemy Free direction; ADR0018 remains Proposed, Claude review/actual Alchemy Free-plan/archive/history/terms/independent-secondary evidence and both protected key bindings missing. Phase8 is not implementation-complete under the owner's real-provider completion requirements, not deployed or production-ready. No merge, cloud migration, settings/role/password change, service activation, paid resource, Phase9/10 or activity stream. Current live source038ed7f and canonical Vercel alias/read-only metadata remain unchanged; both Free Frankfurt Render services main/auto-deployoff/not suspended, restricted direct verify-full app DB settings preserved.
 

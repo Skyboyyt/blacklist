@@ -15,13 +15,7 @@
   },
   "repository": {
     "mainVerified": "5967afa6eee30c5359b9a9f26a1c6bd79f543772",
-    "mergedPriorPRs": [
-      7,
-      8,
-      9,
-      10,
-      11
-    ],
+    "mergedPriorPRs": [7, 8, 9, 10, 11],
     "githubDefaultBranch": "chore/initial-repository",
     "previousChangesAndStashPreserved": true
   },
@@ -224,6 +218,11 @@
       "findings": 0,
       "network": "none",
       "redactPercent": 100
+    },
+    "publicationDocumentationScan": {
+      "files": 3,
+      "findings": 0,
+      "status": "passed"
     }
   },
   "cloudPreservation": {
@@ -282,10 +281,7 @@
       "selectedProductionProvider": false
     },
     "independentSecondary": "unavailable_unknown_upstream",
-    "keysMissing": [
-      "ALCHEMY_ETHEREUM_API_KEY",
-      "HELIUS_RPC_API_KEY"
-    ],
+    "keysMissing": ["ALCHEMY_ETHEREUM_API_KEY", "HELIUS_RPC_API_KEY"],
     "runtimeActivated": false,
     "paidResourceCreated": false
   },
@@ -432,9 +428,23 @@
     "vercel.json"
   ],
   "publication": {
-    "status": "pending_commit_push_and_draft_pr",
+    "status": "pushed_open_draft_pr",
+    "implementationCommit": "e5cfaec8ee7fc01bd1e96ab95526fe805032af84",
+    "url": "https://github.com/Skyboyyt/blacklist/pull/12",
+    "number": 12,
     "base": "main",
+    "head": "feat/phase8-chain-research",
+    "draft": true,
+    "state": "OPEN",
     "merge": false,
-    "deployment": false
+    "deployment": false,
+    "githubStatusChecksPresent": false,
+    "documentationFollowup": "documentation-only on same review branch"
+  },
+  "reviewBranchDeploymentCheck": {
+    "reviewBranch": "feat/phase8-chain-research",
+    "matchingRecentVercelDeployments": [],
+    "successfulPhase8Deployment": false,
+    "cloudMutations": false
   }
 }

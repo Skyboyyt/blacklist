@@ -94,4 +94,6 @@ Actual Alchemy/Helius request results, paid/free account terms/credits/archive c
 
 ## Publication and next step
 
+Implementation `e5cfaec8ee7fc01bd1e96ab95526fe805032af84` is pushed; [draftPR12](https://github.com/Skyboyyt/blacklist/pull/12) is OPEN targeting main with the correct feature head. No GitHub CI/status checks are present. Post-push provider readback found0matching recent Vercel review-branch deployments; canonical/source/settings are unchanged. No merge, cloud SQL, activation or deployment. The publication evidence follow-up is documentation only on the same feature branch.
+
 Commit/push this feature branch and create a draft review PR targeting main; do not merge/deploy. The PR must disclose provider/O-3/coverage/audit/hosted identity blockers. Complete secure key binding and independent Claude/provider review next, then run live read-only capability/snapshot probes and update evidence before any deployment request. Phase9/10 and production readiness are not authorized or established.
