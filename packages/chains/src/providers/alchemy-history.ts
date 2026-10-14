@@ -37,7 +37,7 @@ export function createAlchemyHistory(providerId: string, rpc: RpcTransport) {
       !Number.isInteger(query.limit)
     )
       throw new ProviderFault('not_supported');
-    await state.network();
+    await state.network(options.signal);
     const anchor = await state.anchor(options);
     const page = await rpc.call(
       'alchemy_getAssetTransfers',

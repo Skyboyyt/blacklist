@@ -1,3 +1,4 @@
+import { createNetworkCheck } from './network-check.ts';
 import { z } from 'zod';
 import type { ChainAddress, ChainTxRef } from '@blacklist/core';
 import type {
@@ -51,6 +52,7 @@ const tokenAccount = z.object({
     type: z.literal('account'),
     info: z.object({
       mint: solAddress,
+      owner: solAddress,
       tokenAmount: z.object({ amount: uint, decimals: z.number().int().min(0).max(255) }),
     }),
   }),
@@ -82,15 +84,7 @@ export function createSolanaRpcSource(
   rpc: RpcTransport,
   completeTransactionHistory = false,
 ): AccountInfoSource & TransactionSource & AddressHistorySource & BalanceSource & TokenMetadataSource {
-  let identity: Promise<void> | undefined;
-  const network = () =>
-    (identity ??= rpc
-      .call('getGenesisHash', [], z.literal('5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d'))
-      .then(() => undefined)
-      .catch((error: unknown) => {
-        identity = undefined;
-        throw error;
-      }));
+  const network = createNetworkCheck(rpc, 'getGenesisHash', '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d');
   const provenance = (snapshot: ChainSnapshot, options: ProviderCallOptions) => ({
     providerId: id,
     fetchedAt: new Date(),
@@ -103,7 +97,7 @@ export function createSolanaRpcSource(
   async function read(ref: ChainAddress, options: ProviderCallOptions) {
     if (ref.chainId !== solanaId || !solanaAdapter.parseAddress(ref.address))
       throw new ProviderFault('not_supported');
-    await network();
+    await network(options.signal);
     const result = await rpc.call(
       'getAccountInfo',
       [ref.address, config(options)],
@@ -188,7 +182,7 @@ export function createSolanaRpcSource(
       if (ref.chainId !== solanaId || !solanaAdapter.parseTxHash(ref.txHash))
         throw new ProviderFault('not_supported');
       const requestedAt = new Date();
-      await network();
+      await network(options.signal);
       config(options);
       const result = await rpc.call(
         'getTransaction',
@@ -273,7 +267,7 @@ export function createSolanaRpcSource(
         (query.cursor !== null && !solanaAdapter.parseTxHash(query.cursor))
       )
         throw new ProviderFault('not_supported');
-      await network();
+      await network(options.signal);
       const cfg = config(options);
       const rows = await rpc.call(
         'getSignaturesForAddress',
@@ -348,14 +342,19 @@ export function createSolanaRpcSource(
       options: ProviderCallOptions,
     ): Promise<Sourced<readonly TokenBalance[]>> {
       if (ref.chainId !== solanaId) throw new ProviderFault('not_supported');
-      await network();
+      await network(options.signal);
       const page = await rpc.call(
         'getTokenAccountsByOwner',
         [ref.address, { programId: TOKEN_PROGRAM }, config(options)],
         z.object({
           context,
           value: z
-            .array(z.object({ account: z.object({ owner: z.literal(TOKEN_PROGRAM), data: tokenAccount }) }))
+            .array(
+              z.object({
+                pubkey: solAddress,
+                account: z.object({ owner: z.literal(TOKEN_PROGRAM), data: tokenAccount }),
+              }),
+            )
             .max(100),
         }),
         options.signal,
@@ -363,12 +362,15 @@ export function createSolanaRpcSource(
       // This method returns only SPL Token accounts. Token2022 requires a separate read at the same context slot.
       // Do not silently fabricate a complete combined balance list.
       const balances = new Map<string, TokenBalance>();
+      const accounts = new Set<string>();
       if (options.minContextSlot && BigInt(page.context.slot) < BigInt(options.minContextSlot))
         throw new ProviderFault('invalid_response');
       for (const item of page.value) {
         const info = item.account.data.parsed.info,
           token = solanaAdapter.parseAddress(info.mint);
-        if (!token) throw new ProviderFault('invalid_response');
+        if (!token || accounts.has(item.pubkey) || info.owner !== ref.address)
+          throw new ProviderFault('invalid_response');
+        accounts.add(item.pubkey);
         const prior = balances.get(token);
         if (prior && prior.decimals !== info.tokenAmount.decimals)
           throw new ProviderFault('invalid_response');

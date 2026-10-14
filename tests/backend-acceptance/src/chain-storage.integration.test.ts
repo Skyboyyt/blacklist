@@ -33,7 +33,12 @@ describe('Phase8 receipt and pinned-fact SQL security boundaries', () => {
         },
         fields = {
           execution,
-          normalizedTransaction: { chainId: 'eip155:1', ...execution, transfers: [movement] },
+          normalizedTransaction: {
+            chainId: 'eip155:1',
+            ...execution,
+            blockTime: '2026-10-14T00:00:00.000Z',
+            transfers: [movement],
+          },
         };
       let seq = 0;
       const receipt = async (
@@ -83,13 +88,14 @@ describe('Phase8 receipt and pinned-fact SQL security boundaries', () => {
       const pin = (
         finality: string,
         hash = subject,
-        normalized: unknown = { chainId: 'eip155:1', ...execution, txHash: hash, transfers: [movement] },
+        normalized: unknown = { ...fields.normalizedTransaction, txHash: hash },
+        blockTime: string | null = fields.normalizedTransaction.blockTime,
       ) =>
         h.runtime.query(
           `INSERT INTO blacklist.chain_transactions
-        (chain_id,tx_hash,block_number,block_hash,status,fee_raw,finality,normalized,decoder_version,fetched_at,pinned_reason,verification_id)
-        VALUES('eip155:1',$1,'10',$2,'success','9007199254740993',$3,$4,'decoder-v1',now(),'synthetic-local-test',$5)`,
-          [hash, snapshot.blockHash, finality, normalized, v],
+        (chain_id,tx_hash,block_number,block_hash,status,fee_raw,finality,normalized,decoder_version,fetched_at,pinned_reason,verification_id,block_time)
+        VALUES('eip155:1',$1,'10',$2,'success','9007199254740993',$3,$4,'decoder-v1',now(),'synthetic-local-test',$5,$6)`,
+          [hash, snapshot.blockHash, finality, normalized, v, blockTime],
         );
       await expect(pin('pending')).rejects.toMatchObject({ code: '23514' });
       await expect(pin('final', '0x' + 'c'.repeat(64))).rejects.toMatchObject({ code: '23514' });
@@ -102,6 +108,10 @@ describe('Phase8 receipt and pinned-fact SQL security boundaries', () => {
           transfers: [{ ...movement, amountRaw: '2' }],
         }),
       ).rejects.toMatchObject({ code: '23514' });
+      for (const time of [null, '2026-10-13T00:00:00.000Z'])
+        await expect(pin('final', subject, fields.normalizedTransaction, time)).rejects.toMatchObject({
+          code: '23514',
+        });
       await pin('final');
       await h.runtime.query(
         `INSERT INTO blacklist.asset_transfers(chain_id,tx_hash,ordinal,from_address,to_address,amount_raw,transfer_kind,evidence_level,emitter,authorization_basis,authority_address,top_level)
@@ -165,7 +175,7 @@ describe('Phase8 receipt and pinned-fact SQL security boundaries', () => {
       expect(
         (await h.migrator.query('SELECT name,sha256 FROM blacklist_migrations.applied ORDER BY name')).rows,
       ).toEqual(before);
-      expect(before).toHaveLength(9);
+      expect(before).toHaveLength(10);
       const client = await h.runtime.connect();
       try {
         await client.query('BEGIN');

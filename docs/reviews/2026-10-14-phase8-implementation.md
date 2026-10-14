@@ -1,5 +1,7 @@
 # Review: Phase8 chain research implementation and security
 
+Historical implementation checkpoint. The [continuation report](2026-10-14-phase8-continuation.md) and latest AI_HANDOFF supersede this report's missing-key, coverage-omission and reconciliation observations; original execution evidence below is preserved.
+
 | Field | Value |
 | --- | --- |
 | Implementer / reviewer | Codex; independent Claude review pending |

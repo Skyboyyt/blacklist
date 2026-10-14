@@ -1,0 +1,673 @@
+{
+  "date": "2026-10-14 UTC",
+  "scope": "feat/phase8-chain-research, continuation after 9b79e7e; review only",
+  "phase8Complete": false,
+  "liveProviderEvaluation": {
+    "latest": [
+      {
+        "chain": "ethereum",
+        "check": "account",
+        "status": "passed",
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26188496",
+          "blockHash": "0x22c23d47a1db55d782a69e02ae0f777e6c5cbf833ca11f6e121eb29086c895f1"
+        },
+        "finality": "final",
+        "verification": "single_source",
+        "integerBalance": true
+      },
+      {
+        "chain": "ethereum",
+        "check": "history_first_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26188496",
+          "blockHash": "0x22c23d47a1db55d782a69e02ae0f777e6c5cbf833ca11f6e121eb29086c895f1"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "ethereum",
+        "check": "history_next_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26188496",
+          "blockHash": "0x22c23d47a1db55d782a69e02ae0f777e6c5cbf833ca11f6e121eb29086c895f1"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "ethereum",
+        "check": "transaction",
+        "status": "passed",
+        "publicTransaction": "0x384554825f9e7e4834afecb88f67d65e76094884040ecd682fc0a571365f14a6",
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26137726",
+          "blockHash": "0x8a8ec66203576d0cabdb87b1e1af6d414f3ef31fd3eedf8f96c216b4925a8aa2"
+        },
+        "finality": "final",
+        "executionStatus": "success",
+        "timestamp": "2026-10-07T03:09:35.000Z",
+        "integerFee": true,
+        "transferCount": 0,
+        "receiptCount": 1
+      },
+      {
+        "chain": "solana",
+        "check": "account",
+        "status": "passed",
+        "snapshot": {
+          "kind": "solana_context",
+          "contextSlot": "456717828"
+        },
+        "finality": "final",
+        "verification": "single_source",
+        "integerBalance": true
+      },
+      {
+        "chain": "solana",
+        "check": "history_first_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "solana_context",
+          "contextSlot": "456717829"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "solana",
+        "check": "history_next_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "solana_context",
+          "contextSlot": "456717830"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "solana",
+        "check": "transaction",
+        "status": "passed",
+        "publicTransaction": "2ApKgQXt1ZwAAGKsVG4td3UG5WBFdD3Q5LyyBJwkNeP7EC7kaosCFVnwRD843D7oGdaH9N2ynuB44zGQFx2SPVMm",
+        "snapshot": {
+          "kind": "solana_transaction",
+          "signature": "2ApKgQXt1ZwAAGKsVG4td3UG5WBFdD3Q5LyyBJwkNeP7EC7kaosCFVnwRD843D7oGdaH9N2ynuB44zGQFx2SPVMm",
+          "slot": "456711009"
+        },
+        "finality": "final",
+        "executionStatus": "success",
+        "timestamp": "2026-10-14T04:47:44.000Z",
+        "integerFee": true,
+        "transferCount": 3,
+        "receiptCount": 1
+      },
+      {
+        "chain": "solana",
+        "check": "public_signer_account",
+        "status": "passed",
+        "snapshot": {
+          "kind": "solana_context",
+          "contextSlot": "456717831"
+        },
+        "integerBalance": true,
+        "accountKind": "unknown"
+      },
+      {
+        "chain": "solana",
+        "check": "current_finalized_slot",
+        "status": "passed",
+        "slot": 456717832
+      },
+      {
+        "evaluationOnly": true,
+        "attempts": {
+          "ethereum": 20,
+          "solana": 9
+        },
+        "runtimeActivated": false,
+        "independenceVerified": false,
+        "planTermsVerified": false
+      }
+    ],
+    "failedExecutionSample": [
+      {
+        "chain": "ethereum",
+        "check": "account",
+        "status": "passed",
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26188368",
+          "blockHash": "0x2c1e950d1ac5518824d9b6c58a96def3c601c325495d4682a1aa760d02c5472a"
+        },
+        "finality": "final",
+        "verification": "single_source",
+        "integerBalance": true
+      },
+      {
+        "chain": "ethereum",
+        "check": "history_first_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26188368",
+          "blockHash": "0x2c1e950d1ac5518824d9b6c58a96def3c601c325495d4682a1aa760d02c5472a"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "ethereum",
+        "check": "history_next_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26188368",
+          "blockHash": "0x2c1e950d1ac5518824d9b6c58a96def3c601c325495d4682a1aa760d02c5472a"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "ethereum",
+        "check": "transaction",
+        "status": "passed",
+        "publicTransaction": "0x384554825f9e7e4834afecb88f67d65e76094884040ecd682fc0a571365f14a6",
+        "snapshot": {
+          "kind": "evm_block",
+          "blockNumber": "26137726",
+          "blockHash": "0x8a8ec66203576d0cabdb87b1e1af6d414f3ef31fd3eedf8f96c216b4925a8aa2"
+        },
+        "finality": "final",
+        "executionStatus": "success",
+        "timestamp": "2026-10-07T03:09:35.000Z",
+        "integerFee": true,
+        "transferCount": 0,
+        "receiptCount": 1
+      },
+      {
+        "chain": "solana",
+        "check": "account",
+        "status": "passed",
+        "snapshot": {
+          "kind": "solana_context",
+          "contextSlot": "456710614"
+        },
+        "finality": "final",
+        "verification": "single_source",
+        "integerBalance": true
+      },
+      {
+        "chain": "solana",
+        "check": "history_first_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "solana_context",
+          "contextSlot": "456710615"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "solana",
+        "check": "history_next_page",
+        "status": "passed",
+        "count": 1,
+        "hasNextPage": true,
+        "snapshot": {
+          "kind": "solana_context",
+          "contextSlot": "456710616"
+        },
+        "finality": "final"
+      },
+      {
+        "chain": "solana",
+        "check": "transaction",
+        "status": "passed",
+        "publicTransaction": "2Hw9CPrHCjv55quTzBJTMvPBf58FPksXK6g3rpJ5X5jwvtEedFJUZNT3jdmyCXCVeaFWc8rcmYhwWZQZaXKNdYeS",
+        "snapshot": {
+          "kind": "solana_transaction",
+          "signature": "2Hw9CPrHCjv55quTzBJTMvPBf58FPksXK6g3rpJ5X5jwvtEedFJUZNT3jdmyCXCVeaFWc8rcmYhwWZQZaXKNdYeS",
+          "slot": "456709108"
+        },
+        "finality": "final",
+        "executionStatus": "failed",
+        "timestamp": "2026-10-14T04:40:51.000Z",
+        "integerFee": true,
+        "transferCount": 0,
+        "receiptCount": 1
+      },
+      {
+        "chain": "solana",
+        "check": "current_finalized_slot",
+        "status": "passed",
+        "slot": 456710618
+      },
+      {
+        "evaluationOnly": true,
+        "attempts": {
+          "ethereum": 20,
+          "solana": 8
+        },
+        "runtimeActivated": false,
+        "independenceVerified": false,
+        "planTermsVerified": false
+      }
+    ],
+    "unsupportedVersion": {
+      "status": "expected_unavailable",
+      "providerCode": -32015,
+      "publicSignature": "3pivcV89m5NnQowiTvDeLwy4MuEbHpGPX3W9PSVbiiGWLCL1r6bKNWwd2EmzSYvk5ypjPSBC8s1oFKubsoUwQfZN"
+    },
+    "networkIdentity": {
+      "ethereumChainId": 1,
+      "solanaGenesis": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
+    },
+    "solanaBlockMetadata": {
+      "slot": 456709108,
+      "blockhash": "3wiVJMVsCff4Y965kgFmQteVbKLzrhdoXo8tg4ajKAcn",
+      "parentSlot": 456709107,
+      "blockTime": 1791952851,
+      "blockHeight": 434745427,
+      "status": "retrieved_read_only_rpc",
+      "productionGetBlockAdapter": false
+    },
+    "freePlanTermsVerified": false,
+    "independentSecondaryVerified": false,
+    "live429OrTimeoutInduced": false,
+    "localRateRetryTimeoutNegativeTests": "passed"
+  },
+  "checks": {
+    "frozenInstall": "passed",
+    "rootCheck": {
+      "status": "passed",
+      "unitTests": 596,
+      "contracts": 81,
+      "chains": 61,
+      "backendUnit": 49,
+      "web": 405,
+      "includes": ["format", "lint", "all_workspace_types", "unit_tests", "next_production_build"]
+    },
+    "backendBuild": "passed",
+    "mockBuild": "passed",
+    "bundleExclusion": {
+      "status": "passed",
+      "checks": 4
+    },
+    "schemaDrift": "passed_no_changes",
+    "backendCoverage": {
+      "status": "failed",
+      "testsPassed": 106,
+      "testFilesPassed": 25,
+      "testsFailed": 0,
+      "branches": {
+        "total": 1764,
+        "covered": 1145,
+        "skipped": 0,
+        "pct": 64.9
+      },
+      "required": 75,
+      "packageFloors": {
+        "identity": {
+          "branches": 64.07,
+          "covered": 305,
+          "total": 476,
+          "required": 90,
+          "status": "failed"
+        },
+        "access": {
+          "branches": 95.45,
+          "covered": 21,
+          "total": 22,
+          "required": 90,
+          "status": "passed"
+        },
+        "audit": {
+          "branches": 90.0,
+          "covered": 18,
+          "total": 20,
+          "required": 90,
+          "status": "passed"
+        },
+        "staff": {
+          "branches": 55.74,
+          "covered": 291,
+          "total": 522,
+          "required": 75,
+          "status": "failed"
+        },
+        "shared": {
+          "branches": 78.26,
+          "covered": 18,
+          "total": 23,
+          "required": 75,
+          "status": "passed"
+        },
+        "config": {
+          "branches": 96.25,
+          "covered": 77,
+          "total": 80,
+          "required": 75,
+          "status": "passed"
+        },
+        "db": {
+          "branches": 72.72,
+          "covered": 64,
+          "total": 88,
+          "required": 75,
+          "status": "failed"
+        },
+        "api": {
+          "branches": 66.75,
+          "covered": 241,
+          "total": 361,
+          "required": 75,
+          "status": "failed"
+        },
+        "worker": {
+          "branches": 64.51,
+          "covered": 40,
+          "total": 62,
+          "required": 75,
+          "status": "failed"
+        }
+      },
+      "previouslyOmittedFiles": {
+        "status": "now_included",
+        "count": 5
+      },
+      "parseOmissions": 0,
+      "completeMapGuard": "passed_separately"
+    },
+    "chainCoverage": {
+      "status": "passed",
+      "tests": 61,
+      "branches": {
+        "total": 918,
+        "covered": 740,
+        "skipped": 0,
+        "pct": 80.61
+      },
+      "required": 75
+    },
+    "browser": {
+      "status": "passed",
+      "passed": 418,
+      "failed": 0,
+      "skipped": 82,
+      "durationMinutes": 17.8,
+      "scope": "Chromium154 desktop/mobile, mocks only",
+      "existingSkipReasons": [
+        "device-specific navigation/keyboard cases",
+        "desktop-only cases that set their own viewports"
+      ]
+    },
+    "productionAudit": {
+      "status": "passed",
+      "vulnerabilities": 0
+    },
+    "fullAudit": {
+      "status": "failed",
+      "high": 1,
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "dependency": "braces@3.0.3",
+      "firstPatchedVersion": null
+    },
+    "finalReconciliationNegativeCases": {
+      "status": "passed",
+      "tests": 1,
+      "includesWrongDataChainAndHash": true,
+      "typecheck": "passed",
+      "completeCoverageCheckpointUnchanged": false,
+      "includesExistingInvalidationBarrier": true,
+      "includesConcurrentStaleResponse": true,
+      "completeSuiteRerunAfterFix": true
+    },
+    "disposableDatabaseStorage": {
+      "status": "passed",
+      "tests": 1,
+      "temporaryFilesystem": "tmpfs",
+      "limitBytes": 536870912,
+      "anonymousVolumesRetained": 0,
+      "existingVolumesPruned": false,
+      "runtimeDdlDenied": true,
+      "containerTeardownVerified": true,
+      "completeSuiteRerun": "106_passed_required_coverage_failed"
+    }
+  },
+  "migration": {
+    "newFile": "packages/db/migrations/0004_pinned_transaction_time.sql",
+    "sha256": "4543f992ecbbdb7ecd0e62530dd59499641d7ec10614f369f4089f1655819db2",
+    "previousSqlFiles": 9,
+    "previousBytesPreserved": true,
+    "localLedger": 10,
+    "localApplicationTables": 34,
+    "isolatedMigrationIdempotencyRestoreAndGrants": "passed",
+    "cloudMigrationsRun": 0,
+    "liveLedgerReverified": false,
+    "recovery": "forward repair or approved isolated restore; fail closed on inconsistent pins; no destructive down migration"
+  },
+  "security": {
+    "independentReview": "five Medium issues locally repaired; reviewer independently ran15focused tests and reviewed final atomic reconciliation; did not independently execute DB/live/cloud checks; Claude approval pending",
+    "reconciliation": "CLI-only independently finalized evidence; pins preserved; sequential and concurrent invalidation barriers, write rollback and idempotency tested; later-phase dependent review required",
+    "cloud": {
+      "date": "2026-10-14",
+      "services": [
+        {
+          "service": "api",
+          "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+          "autoDeploy": "off",
+          "dbRole": "blacklist_app",
+          "tls": "verify-full",
+          "providerKeysPresent": false,
+          "migrationCredentialPresent": false
+        },
+        {
+          "service": "worker",
+          "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+          "autoDeploy": "off",
+          "dbRole": "blacklist_app",
+          "tls": "verify-full",
+          "providerKeysPresent": false,
+          "migrationCredentialPresent": false
+        }
+      ],
+      "mixedGroupServiceLinks": 0,
+      "frontendForbiddenVariableNames": [],
+      "credentialScan": {
+        "distinctValues": 9,
+        "files": 3812,
+        "matches": 0
+      },
+      "cloudMutations": 0,
+      "workspaceGroupInventory": {
+        "groups": 1,
+        "knownGroupLinks": 0
+      }
+    },
+    "historyScanner": {
+      "status": "failed_known_findings",
+      "exitCode": 1,
+      "commits": 39,
+      "findings": 4,
+      "newFindings": 0,
+      "valuesRedacted": true
+    },
+    "stagedScanner": {
+      "status": "passed",
+      "exitCode": 0,
+      "files": 35,
+      "findings": 0,
+      "valuesRedacted": true
+    }
+  },
+  "hosted": {
+    "health": [
+      {
+        "service": "api",
+        "path": "/healthz",
+        "httpStatus": 200,
+        "json": {
+          "status": "ok"
+        }
+      },
+      {
+        "service": "worker",
+        "path": "/healthz",
+        "httpStatus": 200,
+        "json": {
+          "status": "ok"
+        }
+      }
+    ],
+    "initialWrongPathProbes": [
+      {
+        "service": "api",
+        "path": "/api/v1/health",
+        "httpStatus": 404,
+        "statusField": null,
+        "failureType": null
+      },
+      {
+        "service": "worker",
+        "path": "/health",
+        "httpStatus": 404,
+        "statusField": null,
+        "failureType": null
+      },
+      {
+        "service": "api",
+        "path": "/api/v1/me/security",
+        "httpStatus": 404,
+        "statusField": null,
+        "failureType": null
+      },
+      {
+        "service": "api",
+        "path": "/api/v1/admin/staff",
+        "httpStatus": 404,
+        "statusField": null,
+        "failureType": null
+      },
+      {
+        "service": "api",
+        "path": "/api/internal/v1/viewer",
+        "httpStatus": 404,
+        "statusField": null,
+        "failureType": null
+      }
+    ],
+    "initialHealthRequestTimeout": true,
+    "neonCatalogProbe": {
+      "status": "blocked",
+      "exitCode": 2,
+      "reason": "verified_tls_tcp_database_connection_unavailable",
+      "privateRecordsRead": 0
+    },
+    "identity": {
+      "status": "untested",
+      "ownerChoseSelfTest": true,
+      "ownerResultsReceived": false
+    }
+  },
+  "blockers": [
+    "required_backend_branch_floors",
+    "unpatched_development_advisory",
+    "Claude_O3_and_recovery_review",
+    "actual_provider_Free_plan_terms_archive_limits",
+    "independent_same_snapshot_secondary_sources",
+    "conflict_receipt_persistence_and_operator_alerting",
+    "later_phase_dependent_signal_retraction_finding_review",
+    "hosted_identity_owner_results_and_idle_cycle",
+    "managed_recovery_logs_retention_monitoring_legal_gates",
+    "mixed_Render_operator_group_must_not_link_to_runtime",
+    "Phase9_report_submission_backend_absent"
+  ],
+  "publication": {
+    "pr": 12,
+    "url": "https://github.com/Skyboyyt/blacklist/pull/12",
+    "status": "draft_open",
+    "base": "main",
+    "sourceChangesPublished": "pending",
+    "merged": false,
+    "deployed": false,
+    "productionUserRecordsChanged": false,
+    "phase9Started": false
+  },
+  "earlierFailures": [
+    {
+      "reason": "repository_root_coverage_with_old_absolute_globs",
+      "testsPassed": 55,
+      "coverage": "empty_map_not_a_pass"
+    },
+    {
+      "reason": "first_complete_source_measurement",
+      "testsPassed": 55,
+      "branchPct": 57.25,
+      "parseOmissions": 0,
+      "status": "failed"
+    },
+    {
+      "reason": "nine_to_ten_migration_fixture_count_and_cascade",
+      "testsFailed": 6,
+      "testsPassed": 95,
+      "status": "failed_then_corrected"
+    },
+    {
+      "reason": "new_profile_update_test_wrongly_expected_null_allowed",
+      "testsFailed": 1,
+      "testsPassed": 15,
+      "status": "failed_then_corrected_to_require400_for_invalid_input"
+    },
+    {
+      "reason": "generic_spy_and_fixture_record_typing",
+      "status": "typecheck_failed_then_fixed"
+    },
+    {
+      "reason": "reconciliation_sequential_invalidation_barrier",
+      "status": "regression_failed_before_fix_then_passed"
+    },
+    {
+      "reason": "reconciliation_concurrent_stale_response",
+      "status": "gated_regression_failed_before_atomic_fix_then_passed"
+    },
+    {
+      "reason": "intermediate_runs_interrupted_after_review_or_type_findings",
+      "status": "incomplete_not_a_pass"
+    },
+    {
+      "reason": "overlapping_coverage_report_directory_lock",
+      "status": "rejected_then_reran_sequentially"
+    },
+    {
+      "reason": "fixture_database_readiness_under_disk_pressure",
+      "testFilesFailed": 5,
+      "testsFailed": 2,
+      "testsPassed": 85,
+      "testsHookSkipped": 18,
+      "status": "failed_then_fixture_storage_repaired"
+    },
+    {
+      "reason": "fixture_duplicate_return_property",
+      "status": "typecheck_failed_then_corrected"
+    },
+    {
+      "reason": "fixture_tmpfs_metadata_assertion_used_Mounts_instead_of_HostConfig",
+      "status": "test_failed_then_corrected_with_actual_filesystem_proof"
+    }
+  ]
+}

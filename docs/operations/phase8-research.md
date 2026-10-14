@@ -2,6 +2,12 @@
 
 Status: local implementation under review; no Phase8 cloud deployment or provider activation. Keep Vercel frontend, Render API/worker, Neon PG18 and Resend unchanged. Claude owns architectural review; [ADR0018](../adr/0018-phase8-provider-selection.md) records the owner's approved Free-provider direction and unresolved O-3 prerequisites.
 
+Latest [continuation report](../reviews/2026-10-14-phase8-continuation.md) supersedes earlier missing-key observations. Saved Render keys actually pass bounded primary mainnet evaluation; the mixed provider/runtime/migrator group has zero service links and must remain operator-isolated. No runtime activation or independent-secondary agreement is established. Use `node scripts/phase8-provider-evaluation.mjs [publicSolanaSignature]` only with protected keys in the isolated probe process for capability evaluation; it does not assert plan verification or change flags/settings. Never write actual values to files/argv. Default public v0 sample demonstrates failed execution; evidence also records a successful v0 with3transfers and a newer unsupported version.
+
+New additive `0004_pinned_transaction_time.sql` brings the local ledger to10, still34tables. It validates pin timestamp equality without editing prior SQL; inconsistent existing rows fail closed and require reviewed recovery. On-demand CLI reconciliation is a domain service only, with independent finalized receipt/ref/snapshot/payload checks and idempotent append-only invalidation. No public operator endpoint, scheduler or actual cloud execution is introduced. Later-phase dependent retractions/review remain required.
+
+Maintained backend coverage now runs all tests at repository root with backend-only test selection, unchanged75/90floors and an empty/missing-file report guard. Actual complete checkpoint:106tests PASS/64.90%branches FAIL; five TS omissions repaired. Chains61tests/80.61%branches PASS; root596units/build/lint/types PASS. See evidence for focused final negatives. Runtime health paths are `/healthz` for both Render services. Hosted owner flow results and live ledger remain unverified; no readiness claim.
+
 ## Configuration and activation prerequisites
 
 | Variable | Service | Default / meaning |
@@ -53,3 +59,5 @@ The non-mock typed server client handles real research DTOs; pages preserve UI a
 Static budget applies to the current single API process, worker allocation zero. Scaling/restarts need explicit quota review; no Redis or monthly billing-cap claim. Unknown provider content is validated or hashed, never returned as logs/URLs/raw errors. Normalized reads are private-telemetry-free shared chain records. Do not log identifiers with actors, credentials, request bodies or receipt contents. Review managed logs/retention and provider terms before live research. No websocket, schedule, keepalive, automatic wallet monitor, private watchlist, external telemetry or sanctions activation.
 
 Keep branch-specific Vercel deployment disabled by committed `vercel.json` at repository and project root; this prevents the review push from deploying Phase8. Render auto-deploy remains off. Publishing a PR is not deployment authorization. Before later rollout obtain approval for the exact reviewed commit, staging migration and provider activation, then confirm canonical alias/source plus functional/security smoke checks. Do not change the existing public foundation while reviewing this branch.
+
+Disposable backend fixtures use bounded512MiB tmpfs with the same pinned PG18/schema/roles and clean up only their own containers/volumes. Existing Compose/user volumes must never be pruned. Sequential and concurrent reconciliation invalidation barriers remain authoritative; delayed matching data cannot clear them.

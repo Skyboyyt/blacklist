@@ -18,7 +18,7 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
   async function read(ref: ChainAddress, options: ProviderCallOptions) {
     if (ref.chainId !== id || !evmAdapter.parseAddress(ref.address)) throw new ProviderFault('not_supported');
     const requestedAt = new Date();
-    await state.network();
+    await state.network(options.signal);
     const block = await state.anchor(options);
     return { requestedAt, block, selector: { blockHash: block.hash, requireCanonical: true } };
   }

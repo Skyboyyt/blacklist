@@ -1,3 +1,4 @@
+import { createNetworkCheck } from './network-check.ts';
 import { z } from 'zod';
 import type { ProviderCallOptions } from '../ports.ts';
 import { hash, hexQuantity } from '../adapters/evm-transaction.ts';
@@ -8,15 +9,7 @@ export const evmCodeSchema = z
   .regex(/^0x(?:[\da-f]{2})*$/u)
   .max(2 * 1024 * 1024);
 export function createEvmStateReader(rpc: RpcTransport) {
-  let identity: Promise<void> | undefined;
-  const network = () =>
-    (identity ??= rpc
-      .call('eth_chainId', [], z.literal('0x1'))
-      .then(() => undefined)
-      .catch((error: unknown) => {
-        identity = undefined;
-        throw error;
-      }));
+  const network = createNetworkCheck(rpc, 'eth_chainId', '0x1');
   async function anchor(options: ProviderCallOptions) {
     if (!['latest', 'finalized'].includes(options.commitment)) throw new ProviderFault('not_supported');
     const head = await rpc.call(

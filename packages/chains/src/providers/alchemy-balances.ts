@@ -29,7 +29,7 @@ export function createAlchemyBalances(providerId: string, rpc: RpcTransport) {
     options: ProviderCallOptions,
   ): Promise<Sourced<readonly TokenBalance[]>> => {
     if (ref.chainId !== 'eip155:1') throw new ProviderFault('not_supported');
-    await state.network();
+    await state.network(options.signal);
     const block = await state.anchor(options),
       selector = { blockHash: block.hash, requireCanonical: true };
     const page = await rpc.call('alchemy_getTokenBalances', [ref.address, 'erc20'], response, options.signal);

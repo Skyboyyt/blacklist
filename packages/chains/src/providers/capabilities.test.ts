@@ -81,6 +81,16 @@ const solTx = {
   },
 };
 describe('metadata and transaction source fault coverage', () => {
+  it('rejects a canonical block response with a height different from the transaction receipt', async () => {
+    const rpc = transport((method, params) =>
+      method === 'eth_getBlockByNumber' && params[0] === block.number
+        ? { ...block, number: '0x11' }
+        : evm(method),
+    );
+    await expect(createEvmRpcSource('a', 'infra-a', rpc).fetchTransaction(etr, final)).rejects.toMatchObject({
+      kind: 'invalid_response',
+    });
+  });
   it('reads anchored ERC20 integer metadata and bytecode without claiming explorer verification', async () => {
     const rpc = transport((m, params) => {
       if (m !== 'eth_call') return evm(m);
@@ -288,11 +298,51 @@ describe('Solana history and classic SPL balances have explicit coverage', () =>
       ),
     ).rejects.toMatchObject({ kind: 'invalid_response' });
   });
-  const account = (amount: string, decimals = 9) => ({
+  const account = (amount: string, decimals = 9, pubkey = TOKEN_PROGRAM) => ({
+    pubkey,
     account: {
       owner: TOKEN_PROGRAM,
-      data: { parsed: { type: 'account', info: { mint: sa, tokenAmount: { amount, decimals } } } },
+      data: { parsed: { type: 'account', info: { mint: sa, owner: sa, tokenAmount: { amount, decimals } } } },
     },
+  });
+  it('rejects duplicated SPL token accounts and accounts owned by another wallet', async () => {
+    const row = {
+      ...account('10'),
+      pubkey: TOKEN_PROGRAM,
+      account: {
+        ...account('10').account,
+        data: {
+          parsed: {
+            type: 'account',
+            info: { mint: sa, owner: sa, tokenAmount: { amount: '10', decimals: 9 } },
+          },
+        },
+      },
+    };
+    for (const rows of [
+      [row, row],
+      [
+        {
+          ...row,
+          account: {
+            ...row.account,
+            data: {
+              parsed: {
+                ...row.account.data.parsed,
+                info: { ...row.account.data.parsed.info, owner: TOKEN_PROGRAM },
+              },
+            },
+          },
+        },
+      ],
+    ]) {
+      const rpc = transport((method) =>
+        method === 'getGenesisHash' ? genesis : { context: { slot: 100 }, value: rows },
+      );
+      await expect(createSolanaRpcSource('s', 'infra-s', rpc).fetchBalances(sr, final)).rejects.toMatchObject(
+        { kind: 'invalid_response' },
+      );
+    }
   });
   it('aggregates classic SPL balances with integer precision and checks the returned context lower bound', async () => {
     const source = createSolanaRpcSource(
@@ -301,7 +351,7 @@ describe('Solana history and classic SPL balances have explicit coverage', () =>
       transport((m) =>
         m === 'getGenesisHash'
           ? genesis
-          : { context: { slot: 100 }, value: [account('9007199254740993'), account('1')] },
+          : { context: { slot: 100 }, value: [account('9007199254740993'), account('1', 9, TOKEN_2022)] },
       ),
     );
     expect((await source.fetchBalances(sr, final)).data).toEqual([
@@ -319,7 +369,9 @@ describe('Solana history and classic SPL balances have explicit coverage', () =>
       's',
       'infra-s',
       transport((m) =>
-        m === 'getGenesisHash' ? genesis : { context: { slot: 100 }, value: [account('1'), account('1', 8)] },
+        m === 'getGenesisHash'
+          ? genesis
+          : { context: { slot: 100 }, value: [account('1'), account('1', 8, TOKEN_2022)] },
       ),
     );
     await expect(source.fetchBalances(sr, final)).rejects.toMatchObject({ kind: 'invalid_response' });

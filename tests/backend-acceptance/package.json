@@ -10,7 +10,7 @@
     "test:integration": "vitest run .integration.test.ts",
     "schema:generate": "drizzle-kit generate --config drizzle.config.ts",
     "test:runtime": "vitest run runtime.integration.test.ts",
-    "test:coverage": "vitest run runtime.integration.test.ts runtime-security.test.ts application-migrations.integration.test.ts delivery-locking.integration.test.ts render-deployment.test.ts render-deployment.integration.test.ts resend.test.ts worker-health.test.ts ingress-diagnostics.test.ts mail-worker-wake.test.ts chain-storage.integration.test.ts research.integration.test.ts --coverage",
+    "test:coverage": "vitest run --coverage && node ../../scripts/assert-backend-coverage.mjs",
     "test:chain-coverage": "vitest run --root ../../packages/chains --coverage --coverage.include 'src/**/*.ts' --coverage.thresholds.branches 75 --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=/tmp/blacklist-phase8-chains-coverage"
   },
   "devDependencies": {

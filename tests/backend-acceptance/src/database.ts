@@ -21,7 +21,18 @@ export async function startDatabase() {
   await writeFile(envFile, `POSTGRES_PASSWORD=${password}\n`, { mode: 0o600 });
   const container = execFileSync(
     'docker',
-    ['run', '--detach', '--env-file', envFile, '--publish', '127.0.0.1::5432', POSTGRES_IMAGE],
+    [
+      'run',
+      '--detach',
+      '--env-file',
+      envFile,
+      '--publish',
+      '127.0.0.1::5432',
+      // Disposable fixture only: bounded RAM storage avoids accumulating anonymous PG volumes.
+      '--tmpfs',
+      '/var/lib/postgresql:rw,nosuid,nodev,size=536870912',
+      POSTGRES_IMAGE,
+    ],
     { encoding: 'utf8' },
   ).trim();
   const port = Number(
@@ -133,13 +144,13 @@ export async function startDatabase() {
       async stop() {
         await boss.stop();
         await Promise.all([admin.end(), runtime.end(), migrator.end()]);
-        execFileSync('docker', ['rm', '--force', container], { stdio: 'ignore' });
+        execFileSync('docker', ['rm', '--force', '--volumes', container], { stdio: 'ignore' });
         await rm(directory, { recursive: true, force: true });
       },
     };
   } catch (error) {
     await Promise.all([admin.end(), runtime.end(), migrator.end()]);
-    execFileSync('docker', ['rm', '--force', container], { stdio: 'ignore' });
+    execFileSync('docker', ['rm', '--force', '--volumes', container], { stdio: 'ignore' });
     await rm(directory, { recursive: true, force: true });
     throw error;
   }

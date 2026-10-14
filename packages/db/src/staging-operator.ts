@@ -110,7 +110,7 @@ export async function operatorMigrationManifest() {
       .sort()
       .map((f) => new URL(f, root)),
   ];
-  if (files.length !== 9) throw new Error('operator_migration_count_invalid');
+  if (files.length !== 10) throw new Error('operator_migration_count_invalid');
   return Promise.all(
     files.map(async (file) => ({
       name: file.pathname.split('/').pop(),

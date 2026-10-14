@@ -1,3 +1,4 @@
+import { createNetworkCheck } from './network-check.ts';
 import { z } from 'zod';
 import type { ChainAddress, ChainTxRef } from '@blacklist/core';
 import type {
@@ -50,17 +51,7 @@ export function createEvmRpcSource(
   const metadata = createEvmMetadataReader(id, independenceGroup, rpc);
   const history = createAlchemyHistory(id, rpc);
   const balances = createAlchemyBalances(id, rpc);
-  let identity: Promise<void> | undefined;
-  const network = () => {
-    identity ??= rpc
-      .call('eth_chainId', [], z.literal('0x1'))
-      .then(() => undefined)
-      .catch((error: unknown) => {
-        identity = undefined;
-        throw error;
-      });
-    return identity;
-  };
+  const network = createNetworkCheck(rpc, 'eth_chainId', '0x1');
   function provenance(snapshot: ChainSnapshot, finality: 'pending' | 'final', fetchedAt: Date) {
     return {
       providerId: id,
@@ -123,7 +114,7 @@ export function createEvmRpcSource(
       if (ref.chainId !== ethereumId || !evmAdapter.parseAddress(ref.address))
         throw new ProviderFault('not_supported');
       const requestedAt = new Date();
-      await network();
+      await network(options.signal);
       const block = await anchor(options),
         selector = { blockHash: block.hash, requireCanonical: true };
       const [balance, code] = await Promise.all([
@@ -182,7 +173,7 @@ export function createEvmRpcSource(
       if (ref.chainId !== ethereumId || !evmAdapter.parseTxHash(ref.txHash))
         throw new ProviderFault('not_supported');
       const requestedAt = new Date();
-      await network();
+      await network(options.signal);
       const [tx, receipt] = await Promise.all([
         rpc.call('eth_getTransactionByHash', [ref.txHash], evmTransactionSchema.nullable(), options.signal),
         rpc.call('eth_getTransactionReceipt', [ref.txHash], evmReceiptSchema.nullable(), options.signal),
@@ -218,7 +209,8 @@ export function createEvmRpcSource(
         blockSchema,
         options.signal,
       );
-      if (block.hash !== receipt.blockHash) throw new ProviderFault('invalid_response');
+      if (block.hash !== receipt.blockHash || block.number !== receipt.blockNumber)
+        throw new ProviderFault('invalid_response');
       const finality = BigInt(receipt.blockNumber) <= BigInt(finalHead.number) ? 'final' : 'pending';
       if (options.commitment === 'finalized' && finality !== 'final') throw new ProviderFault('unavailable');
       const seconds = BigInt(block.timestamp);
