@@ -3,7 +3,7 @@ import type { ChainTxRef } from '@blacklist/core';
 import { canonicalFields, compareReceipts, type ChainDataService } from '@blacklist/chains';
 import type { OperatorActor } from '../access/types.ts';
 import { DomainError } from '../shared/errors.ts';
-import { recordChainRead } from './repository.ts';
+import { recordChainRead, recordChainConflict } from './repository.ts';
 import { readPinnedTransaction, completePinnedReconciliation } from './reconciliation-repository.ts';
 
 /** On-demand operator reconciliation only. No scheduler, wallet monitor or public mutation. */
@@ -25,7 +25,11 @@ export async function reconcilePinnedTransaction(
       dependentReviewRequired: true as const,
     };
   const result = await chains.getTransaction(ref, { minFinality: 'final', crossVerify: true, signal });
-  if (!result.ok) return { status: 'unavailable' as const, reason: result.error.kind };
+  if (!result.ok) {
+    if (result.error.kind === 'data_conflict')
+      await recordChainConflict(runtime, 'transaction', ref.txHash, ref.chainId, result.error);
+    return { status: 'unavailable' as const, reason: result.error.kind };
+  }
   const value = result.value,
     [a, b] = value.provenance.receipts ?? [];
   if (

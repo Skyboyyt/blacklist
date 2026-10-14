@@ -68,4 +68,21 @@ Reviewer found no additional demonstrated live exploit in the new on-demand CLI 
 
 ## Not reviewed
 
-Actual managed cloud logs, hosted identity, real provider independence, account plan/terms, managed disaster recovery and full test/audit results were not independently executed by the reviewer. Implementation-agent evidence is separately identified in the continuation report. Conflicting reads are withheld by the router but their receipt persistence/operator alerting remains incomplete. Claude's O-3/architecture and Phase7 recovery review remain outstanding.
+Actual managed cloud logs, hosted identity, real provider independence, account plan/terms, managed disaster recovery and full test/audit results were not independently executed by the reviewer. Implementation-agent evidence is separately identified in the continuation report. Latest continuation implements conflict receipt persistence; operator alert delivery remains incomplete. New execution/review scope is recorded below. Claude's O-3/architecture and Phase7 recovery review remain outstanding.
+
+## Coverage and conflict-persistence follow-up
+
+Fifteen additional modular test/helper files were independently reviewed at source level. Reviewer recommendations tightened exact mailbox/role outcomes, new-versus-old password checks, immediate revoked-session absence, enrollment-code privacy and token-bearing failure diagnostics. Those assertions were added, not substituted for existing assertions. Synthetic signed WebAuthn uses the production verifier but seeded keys/UV bits do not prove physical hardware/enrollment or hosted identity. Injected human-response/RPC data and loopback SMTP do not prove production verification, actual provider independence, TLS delivery or mailbox ownership. Reviewer did not execute these new tests or the full189-test coverage run.
+
+### P8-IR-06 — Conflict receipts discarded on failure paths
+
+- **Severity:** Medium; provenance/requirements.
+- **Location:** chains router, research persistence and operator reconciliation.
+- **Evidence:** router regression requiring both conflict receipts failed before preservation fix. Independent reviewer then identified operator reconciliation's early failure return still discarding the pair; isolated-PG regression expected one conflict but observed zero before correction.
+- **Impact:** disputed facts were withheld safely but immutable evidence needed to explain comparison was missing. This does not establish unauthorized pinning or a live exploit.
+- **Recommendation:** keep bounded finalized same-snapshot independent receipts in internal failure; revalidate exact subject/capability/chain/comparison, persist atomically, never cache/pin/invalidate on dispute. No receipt details in public errors.
+- **Implementation response (Codex):** implemented for public research and operator reconciliation with existing immutable tables/grants, no migration/dependency/route. Focused5test combined isolated-PG run and final189test full coverage passed. Idempotent concurrent retry, forged/shared/mismatched receipts, write rollback, public error privacy and unchanged pin/cache/invalidation are asserted.
+- **Independent review scope:** source-level confirmation of router/public research preservation, no demonstrated new privacy/partial-write issue. Operator follow-up independently identified; final operator correction execution by implementer, no independent DB/full-coverage/cloud reproduction.
+- **Response (Claude):** pending.
+
+Actual primary-provider evaluation passed; live independent secondaries, account terms, operator notification routing and Phase7 hosted/security recovery gates remain open. Local coverage floors now pass83.57%; this does not turn synthetic or source-only checks into live/independent results. Owner authorized PR12 merge despite the disclosed blockers; this is not Claude architecture approval or production readiness.

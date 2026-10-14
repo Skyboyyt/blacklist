@@ -1,94 +1,79 @@
-# Phase8 continuation: live providers, integrity repairs and validation
+# Phase8 continuation: mainnet validation, security repairs and coverage
 
-Date:2026-10-14 (Europe/London). Branch:`feat/phase8-chain-research`; main remains5967afa. [Draft PR12](https://github.com/Skyboyyt/blacklist/pull/12) targets main. This report supersedes the earlier missing-key/partial-coverage observations while preserving that historical evidence. **Phase8 remains open, unmerged and undeployed.**
+Date:2026-10-14 (Europe/London). Branch:`feat/phase8-chain-research`; [PR12](https://github.com/Skyboyyt/blacklist/pull/12) targets main. Owner explicitly authorized merging despite the disclosed blockers. Actual publication receipt is recorded below after execution. **Phase8 remains open; merge approval does not pass missing provider/hosted gates.**
 
-Machine-readable evidence: [continuation validation](../evidence/2026-10-14-phase8-continuation.json). Separate [independent review](2026-10-14-phase8-independent-review.md) identifies its execution limits.
+Evidence: [machine-readable results](../evidence/2026-10-14-phase8-continuation.json), [independent review](2026-10-14-phase8-independent-review.md). Earlier failed checkpoints are preserved in structured evidence and historical handoff entries.
 
 ## Provider and feature results
 
-| Item | Actual result | Evidence / limitation |
+| Item | Status | Actual evidence / limit |
 | --- | --- | --- |
-| Ethereum — Alchemy | Tested: passed | Actual saved key, chainId1, finalized canonical block reads, public wallet integer balance, two outgoing history pages, historical successful transaction/receipt/time/fee.20attempts in the last bounded evaluation. Enhanced method access is sampled, not a Free-account, credit-cost, full-history or archival guarantee |
-| Solana — Helius | Tested: passed | Actual key, mainnet genesis, finalized slot/account, block metadata and two address-history pages. Supported public v0 transactions with both successful and failed execution decoded with fees/timestamps; successful example has3transfers. A public signer account/balance also read.9attempts in last evaluation |
-| Unsupported Solana transaction | Tested: unavailable | Live-32015 returned for a newer transaction version; decoder correctly reports `not_supported`. No fabricated transaction or silent version upgrade |
-| Provider errors, rate limits, retries, timeouts | Tested locally | Maintained adversarial transport/router/policy/cancellation suites pass. Live quota exhaustion/429, provider timeout or independent failover was not induced. Avoiding quota abuse does not prove live failover |
-| Research API/frontend contracts | Implemented, tested locally | Real-domain/isolated-PG API contracts and non-mock typed-client tests retained; all web/chain/contract tests pass. Browser suite uses mocks. Phase8 endpoints are not deployed to the public site, so live user research remains untested/unavailable |
-| Independent-source evidence | Blocked | Only one approved candidate per chain; different-chain primaries cannot corroborate. Unknown infrastructure groups never agree. Actual independently documented secondaries, same-snapshot reads and O-3/Claude approval remain missing |
-| Pinned-fact reconciliation | Implemented, tested locally; live blocked | On-demand CLI-only service verifies finalized independent same-decoder receipts, explicit chain/hash/snapshot/payload bindings, and appends an idempotent invalidation without rewriting pins. Unknown/pending/degraded/conflicting/mismatched evidence is refused. DB-write rollback and concurrent retry tested; no scheduler/public mutation. Later-phase signal retraction/finding review still required |
-| Scam report submission linked to wallets/transactions | Blocked by phase boundary | Production reporting/moderation backend belongs to Phase9 and is absent. Existing mocks do not authorize real submissions. No fake successful report or Phase9 implementation added |
+| Ethereum — Alchemy | Tested | Actual protected key; Mainnet chainId1, canonical finalized block, integer native wallet balance, two outgoing history pages, public historical successful transaction/receipt/time/fee.20attempts in final bounded evaluation. Not an archive/plan/credit guarantee |
+| Solana — Helius | Tested | Actual key; Mainnet genesis, finalized slot/account/native balance, block metadata and two history pages. Successful and failed v0 transactions/fees/times; successful sample3transfers.9attempts in final evaluation |
+| Newer Solana version | Tested: unavailable | Live-32015 maps to `not_supported`; no fabricated data or silent decoder expansion |
+| Provider faults | Tested locally | Timeout/oversize/malformed/429/retries/cancellation/failover/circuit/pagination tests. Live quota exhaustion/timeouts/failover were not induced |
+| Research API and UI contracts | Implemented, tested locally | Real router/adapters/domain/API/isolated-PG and typed non-mock client; wallet and transaction search, token/contract/balance/history DTOs and honest incomplete/error states. Synthetic RPC in local fixtures; Phase8 API not deployed |
+| Independent-source verification | Blocked | Only one approved primary per chain. Different-chain primaries do not corroborate. Actual independent same-snapshot secondary evidence and O-3/Claude/account plan review remain pending |
+| Pinned-fact reconciliation | Implemented, tested locally | CLI-only finalized independent ref/snapshot/payload/decoder checks, append-only idempotent invalidation, concurrent no-resurrection barrier. Live independent reconciliation remains blocked |
+| Conflict receipts | Implemented, tested locally | Both finalized same-snapshot independent receipts survive router failure and persist atomically for public research and operator reconciliation. Idempotency, forged comparisons, SQL write rollback and safe public DTO tested. No cache/pin/invalidation authority |
+| Operator conflict notifications | Blocked | Durable conflict records exist; delivery channel, recipients, routing and worker contract require Claude/owner decision. No unapproved email/service/public staff endpoint introduced |
+| Scam report submission | Blocked by phase boundary | Production reporting/moderation backend is Phase9. Existing mocks grant no real submission authority; Phase9 not started |
 
-Public historical examples are in the evidence JSON; no owner account, private research record, credential or email token is included. Source attribution remains single-source and factual; movement/direction never becomes guilt or a risk score. Provider-supplied URLs are not fetched.
+Amounts remain integer strings; transactions, direction and association do not imply guilt, ownership or a risk score. Credentials stayed in memory during bounded public read-only evaluation; no provider-supplied URL fetching.
 
-## Repairs and database review
+## Implementation and security review
 
-Independent reviewer reproduced EVM height mismatch, duplicate/wrong-owner Solana balance inflation and cancellation gaps, and identified inconsistent pinned timestamps. Final review added the reconciliation invalidation barrier, including a concurrent stale-response case. All five are repaired locally. Original EVM/Solana, isolated SQL, sequential barrier and gated concurrent regressions failed before their fixes. Existing passing assertions remain intact. See the independent review for locations, impacts and Claude response status.
+Five earlier Medium findings repaired: EVM receipt height/hash, SPL duplicate/wrong-owner balances, bounded shared network identity cancellation, pinned timestamps and sequential/concurrent invalidation barriers. Original regressions failed before fixes. Newly repaired receipt-loss paths also have failing-before router and isolated-PG operator regressions. Receipt persistence revalidates exact chain/capability/subject, finalized same snapshot, different documented infrastructure and different normalized digests before immutable transactional insert. Disputed values never enter shared cache or pins. Public errors include only an approved reason, not receipts or credentials.
 
-- Shared network identity checks cache success only, bound underlying work to5seconds, cancel individual subscribers promptly, and abort work when all leave. Failed identity can retry; callers cannot cancel another subscriber.
-- EVM transaction blocks match both receipt height and hash. SPL accounts have validated unique pubkeys and token owner equal to the requested wallet; integer aggregation and contradictory-decimal tests remain.
-- Additive `packages/db/migrations/0004_pinned_transaction_time.sql` validates `block_time` against immutable normalized receipt time. SHA256:`4543f992ecbbdb7ecd0e62530dd59499641d7ec10614f369f4089f1655819db2`. All9previous SQL files retain their exact bytes. Local ledger10/tables34; exact count/hash/restore/permission assertions updated, not removed.
-- Constraint addition/validation uses the existing transactional migrator and lock/statement limits. Inconsistent existing pins abort validation; never delete or silently repair them. Recovery remains a reviewed forward repair or isolated restore. No cloud SQL, role/password regeneration or user-data modification occurred.
-- Existing invalidation remains authoritative when later facts match the original pin. Final consistency/invalidation decisions recheck that barrier under the same per-fact advisory lock; RPC stays outside the lock. A delayed matching read released after another read invalidates must return the existing invalidation/review requirement, never clear it.
+Added15test/helper files cover member login/password/profile/session states; delivered-token expiry/replay/revision/cooling/mailbox proof; accepted/permanent/retryable email delivery; account/IP/global/human-response abuse; real signed synthetic WebAuthn assurance/step-up/reset/role approval; staff private reads; bounded Argon2 capacity; actual loopback SMTP replies; operator configuration; real-domain research DTOs and conflict persistence. Existing assertions/floors/security rules/dependency pins are unchanged. Synthetic enrollment/UV bits are not physical authenticator or hardware attestation proof; injected human-response/RPC fixtures are not production human verification/provider independence. SMTP tests do not prove production TLS or real mailbox delivery.
 
-Independent reviewer separately ran15focused tests, all passing, and reviewed the revised reconciliation source, including the final atomic barrier. Its live-provider/DB/coverage/cloud claims rely on implementation-agent execution, not independent reproduction. Explicit wrong-chain/hash and sequential/concurrent no-resurrection cases pass the isolated reconciliation rerun/types. Complete backend coverage was rerun after that source correction; interrupted/locked intermediate runs are not completion evidence.
+Independent reviewer ran15earlier focused tests and reviewed the new tests and conflict fix at source level. It found operator reconciliation still discarding conflicts; that path was repaired and regression-tested by the implementation agent. New DB/full-coverage/cloud/live results were not independently reproduced. Claude architecture/recovery response remains pending.
+
+## Database
+
+Additive `packages/db/migrations/0004_pinned_transaction_time.sql`, SHA256`4543f992ecbbdb7ecd0e62530dd59499641d7ec10614f369f4089f1655819db2`; all9prior migrations byte-identical, local ledger10/tables34. Validated pin-time constraint fails closed on inconsistent existing pins without deleting/rewriting them. Migration order/hash/transaction/grants/append-only/restore tests pass on isolated pinned PG18. Receipt repair reuses existing tables/grants and introduces no new migration. No cloud SQL, production user mutation or role/password regeneration.
+
+Direct Neon verified-TLS read-only catalog probe remains blocked; live ledger is unverified. Managed restore/backup/retention/logging/idle-cycle gates remain open. Existing Docker/Compose/user volumes were preserved. Disposable fixtures use bounded512MiB tmpfs and clean only their own containers; logical restore is not a managed disaster-recovery claim.
 
 ## Checks actually executed
 
-| Check | Result |
+| Check | Actual result |
 | --- | --- |
-| Frozen install/toolchain | PASS; Node24.21/pnpm12.7 and existing supply-chain settings retained |
-| `pnpm check` | PASS final source rerun: format, lint, workspace types,596unit tests (61chains/81contracts/49backend unit/405web), Next production build |
-| `pnpm build:backend` | PASS |
-| Mock production build | PASS |
-| Browser/static mock and server-variable exclusion | PASS;4checks |
-| Full maintained backend coverage suite |106tests/25files PASS; **coverage command FAIL64.90%branches/75%**. Includes49backend unit tests already counted above; do not add overlapping counts |
-| Chain coverage |61tests PASS;80.61%branches/75% PASS |
-| Desktop/mobile Chromium154 |418PASS/0FAIL/82existing skips,17.8minutes; mock browser flows |
-| Drizzle drift / migration / restore / least-privilege | PASS locally; no schema drift, isolated PG18 TLS/migration/restore/security tests included in complete backend suite |
-| Final wrong-chain/hash reconciliation negatives |1isolated test PASS; types PASS. This adds cases inside an existing test, not extra complete-suite count |
-| Final source lint/types/backend build |PASS after atomic reconciliation and disposable fixture corrections |
-| Production dependency audit |PASS,0vulnerabilities |
-| Full dependency audit |FAIL,1high dev`braces@3.0.3`, GHSA-vfj7-8cjw-p6xm; official GitHub advisory still reports no patched version. No suppression/security policy change |
-| Actual credential-value scan |PASS:9distinct saved runtime/provider values checked against3812source/browser files,0matches; no values emitted/persisted |
-| Git history scanner |Raw FAIL:40scanned commits,4exactly matching previous fictional/prose findings,0new. No actual exposed credential found; this is not a raw scanner pass |
-| Staged publication scanner |PASS35files/0findings, network-disabled pinned scanner, full redaction |
-| Render API and worker `/healthz` |200/`status:ok` each. Early probes used incorrect health paths and one timed out; corrected configured-path checks are the health evidence |
-| Direct Neon verified-TLS catalog probe |BLOCKED,exit2; no private rows read. No TLS/driver workaround; live migration ledger unverified |
-| Hosted activation/login/logout/reset |UNTESTED; owner elected to perform these flows personally, results pending |
+| Frozen install | Passed, Node24.21/pnpm12.7, existing supply-chain rules |
+| Root `pnpm check` | Passed599unit assertions (61chains/81contracts/52backend unit/405web), format/lint/workspace types/Next production build. Operator follow-up then verified with final source checks below |
+| Final backend coverage | **Passed189tests/38files; 83.57%branches, all global/package floors**. Includes52unit tests already counted above; no overlapping totals |
+| Complete coverage map guard | Passed; all five formerly omitted entry/operator TS files included, zero parse omissions |
+| Chain coverage | Passed final61tests/80.67%branches, unchanged75%floor |
+| Final backend build/types/lint | Passed final full workspace types, full lint and backend build after operator conflict correction |
+| Mock build / bundle isolation | Mock build passed;4browser/server-only exclusion checks passed; fresh final4check bundle rerun passed |
+| Chromium154 desktop/mobile |418passed/0failed/82existing device-specific skips; mocks only, frontend unchanged in this follow-up |
+| Schema drift / migration / restore / least privilege | Passed locally; no schema drift, full isolated-PG suite includes migration/grant/immutability/security negatives |
+| Production dependency audit | Passed,0vulnerabilities |
+| Full dependency audit | Failed:1high development`braces@3.0.3`, GHSA-vfj7-8cjw-p6xm; official advisory has no patched version. No waiver/scanner/policy suppression |
+| Actual protected-value scan | Passed fresh readback:8distinct protected values/3252source/browser files,0matches; earlier9values/3812files also0. Scope counts differ; no values persisted or printed |
+| Secret scanners | Final staged29files passed0findings, pinned network-disabled scanner/100%redaction. Earlier history raw failure4exact known fictional/prose matches,0new; final postcommit history receipt follows, never called a raw pass |
+| Render API/worker health | Both configured`/healthz`200/statusok; not a Phase8 or hosted identity check |
+| Hosted activation/login/logout/reset | Untested; owner elected to test personally, results not received |
 
-Coverage omissions are fixed by repository-root transformation with backend-only test selection and unchanged server source includes/floors. A complete-map guard rejects empty coverage and missing formerly omitted entry/operator files. An initial attempt with old absolute globs yielded an empty map and is **not** a pass. Corrected55-test measurement57.25%included all files; broader runs improved tested paths. A nine-to-ten fixture count caused6cascading failures and a new test initially expected an invalid null profile update to succeed; causes corrected and complete105-test rerun passed. Generic spy/record typing errors were repaired. No failures are erased from structured evidence.
+| Required branch floor | Actual | Required | Status |
+| --- | --- | --- | --- |
+| Global | 83.57% |75% |Passed |
+| identity | 93.69% | 90% | Passed |
+| access | 95.45% | 90% | Passed |
+| audit | 90.00% | 90% | Passed |
+| staff | 78.35% | 75% | Passed |
+| shared | 78.26% | 75% | Passed |
+| config | 96.25% | 75% | Passed |
+| db | 75.00% | 75% | Passed |
+| api | 76.45% | 75% | Passed |
+| worker | 85.48% | 75% | Passed |
 
-Final test-environment repair: repeated fixture container deletion retained anonymous PostgreSQL volumes. Inspection found528local volumes/24.66GB and a97%-full workspace; a subsequent full rerun had database-readiness failures and hook-skipped tests, not a pass. New fixtures use bounded512MiB temporary PostgreSQL storage and remove only their own containers/anonymous volumes. Existing volumes, Compose state and user data were preserved; no generic prune. Actual filesystem type/size, runtime DDL denial and teardown are verified by a new isolated integration test. Research/reconciliation also pass on this storage. The same pinned PG18 image, schemas, roles, timeout limits and restore assertions remain; this does not claim managed/disk disaster recovery. Final complete coverage after repair:106tests/25files PASS,64.90%branches FAIL. The failed readiness checkpoint was85PASS/2FAIL/18hook-skipped; these were infrastructure hook skips, not new deliberate test skips. Temporary typing/metadata assertions were corrected and are retained in evidence.
+Full185-test checkpoint first passed83.50%; this final189-test rerun includes the subsequent conflict source changes. Reports were written to separate `/tmp` filesystem then copied for the unchanged complete-map guard. Source includes, test selection and threshold configuration are unchanged. Full-run S12 transient ratio1.655 failure, disk/lock/interrupted runs and fixture/type/lint corrections are preserved as failures in evidence. No generic volume prune; only generated Next cache was archived and removed after file/size verification to relieve workspace pressure. Existing browser skips remain device-specific, no new skips/removed assertions.
 
-| Required branch floor | Actual | Status |
-| --- | --- | --- |
-| Global75% |64.90% |Failed |
-| Identity90% |64.07% |Failed |
-| Access90% |95.45% |Passed |
-| Audit90% |90.00% |Passed |
-| Staff75% |55.74% |Failed |
-| Shared75% |78.26% |Passed |
-| Configuration75% |96.25% |Passed |
-| Database75% |72.72% |Failed |
-| API75% |66.75% |Failed |
-| Worker75% |64.51% |Failed |
+## Cloud boundaries and remaining work
 
-The former60.04%measurement omitted files and is not a directly comparable complete baseline. Coverage still prevents closure. Existing skips are conditional desktop/mobile keyboard/navigation cases and desktop-only tests which set their own viewports; no new skips, deleted assertions, widened trust, lowered floors or scanner exclusions.
+Read-only metadata confirms existing Render API/worker main/source038ed7f, FreeFrankfurt, auto-deployoff; `blacklist_app`, direct Neon and`sslmode=verify-full`. No API/worker direct provider/migrator variables. Mixed environment group has zero links and must remain operator-isolated; eventual approved rollout requires API-only provider settings. Vercel canonical source038ed7f and0Phase8branch deployments among20recent before publication; no forbidden frontend variables. No cloud setting, secret, real-user record, paid resource, database migration or backend deployment changed.
 
-## Cloud and remaining blockers
+Remaining blockers: Claude O-3/recovery review; actual account Free-plan/terms/credits/archive limits; truly independent secondary snapshots and live reconciliation; operator notification delivery decision; unpatched dev advisory; hosted identity owner results; managed recovery/logs/cold-idle/session/retention/monitoring/legal gates. Dependent signal/finding retraction and production reports remain later-phase services. Local coverage is now passed; it does not close hosted or architecture gates.
 
-Read-only Render metadata confirms both services still main/Free Frankfurt/source038ed7f/auto-deployoff, restricted `blacklist_app` and direct verified-TLS URLs. The known environment group holds both keys plus runtime/migration URLs but has **zero service links**. Workspace listing reports this group only. No API/worker direct provider/migrator variables and no forbidden Vercel variables were found. Keep mixed operator storage isolated; future approved rollout needs API-only provider settings. No service settings were changed. Cloud health does not verify Phase8 migrations or hosted identity.
-
-Required next work:
-
-1. Add meaningful missing identity/staff/DB/API/worker branch coverage; retain all enforced floors. Access/audit improvements close those coverage deficiencies only, not all hosted security gates.
-2. Claude reviews O-3 and recovery ADRs; owner/Claude resolve actual Free plan/terms/archival limits and independently documented secondary providers. Primary success does not make snapshots independently verified.
-3. Complete conflict-receipt persistence/operator alerting. Reconciliation's immutable invalidation is locally implemented; live independent reconciliation and dependent signal/finding review remain unverified/unavailable.
-4. Resolve unpatched development advisory through policy-compatible upstream repair or reviewed tooling decision, not an audit waiver.
-5. Obtain owner's hosted flow results, then validate cold/idle/session boundaries, actual logs, managed restore/retention/monitoring/legal and remaining Phase7 recovery gates. No real user passwords/records may be changed for testing.
-6. Review the exact commit/migration/provider settings before any authorized staging rollout. Do not link privileged migration storage to runtime. Reports remain a later-phase dependency.
-
-No Phase8 closure approval requested: required gates still fail. No Phase9, merge, cloud migration, infrastructure purchase or deployment is authorized by this continuation. Publication is review-branch/draft-PR only; actual commit/push readback is recorded in the latest handoff.
-
-## Actual review publication
-
-Fixes/evidence commit `813fccc3b6e894634e26b7a3e56615d07f54353b` pushed to the existing Phase8 review branch; remote head verified. PR12 updated and read back OPEN/draft/base main, source head correct; main remains5967afa. Post-push read-only cloud metadata confirms existing API/worker/main/auto-deployoff/source038ed7f and canonical Vercel deployment/source038ed7f unchanged. No matching Phase8 branch deployment among20recent Vercel deployments. This receipt is a documentation-only follow-up; no automatic merge/deployment.
+Owner's latest explicit authorization permits PR12 merge despite these blockers and possible Vercel deployment. It does not authorize activating backend providers, applying cloud migrations, starting Phase9, purchasing resources or declaring readiness. Actual GitHub/deployment status follows after verified publication.

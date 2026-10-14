@@ -88,11 +88,23 @@ describe('bounded capability routing and authoritative verification', () => {
     const conflict = createChainDataService([a, provider('node-c', 'infra-c', '2')]);
     expect(await conflict.getAccountInfo(ref, { crossVerify: true })).toMatchObject({
       ok: false,
-      error: { kind: 'data_conflict' },
+      error: {
+        kind: 'data_conflict',
+        receipts: [
+          expect.objectContaining({ providerId: 'node-a' }),
+          expect.objectContaining({ providerId: 'node-c' }),
+        ],
+      },
     });
     expect(await conflict.getAccountInfo(ref, { crossVerify: true })).toMatchObject({
       ok: false,
-      error: { kind: 'data_conflict' },
+      error: {
+        kind: 'data_conflict',
+        receipts: [
+          expect.objectContaining({ providerId: 'node-a' }),
+          expect.objectContaining({ providerId: 'node-c' }),
+        ],
+      },
     });
   });
   it('fails over, breaks repeated failing capabilities, and shows bounded stale cache only as degraded', async () => {

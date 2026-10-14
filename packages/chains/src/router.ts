@@ -215,7 +215,17 @@ export function createChainDataService(
             continue;
           }
         }
-        if (verification === 'conflict') return failure(chainId, capability, 'data_conflict', ids);
+        if (verification === 'conflict' && receipts[0] && receipts[1])
+          return {
+            ok: false,
+            error: {
+              kind: 'data_conflict',
+              chainId,
+              capability,
+              providerIds: ids,
+              receipts: [receipts[0], receipts[1]],
+            },
+          };
         value = { ...first, provenance: { ...first.provenance, verification, receipts } };
       }
       if (cache.size >= 500) {

@@ -37,7 +37,8 @@ describe('on-demand pinned-fact reconciliation on isolated PostgreSQL', () => {
           actorRef: 'cli:reconciliation-test',
           operator: 'Synthetic reconciliation operator',
         };
-      let blockHash = '0x' + 'b'.repeat(64);
+      let blockHash = '0x' + 'b'.repeat(64),
+        secondaryFee = '0x1';
       const provider = (id: string, group: string) => {
         const rpc: RpcTransport = {
           async call<S extends z.ZodType>(
@@ -67,7 +68,7 @@ describe('on-demand pinned-fact reconciliation on isolated PostgreSQL', () => {
                         transactionIndex: '0x0',
                         status: '0x1',
                         gasUsed: '0x5208',
-                        effectiveGasPrice: '0x1',
+                        effectiveGasPrice: id === 'node-b' ? secondaryFee : '0x1',
                         logs: [],
                       }
                     : { number: '0x10', hash: blockHash, timestamp: '0x65000000' };
@@ -154,6 +155,48 @@ describe('on-demand pinned-fact reconciliation on isolated PostgreSQL', () => {
           ),
         ).toMatchObject({ status: 'unavailable' });
       }
+      // A provider conflict is evidence to retain, never authority to invalidate the pin.
+      secondaryFee = '0x2';
+      const conflictsBefore = (
+        await h.runtime.query(
+          "SELECT count(*)::integer AS n FROM blacklist.chain_fact_verifications WHERE result='conflict'",
+        )
+      ).rows[0]?.n;
+      const cacheBefore = (
+        await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.research_cache')
+      ).rows[0]?.n;
+      expect(await reconcilePinnedTransaction(runtime, service(), actor, ref)).toEqual({
+        status: 'unavailable',
+        reason: 'data_conflict',
+      });
+      expect(
+        (
+          await h.runtime.query(
+            "SELECT count(*)::integer AS n FROM blacklist.chain_fact_verifications WHERE result='conflict'",
+          )
+        ).rows[0]?.n,
+      ).toBe(Number(conflictsBefore) + 1);
+      expect(
+        (await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.research_cache')).rows[0]?.n,
+      ).toBe(cacheBefore);
+      expect((await h.runtime.query('SELECT id FROM blacklist.chain_fact_invalidations')).rowCount).toBe(0);
+      expect(
+        (await h.runtime.query('SELECT normalized FROM blacklist.chain_transactions')).rows[0]?.normalized,
+      ).toEqual(normalized);
+      const receiptsBefore = (
+        await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.verification_receipts')
+      ).rows[0]?.n;
+      await h.migrator.query('REVOKE INSERT ON blacklist.chain_fact_verifications FROM gate_runtime');
+      try {
+        await expect(reconcilePinnedTransaction(runtime, service(), actor, ref)).rejects.toThrow();
+        expect(
+          (await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.verification_receipts'))
+            .rows[0]?.n,
+        ).toBe(receiptsBefore);
+      } finally {
+        await h.migrator.query('GRANT INSERT ON blacklist.chain_fact_verifications TO gate_runtime');
+      }
+      secondaryFee = '0x1';
       blockHash = '0x' + 'c'.repeat(64);
       expect(
         await reconcilePinnedTransaction(runtime, service('unknown-upstream'), actor, ref),

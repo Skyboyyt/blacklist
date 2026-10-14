@@ -295,13 +295,13 @@
     "frozenInstall": "passed",
     "rootCheck": {
       "status": "passed",
-      "unitTests": 596,
+      "unitTests": 599,
       "contracts": 81,
       "chains": 61,
-      "backendUnit": 49,
+      "backendUnit": 52,
       "web": 405,
       "includes": ["format", "lint", "all_workspace_types", "unit_tests", "next_production_build"],
-      "finalSourceRerun": "passed_after_atomic_reconciliation_and_fixture_repairs"
+      "finalSourceRerun": "passed_599_after_research_conflict_fix_before_operator_followup"
     },
     "backendBuild": "passed",
     "mockBuild": "passed",
@@ -311,24 +311,24 @@
     },
     "schemaDrift": "passed_no_changes",
     "backendCoverage": {
-      "status": "failed",
-      "testsPassed": 106,
-      "testFilesPassed": 25,
+      "status": "passed",
+      "testsPassed": 189,
+      "testFilesPassed": 38,
       "testsFailed": 0,
       "branches": {
-        "total": 1764,
-        "covered": 1145,
+        "total": 1772,
+        "covered": 1481,
         "skipped": 0,
-        "pct": 64.9
+        "pct": 83.57
       },
       "required": 75,
       "packageFloors": {
         "identity": {
-          "branches": 64.07,
-          "covered": 305,
+          "branches": 93.69,
+          "covered": 446,
           "total": 476,
           "required": 90,
-          "status": "failed"
+          "status": "passed"
         },
         "access": {
           "branches": 95.45,
@@ -345,11 +345,11 @@
           "status": "passed"
         },
         "staff": {
-          "branches": 55.74,
-          "covered": 291,
+          "branches": 78.35,
+          "covered": 409,
           "total": 522,
           "required": 75,
-          "status": "failed"
+          "status": "passed"
         },
         "shared": {
           "branches": 78.26,
@@ -366,25 +366,25 @@
           "status": "passed"
         },
         "db": {
-          "branches": 72.72,
-          "covered": 64,
+          "branches": 75.0,
+          "covered": 66,
           "total": 88,
           "required": 75,
-          "status": "failed"
+          "status": "passed"
         },
         "api": {
-          "branches": 66.75,
-          "covered": 241,
+          "branches": 76.45,
+          "covered": 276,
           "total": 361,
           "required": 75,
-          "status": "failed"
+          "status": "passed"
         },
         "worker": {
-          "branches": 64.51,
-          "covered": 40,
+          "branches": 85.48,
+          "covered": 53,
           "total": 62,
           "required": 75,
-          "status": "failed"
+          "status": "passed"
         }
       },
       "previouslyOmittedFiles": {
@@ -392,18 +392,21 @@
         "count": 5
       },
       "parseOmissions": 0,
-      "completeMapGuard": "passed_separately"
+      "completeMapGuard": "passed_same_final_command",
+      "command": "pnpm --filter @blacklist/backend-acceptance exec vitest run --coverage --coverage.reportsDirectory=/tmp/blacklist-phase8-conflict-final-coverage; copy summary; node scripts/assert-backend-coverage.mjs",
+      "sourceIncludesThresholdsAndTestSelectionUnchanged": true
     },
     "chainCoverage": {
       "status": "passed",
       "tests": 61,
       "branches": {
-        "total": 918,
-        "covered": 740,
+        "total": 921,
+        "covered": 743,
         "skipped": 0,
-        "pct": 80.61
+        "pct": 80.67
       },
-      "required": 75
+      "required": 75,
+      "finalSourceRerun": "passed_after_conflict_receipt_fix"
     },
     "browser": {
       "status": "passed",
@@ -447,7 +450,32 @@
       "existingVolumesPruned": false,
       "runtimeDdlDenied": true,
       "containerTeardownVerified": true,
-      "completeSuiteRerun": "106_passed_required_coverage_failed"
+      "completeSuiteRerun": "189_passed_all_required_coverage_floors_passed"
+    },
+    "conflictPersistence": {
+      "status": "passed",
+      "focusedTests": 5,
+      "fullSuiteIncludesFocused": true,
+      "routerRegressionFailedBeforeFix": true,
+      "operatorRegressionFailedBeforeFix": true,
+      "immutableReceipts": true,
+      "transactionalRollback": true,
+      "idempotentWrites": true,
+      "forgedComparisonsRejected": true,
+      "publicDtoRedacted": true,
+      "disputedCacheWrites": false,
+      "pinOrInvalidationAuthority": false,
+      "operatorNotificationDelivery": "blocked_pending_approved_channel_and_routing"
+    },
+    "finalSourceChecks": {
+      "workspaceTypes": "passed",
+      "fullLint": "passed",
+      "backendBuild": "passed",
+      "bundleExclusion": "passed_4_checks",
+      "backendCoverage": "passed_189_all_floors",
+      "chainCoverage": "passed_61_80.67",
+      "frontendSourceChangedInFollowup": false,
+      "wholeRootCheckBeforeOperatorDelta": "passed_599"
     }
   },
   "migration": {
@@ -515,6 +543,68 @@
       "files": 35,
       "findings": 0,
       "valuesRedacted": true
+    },
+    "finalTestReview": {
+      "status": "source_reviewed",
+      "executedByReviewer": false,
+      "physicalWebAuthnHardwareValidation": false,
+      "syntheticHumanResponseOnly": true,
+      "syntheticProviderPortsOnly": true,
+      "loopbackSMTPNotProductionTlsOrMailboxProof": true
+    },
+    "finalCloudReadback": {
+      "services": {
+        "api": {
+          "branch": "main",
+          "autoDeploy": "no",
+          "autoDeployTrigger": "off",
+          "suspended": "not_suspended",
+          "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+          "deployStatus": "live",
+          "dbRole": "blacklist_app",
+          "direct": true,
+          "tls": "verify-full",
+          "providerKeysPresent": false,
+          "migrationCredentialPresent": false
+        },
+        "worker": {
+          "branch": "main",
+          "autoDeploy": "no",
+          "autoDeployTrigger": "off",
+          "suspended": "not_suspended",
+          "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+          "deployStatus": "live",
+          "dbRole": "blacklist_app",
+          "direct": true,
+          "tls": "verify-full",
+          "providerKeysPresent": false,
+          "migrationCredentialPresent": false
+        }
+      },
+      "readFailures": {},
+      "cloudMutations": 0,
+      "mixedGroupServiceLinks": 0,
+      "vercelAlias": {
+        "deploymentId": "dpl_BY3Y72aGYUP7At1niBLCoa9fag4R",
+        "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8"
+      },
+      "vercelRecentDeployments": 20,
+      "phase8BranchDeployments": [],
+      "frontendForbiddenVariableNames": [],
+      "credentialScan": {
+        "distinctValues": 8,
+        "files": 3252,
+        "matches": 0,
+        "valuesPrintedOrPersisted": false
+      }
+    },
+    "finalStagedScanner": {
+      "status": "passed",
+      "files": 29,
+      "findings": 0,
+      "network": "none",
+      "redaction": "100_percent",
+      "imageDigest": "sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9"
     }
   },
   "hosted": {
@@ -587,17 +677,16 @@
     }
   },
   "blockers": [
-    "required_backend_branch_floors",
     "unpatched_development_advisory",
     "Claude_O3_and_recovery_review",
     "actual_provider_Free_plan_terms_archive_limits",
     "independent_same_snapshot_secondary_sources",
-    "conflict_receipt_persistence_and_operator_alerting",
     "later_phase_dependent_signal_retraction_finding_review",
     "hosted_identity_owner_results_and_idle_cycle",
     "managed_recovery_logs_retention_monitoring_legal_gates",
     "mixed_Render_operator_group_must_not_link_to_runtime",
-    "Phase9_report_submission_backend_absent"
+    "Phase9_report_submission_backend_absent",
+    "operator_alert_delivery_channel_and_routing_not_approved"
   ],
   "publication": {
     "pr": 12,
@@ -636,7 +725,10 @@
       "phase8BranchDeployments": [],
       "readFailures": {}
     },
-    "documentationReceipt": "subsequent_documentation_only_commit_on_same_review_branch"
+    "documentationReceipt": "subsequent_documentation_only_commit_on_same_review_branch",
+    "ownerAuthorizedMergeDespiteBlockers": true,
+    "mergeAuthorizationDate": "2026-10-14",
+    "latestStatus": "commit_push_and_owner_authorized_merge_pending_actual_execution"
   },
   "earlierFailures": [
     {
@@ -698,6 +790,125 @@
     {
       "reason": "fixture_tmpfs_metadata_assertion_used_Mounts_instead_of_HostConfig",
       "status": "test_failed_then_corrected_with_actual_filesystem_proof"
+    },
+    {
+      "reason": "previous_complete_backend_checkpoint",
+      "testsPassed": 106,
+      "branchPct": 64.9,
+      "packageFloors": {
+        "identity": {
+          "branches": 64.07,
+          "covered": 305,
+          "total": 476,
+          "required": 90,
+          "status": "failed"
+        },
+        "access": {
+          "branches": 95.45,
+          "covered": 21,
+          "total": 22,
+          "required": 90,
+          "status": "passed"
+        },
+        "audit": {
+          "branches": 90.0,
+          "covered": 18,
+          "total": 20,
+          "required": 90,
+          "status": "passed"
+        },
+        "staff": {
+          "branches": 55.74,
+          "covered": 291,
+          "total": 522,
+          "required": 75,
+          "status": "failed"
+        },
+        "shared": {
+          "branches": 78.26,
+          "covered": 18,
+          "total": 23,
+          "required": 75,
+          "status": "passed"
+        },
+        "config": {
+          "branches": 96.25,
+          "covered": 77,
+          "total": 80,
+          "required": 75,
+          "status": "passed"
+        },
+        "db": {
+          "branches": 72.72,
+          "covered": 64,
+          "total": 88,
+          "required": 75,
+          "status": "failed"
+        },
+        "api": {
+          "branches": 66.75,
+          "covered": 241,
+          "total": 361,
+          "required": 75,
+          "status": "failed"
+        },
+        "worker": {
+          "branches": 64.51,
+          "covered": 40,
+          "total": 62,
+          "required": 75,
+          "status": "failed"
+        }
+      },
+      "status": "failed_then_coverage_added_without_policy_changes"
+    },
+    {
+      "reason": "new_coverage_test_iterations",
+      "testsPassedAtCheckpoints": [159, 184, 185],
+      "branchPctAtCheckpoints": [75, 82.59, 83.5],
+      "status": "missing_identity_staff_API_branches_then_added"
+    },
+    {
+      "reason": "SMTP_dependency_mock_did_not_intercept_pnpm_worker_copy",
+      "status": "replaced_new_test_with_actual_loopback_SMTP_wire_no_production_port"
+    },
+    {
+      "reason": "synthetic_RPC_absence_contradicted_existing_receipt",
+      "status": "corrected_both_null_responses_complete_vs_incomplete_archive_assertions_retained"
+    },
+    {
+      "reason": "S12_timing_under_disk_pressure",
+      "testsPassed": 184,
+      "testsFailed": 1,
+      "timingRatio": 1.655,
+      "status": "full_unchanged_suite_rerun_passed_after_resource_isolation"
+    },
+    {
+      "reason": "workspace_ENOSPC_and_report_directory_lock",
+      "status": "serialized_checks_reports_on_separate_tmp_filesystem_existing_volumes_preserved"
+    },
+    {
+      "reason": "conflict_router_discards_verification_receipts",
+      "status": "regression_failed_before_fix_then_passed"
+    },
+    {
+      "reason": "operator_reconciliation_discards_conflict_receipts",
+      "status": "isolated_PG_regression_failed_before_fix_then_passed"
+    },
+    {
+      "reason": "new_conflict_fixture_omitted_eth_getBlockByHash_and_wrong_DTO_kind",
+      "status": "four_new_tests_failed_then_corrected_fixture_and_normative_DTO_expected"
+    },
+    {
+      "reason": "new_test_type_only_import_lint",
+      "status": "failed_then_fixed"
     }
-  ]
+  ],
+  "onboardingDraft": {
+    "status": "saved",
+    "requiresPublish": true,
+    "startInstructionsUpdated": true,
+    "installNetworkAndBindingsPreserved": true,
+    "runtimeApplied": false
+  }
 }

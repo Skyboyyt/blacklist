@@ -1,5 +1,6 @@
 import type { Actor } from '../access/index.ts';
 import type { DatabaseRuntime } from '@blacklist/db';
+import type { ChainId } from '@blacklist/core';
 import {
   registry,
   evmAdapter,
@@ -7,8 +8,10 @@ import {
   type ChainDataService,
   type ReadOptions,
   type HistoryQuery,
+  type ChainResult,
+  type ProviderCapability,
 } from '@blacklist/chains';
-import { recordChainRead } from '../chaindata/index.ts';
+import { recordChainRead, recordChainConflict } from '../chaindata/index.ts';
 import { DomainError } from '../shared/errors.ts';
 export interface ResearchContext {
   readonly chains: ChainDataService;
@@ -58,7 +61,7 @@ export async function readResearchAddress(
 ) {
   const { chain, ref } = researchAddress(ctx, actor, slug, input),
     result = await ctx.chains.getAccountInfo(ref, options);
-  if (result.ok) await recordChainRead(ctx.runtime, 'account_info', ref.address, result.value);
+  await recordResult(ctx, 'account_info', ref.address, ref.chainId, result);
   return { chain, ref, result };
 }
 export async function readResearchTransaction(
@@ -70,7 +73,7 @@ export async function readResearchTransaction(
 ) {
   const { chain, ref } = researchTransaction(ctx, actor, slug, input),
     result = await ctx.chains.getTransaction(ref, options);
-  if (result.ok) await recordChainRead(ctx.runtime, 'transaction', ref.txHash, result.value);
+  await recordResult(ctx, 'transaction', ref.txHash, ref.chainId, result);
   return { chain, ref, result };
 }
 export async function readResearchHistory(
@@ -82,12 +85,11 @@ export async function readResearchHistory(
 ) {
   const { chain, ref } = researchAddress(ctx, actor, slug, input),
     result = await ctx.chains.getAddressHistory(ref, query);
-  if (result.ok)
-    await recordChainRead(ctx.runtime, 'address_history', ref.address, result.value, ref.chainId, {
-      cursor: query.cursor ?? null,
-      limit: query.limit,
-      direction: query.direction ?? 'all',
-    });
+  await recordResult(ctx, 'address_history', ref.address, ref.chainId, result, {
+    cursor: query.cursor ?? null,
+    limit: query.limit,
+    direction: query.direction ?? 'all',
+  });
   return { chain, ref, result };
 }
 export async function readResearchBalances(
@@ -99,7 +101,7 @@ export async function readResearchBalances(
 ) {
   const { chain, ref } = researchAddress(ctx, actor, slug, input),
     result = await ctx.chains.getBalances(ref, options);
-  if (result.ok) await recordChainRead(ctx.runtime, 'balances', ref.address, result.value, ref.chainId);
+  await recordResult(ctx, 'balances', ref.address, ref.chainId, result);
   return { chain, ref, result };
 }
 export async function readResearchToken(
@@ -111,7 +113,7 @@ export async function readResearchToken(
 ) {
   const { chain, ref } = researchAddress(ctx, actor, slug, input),
     result = await ctx.chains.getTokenInfo(ref, options);
-  if (result.ok) await recordChainRead(ctx.runtime, 'token_metadata', ref.address, result.value, ref.chainId);
+  await recordResult(ctx, 'token_metadata', ref.address, ref.chainId, result);
   return { chain, ref, result };
 }
 export async function readResearchContract(
@@ -123,7 +125,19 @@ export async function readResearchContract(
 ) {
   const { chain, ref } = researchAddress(ctx, actor, slug, input),
     result = await ctx.chains.getContractInfo(ref, options);
-  if (result.ok)
-    await recordChainRead(ctx.runtime, 'contract_source', ref.address, result.value, ref.chainId);
+  await recordResult(ctx, 'contract_source', ref.address, ref.chainId, result);
   return { chain, ref, result };
+}
+
+async function recordResult(
+  ctx: ResearchContext,
+  capability: ProviderCapability,
+  subject: string,
+  chainId: ChainId,
+  result: ChainResult<unknown>,
+  cacheScope: unknown = null,
+): Promise<void> {
+  if (result.ok) await recordChainRead(ctx.runtime, capability, subject, result.value, chainId, cacheScope);
+  else if (result.error.kind === 'data_conflict')
+    await recordChainConflict(ctx.runtime, capability, subject, chainId, result.error);
 }

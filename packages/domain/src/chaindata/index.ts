@@ -1,2 +1,2 @@
-export { recordChainRead } from './repository.ts';
+export { recordChainRead, recordChainConflict } from './repository.ts';
 export { reconcilePinnedTransaction } from './reconciliation.ts';
