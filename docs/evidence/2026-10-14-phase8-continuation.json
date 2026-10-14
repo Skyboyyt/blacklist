@@ -605,6 +605,15 @@
       "network": "none",
       "redaction": "100_percent",
       "imageDigest": "sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9"
+    },
+    "finalHistoryScanner": {
+      "rawStatus": "failed",
+      "rawExitCode": 1,
+      "commitsScanned": 42,
+      "knownFindings": 4,
+      "newFindings": 0,
+      "baselineUnchanged": true,
+      "suppressionAdded": false
     }
   },
   "hosted": {
@@ -691,16 +700,16 @@
   "publication": {
     "pr": 12,
     "url": "https://github.com/Skyboyyt/blacklist/pull/12",
-    "status": "draft_open",
+    "status": "merged",
     "base": "main",
     "sourceChangesPublished": "passed",
-    "merged": false,
+    "merged": true,
     "deployed": false,
     "productionUserRecordsChanged": false,
     "phase9Started": false,
     "implementationCommit": "813fccc3b6e894634e26b7a3e56615d07f54353b",
     "remoteImplementationHeadVerified": true,
-    "mainCommit": "5967afa6eee30c5359b9a9f26a1c6bd79f543772",
+    "mainCommit": "c11dcca8af5ad1c5888a9e2d78860544db635990",
     "prHeadVerified": true,
     "postPushCloud": {
       "api": {
@@ -725,10 +734,73 @@
       "phase8BranchDeployments": [],
       "readFailures": {}
     },
-    "documentationReceipt": "subsequent_documentation_only_commit_on_same_review_branch",
+    "documentationReceipt": "postmerge_documentation_only_review_followup",
     "ownerAuthorizedMergeDespiteBlockers": true,
     "mergeAuthorizationDate": "2026-10-14",
-    "latestStatus": "commit_push_and_owner_authorized_merge_pending_actual_execution"
+    "latestStatus": "PR12_owner_authorized_merge_verified",
+    "mergeCommit": "c11dcca8af5ad1c5888a9e2d78860544db635990",
+    "finalImplementationCommit": "a3834906ba02b3e16e70991f799222ffae25a5bb",
+    "mainHeadVerified": true,
+    "mergedAt": "2026-10-14T22:55:01Z",
+    "postMergeCloud": {
+      "services": {
+        "api": {
+          "branch": "main",
+          "autoDeploy": "no",
+          "autoDeployTrigger": "off",
+          "suspended": "not_suspended",
+          "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+          "deployStatus": "live",
+          "dbRole": "blacklist_app",
+          "direct": true,
+          "tls": "verify-full",
+          "providerKeysPresent": false,
+          "migrationCredentialPresent": false
+        },
+        "worker": {
+          "branch": "main",
+          "autoDeploy": "no",
+          "autoDeployTrigger": "off",
+          "suspended": "not_suspended",
+          "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8",
+          "deployStatus": "live",
+          "dbRole": "blacklist_app",
+          "direct": true,
+          "tls": "verify-full",
+          "providerKeysPresent": false,
+          "migrationCredentialPresent": false
+        }
+      },
+      "readFailures": {},
+      "cloudMutations": 0,
+      "mixedGroupServiceLinks": 0,
+      "vercelAlias": {
+        "deploymentId": "dpl_BY3Y72aGYUP7At1niBLCoa9fag4R",
+        "commit": "038ed7fcd6010d44244d6eb05e920da8ebbd0fe8"
+      },
+      "vercelRecentDeployments": 20,
+      "phase8BranchDeployments": [],
+      "frontendForbiddenVariableNames": [],
+      "credentialScan": {
+        "distinctValues": 8,
+        "files": 3230,
+        "matches": 0,
+        "valuesPrintedOrPersisted": false
+      }
+    },
+    "backendDeployed": false,
+    "canonicalFrontendChanged": false,
+    "githubChecks": {
+      "count": 1,
+      "checks": [
+        {
+          "name": "Vercel Preview Comments",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "fullVerificationCiClaimed": false
+    }
   },
   "earlierFailures": [
     {

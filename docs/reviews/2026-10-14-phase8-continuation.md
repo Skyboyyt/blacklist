@@ -1,6 +1,6 @@
 # Phase8 continuation: mainnet validation, security repairs and coverage
 
-Date:2026-10-14 (Europe/London). Branch:`feat/phase8-chain-research`; [PR12](https://github.com/Skyboyyt/blacklist/pull/12) targets main. Owner explicitly authorized merging despite the disclosed blockers. Actual publication receipt is recorded below after execution. **Phase8 remains open; merge approval does not pass missing provider/hosted gates.**
+Date:2026-10-14 (Europe/London). Branch:`feat/phase8-chain-research`; [PR12](https://github.com/Skyboyyt/blacklist/pull/12) targets main. Owner explicitly authorized merging despite the disclosed blockers. PR12 is actually merged into mainc11dcca; exact receipt below. **Phase8 remains open; merge approval does not pass missing provider/hosted gates.**
 
 Evidence: [machine-readable results](../evidence/2026-10-14-phase8-continuation.json), [independent review](2026-10-14-phase8-independent-review.md). Earlier failed checkpoints are preserved in structured evidence and historical handoff entries.
 
@@ -51,7 +51,7 @@ Direct Neon verified-TLS read-only catalog probe remains blocked; live ledger is
 | Production dependency audit | Passed,0vulnerabilities |
 | Full dependency audit | Failed:1high development`braces@3.0.3`, GHSA-vfj7-8cjw-p6xm; official advisory has no patched version. No waiver/scanner/policy suppression |
 | Actual protected-value scan | Passed fresh readback:8distinct protected values/3252source/browser files,0matches; earlier9values/3812files also0. Scope counts differ; no values persisted or printed |
-| Secret scanners | Final staged29files passed0findings, pinned network-disabled scanner/100%redaction. Earlier history raw failure4exact known fictional/prose matches,0new; final postcommit history receipt follows, never called a raw pass |
+| Secret scanners | Final staged29files passed0findings, pinned network-disabled scanner/100%redaction. Earlier history raw failure4exact known fictional/prose matches,0new; final42diff-bearing commits/rawFAIL4same known matches/0new, never called a raw pass |
 | Render API/worker health | Both configured`/healthz`200/statusok; not a Phase8 or hosted identity check |
 | Hosted activation/login/logout/reset | Untested; owner elected to test personally, results not received |
 
@@ -77,3 +77,9 @@ Read-only metadata confirms existing Render API/worker main/source038ed7f, FreeF
 Remaining blockers: Claude O-3/recovery review; actual account Free-plan/terms/credits/archive limits; truly independent secondary snapshots and live reconciliation; operator notification delivery decision; unpatched dev advisory; hosted identity owner results; managed recovery/logs/cold-idle/session/retention/monitoring/legal gates. Dependent signal/finding retraction and production reports remain later-phase services. Local coverage is now passed; it does not close hosted or architecture gates.
 
 Owner's latest explicit authorization permits PR12 merge despite these blockers and possible Vercel deployment. It does not authorize activating backend providers, applying cloud migrations, starting Phase9, purchasing resources or declaring readiness. Actual GitHub/deployment status follows after verified publication.
+
+## Actual owner-authorized merge receipt
+
+Source commit`a3834906ba02b3e16e70991f799222ffae25a5bb` pushed and exact SHA verified. PR12 marked ready then SHA-bound merged at2026-10-14T22:55:01Z; CLOSED/merged/main`c11dcca8af5ad1c5888a9e2d78860544db635990` independently read back. No force/direct-main push. Final staged29files secret scanner0findings; history42diff-bearing commits rawFAIL4known fixture/prose matches/0new. One successful Vercel Preview Comments check is not full CI/deployment evidence.
+
+Postmerge read-only metadata: both Render services remain source038ed7f/main/autodeployoff/blacklist_app/directverify-full, no provider/migrator runtime vars; mixed group0links. Vercel canonical deployment/source038ed7f unchanged, no Phase8branch deployments among20recent. No forbidden frontend vars; fresh8protected values/3230source/browser files0matches. No cloud DB/provider activation or actual Phase8 deployment. Feature branch fast-forwarded to verified main before this documentation-only handoff receipt; review follow-up will not be automatically merged under PR12-specific approval.
