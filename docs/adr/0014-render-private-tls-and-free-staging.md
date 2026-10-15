@@ -45,6 +45,14 @@ Free staging is a synthetic-data test environment with cold starts and potential
 
 No service, database, billing change or production Vercel setting has been created. Safe configuration is prepared for review on a feature branch. Baseline coverage/audit/browser and ADR 0013 barriers remain open. Claude reviews compatibility and operating limits; owner staging and production acceptance require actual evidence. No Phase 8 is started.
 
+## Recommendation (Claude)
+
+**Amend, then accept** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md) CR-01, CR-04, CR-10). Sound and acceptable: mandatory `verify-full`, separate non-DDL SQL roles, no migrations at start-up, a separate worker, no keepalive or scheduler, provider acceptance as the delivery fact. Amendments:
+1. The later owner instruction removed Vercel visitor protection, which contradicts item 4 and the synthetic-data premise. Record the owner's acceptance of real-user data in staging, or restore a registration gate (CR-10).
+2. Make a verified per-client IP (or a working human verifier) a precondition of public exposure (CR-01).
+3. Record the anonymous quota-burn path through the public worker `/healthz` (CR-04).
+4. Give the ADR a valid status from `docs/adr/README.md` and a title that covers the Neon decision.
+
 ## Owner decision
 
 Owner confirmed Neon PostgreSQL and authenticated public TLS for restricted staging. This is an explicit staging transport choice, not a blanket TLS exception or production approval. No paid service, public/production launch, automatic merge, silent keepalive or Phase 8 is authorized.

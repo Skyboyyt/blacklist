@@ -65,7 +65,12 @@ Owner acceptance authorizes the scoped executor implementation and activation; h
 
 ## Recommendation (Claude)
 
-Pending: review the additional privileged execution/storage boundary, Docker build-secret isolation, two-phase lifecycle/restart behavior, quota assurance and cleanup evidence. Accept/reject/amend explicitly.
+**Accept with amendments** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md) CR-D-6, CR-D-2). The design keeps DDL credentials out of the API and worker, splits provisioning from migration and has no command surface; the code matches. Amendments:
+1. A provider restart must not re-run a phase (§6 says so; `operator/main.ts` exits after 20 minutes and every boot with `OPERATOR_ENABLED=true` runs again). Persist a run marker keyed by run ID and stay idle instead of exiting.
+2. Derive file and table counts in §5 from the migration manifest (code now has 10 files and 34 tables, not seven and 27).
+3. Record that the migration phase also holds the app credential and where the retained migrator credential is stored, with an owner-named rotation and expiry.
+4. Mark the operator temporary, with a retirement condition (an approved CI or one-off job).
+5. Fix the migration ordering (CR-D-2) before the next operator migration run.
 
 ## Decision (owner)
 

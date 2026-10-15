@@ -18,6 +18,43 @@ Read this first at the start of every session. Update it at the end of every ses
 | Last updated | 2026-10-14 (Europe/London) |
 
 
+## Claude review of Phases 7–8 as merged — 2026-10-15
+
+- **Scope:** `origin/main` `c11dcca` (PRs #7–#12) against `chore/initial-repository`. The review is read-only on code. The only changes are the review file and Claude's recommendations in ADRs 0013–0018. Branch `claude/amazing-goodall-drtbc9`, restarted from `main`. Full report: [docs/reviews/2026-10-15-claude-phase7-8-review.md](docs/reviews/2026-10-15-claude-phase7-8-review.md).
+- **Actual checks (Claude):**
+  - `pnpm install --frozen-lockfile` and `pnpm check` exit 0: 81 contract, 61 chain, 52 backend non-database and 405 web tests, plus lint, types and build.
+  - `pnpm audit --prod` is clean. The full audit has one high, dev-only advisory (`braces`).
+  - **Not run:** the database integration suites (no Docker here), coverage, E2E, and any cloud or provider read.
+- **Findings:**
+  - **High:**
+    - CR-01: one throttle identity for every user, so anyone can lock everyone out of login, registration, reset and research. There is no human verifier and the web tier sends no client IP.
+    - CR-11: process. Provider code came from a Proposed ADR, ADRs went live without Claude's review, and Phase 6 and Phase 7 exits are unrecorded.
+  - **Medium:**
+    - CR-02: re-auth is unthrottled.
+    - CR-03: research writes permanent receipts and its budget never resets.
+    - CR-04: the public worker `/healthz` can burn free quotas.
+    - CR-06: item-specific failures trip a provider-wide circuit breaker.
+    - CR-09: ADR 0013 gaps are visible in code.
+    - CR-10: real-user data sits in staging without retention.
+    - CR-12, CR-13: stale documents and handoff.
+    - CR-14: database D-1 and D-2.
+  - Smaller items are under CR-15.
+- **ADR recommendations recorded:**
+  - 0013: amend, keeping fail-closed behaviour.
+  - 0014: amend, then accept.
+  - 0015: accept with amendments.
+  - 0016: amend; accept only with conditions (CR-01, CR-02, CR-05 fixed first).
+  - 0017: accept with amendments.
+  - 0018: amend, then accept as provisional single-source providers. The provider merge needs a recorded owner waiver.
+  - **The owner decides; nothing is accepted by this change.**
+- **Next:**
+  1. Fix CR-01 and CR-02, or restore a registration gate until they are fixed.
+  2. Owner waivers or phase closure.
+  3. Research-enable conditions.
+  4. Database D-1 and D-2.
+  5. Documentation consistency pass and handoff reset.
+  6. Pending finding responses, R-04 first.
+
 ## Phase8 final continuation — coverage and conflict evidence — 2026-10-14
 
 **Authorization/status:** owner explicitly replied “Merge PR #12 into main despite the disclosed blockers” after being told main may trigger Vercel deployment. This supersedes review-only/no-merge instructions for PR12 specifically. Complete local checks/secret scan, commit/push, then merge exact reviewed head. No backend activation/cloud migration/paid resource/Phase9 or readiness claim. Actual publication/merge receipt follows, never assume it happened. Owner's hosted activation/login/logout/reset results are still pending.

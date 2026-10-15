@@ -34,4 +34,11 @@ Claude should define the operator's permitted verification role and the distinct
 
 ## Recommendation and decision
 
-Pending Claude's recommendation and the owner's decision. No exception is authorized by this proposal.
+**Amend before any decision; keep today's fail-closed behaviour until then** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md) CR-09).
+
+The problem is real and visible in code: `approveTx` requires an admin verifier, so when the subject is the only admin the operator branch can never run, and `objected` is terminal (offboarding is the only exit). The ADR should state a concrete transition model:
+1. The operator counts as the admin verifier only when the subject is the sole active admin, together with a separately recorded, named second human under P-13; fix `approveTx` to match.
+2. An objection closes the case; a new case needs a fresh opening by an admin other than the objector, with step-up, and restarts verification and the 24-hour window.
+3. Objections need step-up (`objectRecovery` takes none today, so one compromised admin can block every recovery).
+4. The suspended subject's objection channel: a POST-only fragment-token link to the account email that records an objection and grants nothing.
+5. Negative tests for each.

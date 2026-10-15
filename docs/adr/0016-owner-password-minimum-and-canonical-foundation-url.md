@@ -26,7 +26,12 @@ Free Render API/worker still sleep independently. Manual worker wake-up before a
 
 ## Recommendation (Claude)
 
-Pending independent review of the explicit policy tradeoff and canonical-domain rollout. No recommendation is invented.
+**Amend; accept only with conditions** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md)).
+- The 15→8 cut is a product decision, separate from the routing defect the ADR's evidence actually shows; record it as such.
+- Eight is defensible for staff (WebAuthn is always a second factor). For password-only members it is below NIST SP 800-63B-4's single-factor baseline of 15, so it is acceptable only with working compensating controls. Today they are missing or weak: no human verifier (CR-01), throttle keys shared by every user (CR-01), unthrottled re-authentication (CR-02), and a 20-entry offline denylist described as "expanded" (CR-05).
+- Conditions: fix CR-01, CR-02 and CR-05 before real users rely on the public URL; record the deviation and residual risk in identity §13 and THREAT-MODEL T-02/T-03; add a supersession note to ADR 0001 item 7.
+- Option for the owner: keep 8 for staff and raise members to 12–15, or allow 8 for members once member MFA exists.
+- Move the canonical-URL rollout and the 90-second auth timeout into an operational record; they should not ride on a credential-policy ADR.
 
 ## Decision (owner)
 

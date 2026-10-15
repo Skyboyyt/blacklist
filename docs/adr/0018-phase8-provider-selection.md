@@ -45,7 +45,18 @@ Provider-independent registry, adapters, strict response handling and verificati
 
 ## Decision
 
-Owner approved the proposed Free-provider direction via explicit asynchronous reply on2026-10-14. Actual Alchemy plan/history evidence, both RPC credentials, independent secondary selection and Claude review remain pending. O-3 is not closed and no live provider is activated. This ADR does not change chain evidence, privacy, moderation, risk, authentication, paid hosting or live deployment policies.
+Owner approved the proposed Free-provider direction via explicit asynchronous reply on 2026-10-14. Actual Alchemy plan/history evidence, both RPC credentials, independent secondary selection and Claude review remain pending. O-3 is not closed and no live provider is activated. This ADR does not change chain evidence, privacy, moderation, risk, authentication, paid hosting or live deployment policies.
+
+## Recommendation (Claude)
+
+**Amend, then accept as provisional single-source display providers** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md) CR-03, CR-06–CR-08). Helius Free and Alchemy Free tagged `unknown-upstream`, all capability flags off by default, no change to chain-data semantics. Amendments:
+1. State that without a documented independent secondary, cross-verification is always `unavailable`, which blocks pinning transaction evidence and creating scoring signals; name that as a dependency of those phases.
+2. Define the budget: a window matching the provider plan (not a lifetime counter), a per-request cap on provider calls, and the API/worker split.
+3. Make CR-03, CR-06, CR-07 and CR-08 conditions for setting `RESEARCH_ENABLED=true`.
+4. Remove or justify the public `api.mainnet-beta.solana.com` endpoint in the allowlist.
+5. Move the Render environment-group narrative into operations docs.
+
+The provider code was merged while this ADR is Proposed (AGENTS §6); record that as an explicit owner waiver. O-3 stays open.
 
 ## Protocol inspection follow-up
 
