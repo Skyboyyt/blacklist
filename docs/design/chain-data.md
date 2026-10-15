@@ -113,6 +113,8 @@ Receipts reproduce **what was compared**. Without raw-response archival they do 
 | `unavailable` | No independent provider could answer for that snapshot (capability or history missing, or same-slot retrieval impossible) |
 | `single_source` | No second read attempted (ordinary display) |
 
+> **Implementation note (2026-10-15):** conflicts are persisted and shown as "Data under verification", but operator **alert delivery is not implemented** (it needs an approved channel). This is a known deviation tracked in [Claude's Phase 7–8 review](../reviews/2026-10-15-claude-phase7-8-review.md).
+
 Blacklist **never** reports `agree` for different snapshots, even with byte-identical values, or for providers in the same independence group.
 
 ### 5.4 Comparison rules

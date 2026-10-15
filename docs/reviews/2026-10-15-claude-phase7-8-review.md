@@ -106,7 +106,7 @@ The main problems are availability on the public deployment and process:
 - **Location:** `packages/domain/src/identity/password-policy.ts:7-28,49`
 - **Evidence:** a 20-entry `Set`. Any HIBP error or 5-second timeout falls back to it, so `iloveyou`, `sunshine` and `11111111` are accepted while HIBP is down. ADR 0016, THREAT-MODEL and the public-registration review call it "expanded".
 - **Recommendation:** bundle a real top-N list of at least 8 characters plus context terms, and correct the documents.
-- **Response (Claude):** open.
+- **Response (Claude):** open. A real list needs an owner-approved source and licence, since bundling one is a new data dependency.
 
 ### CR-06 Failures caused by the queried item trip a provider-wide circuit breaker
 - **Severity:** Medium
@@ -195,7 +195,10 @@ The main problems are availability on the public deployment and process:
   - One consistency pass (Claude).
   - An ADR or data-model entry for `research_cache`.
   - A minimal CI workflow, or a correction to the dependency policy.
-- **Response (Claude):** open; proposed as the next Claude task.
+- **Response (Claude):** done (2026-10-15) for the status and consistency items:
+  - AGENTS §1 is one current block;
+  - ARCHITECTURE header and stack rows (database, cache, email), ESSENTIALS stage, THREAT-MODEL status and Phase 8 notes, data-model status and the `research_cache` flag, the chain-data alert deviation note, the ADR index (0013–0018), the ADR 0001 supersession note, README, phase7-acceptance and the dependency-policy CI note are updated.
+  - **Still open:** the `research_cache` decision, the ARCHITECTURE decision log (D-053+) and a CI workflow (owner).
 
 ### CR-13 The handoff and evidence are stale and hard to audit
 - **Severity:** Medium
@@ -209,7 +212,7 @@ The main problems are availability on the public deployment and process:
 - **Recommendation:**
   - Read back Vercel and Render after the merge and record it.
   - Reset the handoff to a short current-state block, with per-session tables linking to raw evidence, and archive the history.
-- **Response (Claude):** open.
+- **Response (Claude):** done (2026-10-15) for the handoff. AI_HANDOFF.md is now a short current-state file, and the full history is moved unchanged to `docs/handoff-archive/AI_HANDOFF-to-2026-10-15.md`. **Still open (owner/Codex):** reading back Vercel and Render after the Phase 8 merge; committing raw runner and coverage output with evidence.
 
 ### CR-14 Database hardening
 - **Severity:** Medium (D-1, D-2) and Low (the others)

@@ -2,7 +2,7 @@
 
 The short, binding version of [ARCHITECTURE.md](ARCHITECTURE.md) (revision 3). Normative protocol detail lives in [docs/design/identity.md](docs/design/identity.md), [docs/design/moderation.md](docs/design/moderation.md) and [docs/design/chain-data.md](docs/design/chain-data.md). If any two documents disagree, **stop and raise it**; never pick one silently.
 
-**Stage:** Phase7 foundation is merged; owner authorized Phase8 chain research implementation on a separate review branch. No Phase8 deployment or later phase is authorized. Provider activation requires unresolved O-3/Claude review and real-provider validation. Actual gates and limits are in [AI_HANDOFF.md](AI_HANDOFF.md) and the [Phase8 report](docs/reviews/2026-10-14-phase8-implementation.md).
+**Stage (2026-10-15):** Phase 7 foundation and Phase 8 chain research are merged on `main`. Research is off by default; provider activation still needs O-3, an accepted ADR 0018 and the conditions in [Claude's review](docs/reviews/2026-10-15-claude-phase7-8-review.md). No later phase is authorized. Actual gates and limits are in [AI_HANDOFF.md](AI_HANDOFF.md).
 
 **Execution order is frontend-first** (ARCHITECTURE §36):
 

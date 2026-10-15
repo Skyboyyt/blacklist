@@ -45,5 +45,9 @@ No ADR status authorizes starting a phase. Phase authorization is always a separ
 | [0010](0010-project-submission-and-verification-status.md) | Project submissions, update proposals and verification status | **Part A Accepted** (2026-10-12); Part B Proposed |
 | [0011](0011-additional-evm-networks.md) | Additional EVM networks (Base, Arbitrum, BNB Chain, Polygon) | **Proposed** |
 | [0012](0012-public-project-scoreboard.md) | Public project scoreboard | **Accepted (band-only variant)** |
-| [0015](0015-staging-database-operator-execution.md) | Render-only staging database operator execution | **Accepted by owner; Claude independent review pending** |
-| [0018](0018-phase8-provider-selection.md) | Phase8 blockchain provider selection (O-3) | **Proposed; owner Free-provider direction approved, Claude/capability/plan evidence pending** |
+| [0013](0013-small-team-recovery-and-objection-resolution.md) | Small-team staff recovery and objection resolution | **Proposed**; Claude: amend before decision (2026-10-15) |
+| [0014](0014-render-private-tls-and-free-staging.md) | Render and Neon free staging, TLS | Owner hosting selection recorded; Claude: amend, then accept (2026-10-15) |
+| [0015](0015-staging-database-operator-execution.md) | Render-only staging database operator execution | **Accepted by owner**; Claude: accept with amendments (2026-10-15) |
+| [0016](0016-owner-password-minimum-and-canonical-foundation-url.md) | Owner password minimum (8) and canonical foundation URL | **Accepted by owner**; Claude: accept only with conditions (2026-10-15) |
+| [0017](0017-request-triggered-free-mail-worker-wake.md) | Request-triggered free mail-worker wake | **Accepted by owner**; Claude: accept with amendments (2026-10-15) |
+| [0018](0018-phase8-provider-selection.md) | Phase 8 blockchain provider selection (O-3) | **Proposed**; owner Free-provider direction approved; Claude: amend, then accept as provisional (2026-10-15); plan evidence pending |

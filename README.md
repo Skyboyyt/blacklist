@@ -9,7 +9,7 @@ Core principles:
 
 ## Current status
 
-> **Phase 5 implemented on mocks and reviewed; six findings repaired on `fix/frontend-review-findings`. Remaining Phase 6 quality checks and documented gaps are pending. No backend exists; backend foundation begins in Phase 7.**
+> **Frontend Phases 1–6 are implemented. The Phase 7 backend foundation and Phase 8 chain research are merged on `main` and run on free staging services. Research is off by default. This is not production-ready; see [AI_HANDOFF.md](AI_HANDOFF.md) for the current state.**
 >
 > This repository contains the product requirements, architecture (revision 3), normative design documents, a threat model, engineering rules and ADRs. The frontend includes a design system, application shell, research previews, Phase 2 account and security screens, Phase 3 project directory and profile pages, Phase 4 staff review screens, and Phase 5 member submission flows connected to staff review on a shared demo store, responses, emergency suspension and an administrator console, running on typed contracts and a **mock adapter with fictional data** ([docs/design/frontend.md](docs/design/frontend.md)). **No real data, accounts or assessments exist.** Do not deploy this repository.
 >

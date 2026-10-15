@@ -25,7 +25,7 @@ Rules:
 - Internal packages use the `@blacklist/*` scope with the `workspace:` protocol only (dependency-confusion defense). Consider registering the npm scope to block squatting (owner decision).
 - GitHub Actions pinned to full commit SHAs; container base images pinned by digest.
 - Automated update PRs (Renovate or Dependabot) must respect the release-age window and are reviewed like code.
-- CI runs OSV-Scanner/`pnpm audit`, generates an SBOM, and fails on known critical vulnerabilities without an approved exception.
+- CI runs OSV-Scanner/`pnpm audit`, generates an SBOM, and fails on known critical vulnerabilities without an approved exception. **Not yet in place (2026-10-15): no CI workflow exists.** Audits are run by hand and recorded in AI_HANDOFF. The full audit currently reports one high, dev-only advisory (`braces`, GHSA-vfj7-8cjw-p6xm, no patch) with no suppression.
 - Remove unused dependencies promptly.
 
 ## 2.1 Installed in Phase 1 (2026-10-05)
