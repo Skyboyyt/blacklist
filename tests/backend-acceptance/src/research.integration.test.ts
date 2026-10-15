@@ -27,7 +27,7 @@ function connection(pool: Pool, port: number) {
   return url.toString();
 }
 describe('real API/domain/Postgres research boundary (synthetic RPC, mock mode off)', () => {
-  it('returns contract-valid sourced facts, persists receipts, rejects private/forged/input paths and caps abuse', async () => {
+  it('returns contract-valid sourced facts, caches single-source reads without receipts, rejects private/forged/input paths and caps abuse', async () => {
     const h = await startDatabase();
     let ctx: ReturnType<typeof createIdentity> | undefined, app: ReturnType<typeof createServer> | undefined;
     try {
@@ -142,16 +142,22 @@ describe('real API/domain/Postgres research boundary (synthetic RPC, mock mode o
         remoteAddress: '192.0.2.2',
       });
       expect(researchResultSchema(addressResearchSchema).parse(sol.json()).kind).toBe('found');
+      // CR-03: single-source display reads fill the disposable cache, never append-only receipts.
       expect(
         (await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.verification_receipts')).rows[0]
           ?.n,
-      ).toBe(2);
+      ).toBe(0);
+      expect(
+        Number(
+          (await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.research_cache')).rows[0]?.n,
+        ),
+      ).toBeGreaterThan(0);
       const again = await app.inject({ method: 'GET', url, remoteAddress: '192.0.2.3' });
       expect(again.statusCode).toBe(200);
       expect(
         (await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.verification_receipts')).rows[0]
           ?.n,
-      ).toBe(2);
+      ).toBe(0);
       expect(
         (await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.chain_transactions')).rows[0]?.n,
       ).toBe(0);
@@ -264,7 +270,7 @@ describe('real API/domain/Postgres research boundary (synthetic RPC, mock mode o
       expect(
         (await h.runtime.query('SELECT count(*)::integer AS n FROM blacklist.verification_receipts')).rows[0]
           ?.n,
-      ).toBe(Number(before) + 1);
+      ).toBe(Number(before));
     } finally {
       await app?.close();
       await ctx?.runtime.close();

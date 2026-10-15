@@ -35,6 +35,25 @@ const result = <T>(fn: () => Promise<T>): Promise<ModerationResult<T>> =>
         ['passkey_required', 'passkey_not_verified', 'stepup_required'].includes(error.code)
       )
         return { kind: 'error' as const, code: 'stepup_required' as const };
+      // api-integration-contracts §7: stale or invalid admin changes are reported, not hidden.
+      if (error instanceof ApiFailure && error.code === 'conflict')
+        return {
+          kind: 'error' as const,
+          code: 'invalid_transition' as const,
+          detail: 'This changed or already exists. Reload and try again; nothing was applied.',
+        };
+      if (error instanceof ApiFailure && ['invalid_request', 'invalid_transition'].includes(error.code))
+        return {
+          kind: 'error' as const,
+          code: 'invalid_transition' as const,
+          detail: 'The request was incomplete or not allowed in this state. Nothing was applied.',
+        };
+      if (error instanceof ApiFailure && error.code === 'not_eligible')
+        return {
+          kind: 'error' as const,
+          code: 'not_eligible' as const,
+          detail: 'A two-person or independence rule prevents you from taking this action.',
+        };
       return { kind: 'error' as const, code: 'temporarily_unavailable' as const };
     });
 async function read<S extends z.ZodType>(path: string, schema: S): Promise<z.output<S>> {
@@ -143,9 +162,9 @@ export const liveAdminApi: AdminApi = {
       });
       return find(await recoveries(), response.id);
     }),
-  verifyRecovery: (id, method) =>
+  verifyRecovery: (id, method, rationale) =>
     result(async () => {
-      await mutate('/admin/recoveries/verify', { id, method, rationale: method });
+      await mutate('/admin/recoveries/verify', { id, method, rationale });
       return find(await recoveries(), id);
     }),
   approveRecovery: (id) =>

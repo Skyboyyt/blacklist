@@ -426,11 +426,11 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       return ok(clone(recovery));
     },
 
-    async verifyRecovery(id, method) {
+    async verifyRecovery(id, method, rationale) {
       await wait();
       const me = admin();
       if (!me) return forbidden();
-      return addRecoveryVerification(store, id, { ref: me, isAdmin: true }, method, at());
+      return addRecoveryVerification(store, id, { ref: me, isAdmin: true }, method, rationale, at());
     },
 
     async approveRecovery(id) {

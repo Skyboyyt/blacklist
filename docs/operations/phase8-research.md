@@ -19,7 +19,8 @@ Maintained backend coverage runs all tests at repository root with backend-only 
 | `ALCHEMY_ETHEREUM_API_KEY` | protected API runtime | Ethereum mainnet Free key; no value in source/browser/logs |
 | `HELIUS_RPC_API_KEY` | protected API runtime | Solana mainnet Free key; no value in source/browser/logs |
 | `RPC_API_REQUESTS_PER_MINUTE` | API only | 30 per key; requests/retries consume quota |
-| `RPC_API_TOTAL_REQUEST_BUDGET` | API only | 100 per process lifetime, resets on restart; not monthly billing protection |
+| `RPC_API_TOTAL_REQUEST_BUDGET` | API only | 100 per `RPC_API_BUDGET_WINDOW_HOURS` window per process (also reset by a restart); not monthly billing protection |
+| `RPC_API_BUDGET_WINDOW_HOURS` | API only | 24 by default; set it so budget × windows per month fits the verified plan |
 
 Existing API database/signer/internal/staging/Origin/RP settings stay mandatory. Worker retains its mail/DB settings and gets no RPC credentials. Vercel uses existing server-only `API_INTERNAL_URL`, `INTERNAL_API_TOKEN`, `DEPLOYMENT_ENV`, `STAGING_ACCESS_TOKEN`, `CANONICAL_APP_ORIGIN`; no new browser environment variables. Both provider keys are required before enabling research. Do not copy proxy placeholders into cloud services. Enter actual credentials through their protected settings only.
 

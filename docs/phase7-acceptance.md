@@ -1,5 +1,7 @@
 # Phase 7 acceptance and implementation evidence — 2026-10-13
 
+> **Status update (2026-10-15):** this work was later published and merged to `main` (PRs #8–#11), and Phase 8 followed. Statements below about local, uncommitted or unpublished state are historical. The exit criteria still open are listed in [Claude's review](reviews/2026-10-15-claude-phase7-8-review.md) (CR-11).
+
 **Scope:** the exact acceptance spikes were implemented and passed before runtime features. The approved local Backend Foundation now exists; application checks supplement those isolated proofs. Claude remains primary engineer and architecture owner. This is reviewable, unpublished work, not production readiness.
 
 ## Git and repair integration

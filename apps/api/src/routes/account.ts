@@ -55,7 +55,7 @@ export function accountRoutes(app: FastifyInstance, ctx: IdentityContext) {
     { config: { security: { auth: 'member', mutation: true } } },
     async (req) => {
       if (!req.actor) throw new DomainError('session_expired');
-      await reauthenticate(ctx, req.actor, reauthRequestSchema.parse(req.body).password);
+      await reauthenticate(ctx, req.actor, reauthRequestSchema.parse(req.body).password, req.clientPrefix);
       return { kind: 'ok' };
     },
   );

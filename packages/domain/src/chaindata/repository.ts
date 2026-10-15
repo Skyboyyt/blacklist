@@ -23,7 +23,11 @@ export async function recordChainRead(
 ): Promise<void> {
   const receipts = value.provenance.receipts ?? [];
   await runtime.transaction(async (_tx, client) => {
-    await writeReceipts(client, capability, subject, receipts, value.provenance.verification);
+    // Immutable receipts are verification evidence (chain-data §5.2): only a cross-verified
+    // read (two receipts) is kept. Ordinary single-source display reads touch the
+    // disposable cache only, so anonymous browsing cannot grow append-only tables (CR-03).
+    if (receipts.length >= 2)
+      await writeReceipts(client, capability, subject, receipts, value.provenance.verification);
     const first = receipts[0];
     // Shared public chain cache only: no user/session/handle/email or search activity association.
     const chainId = first?.chainId ?? chain;

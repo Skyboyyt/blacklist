@@ -166,6 +166,15 @@ describe('bounded capability routing and authoritative verification', () => {
     await router.getAccountInfo(ref);
     expect(p.fetchAccountInfo).toHaveBeenCalledTimes(4);
   });
+  it('does not let item-specific invalid or unsupported answers open the circuit for everyone', async () => {
+    for (const kind of ['invalid_response', 'not_supported'] as const) {
+      const p = provider();
+      p.fetchAccountInfo = vi.fn().mockRejectedValue(new ProviderFault(kind));
+      const router = createChainDataService([p], () => 0);
+      for (let i = 0; i < 5; i++) expect((await router.getAccountInfo(ref)).ok).toBe(false);
+      expect(p.fetchAccountInfo).toHaveBeenCalledTimes(5);
+    }
+  });
   it('restarts pagination at its snapshot on provider failover without passing another provider cursor', async () => {
     let time = 0,
       fail = false;

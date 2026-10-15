@@ -20,17 +20,53 @@ async function verifyCurrent(tx: Parameters<typeof lockActor>[0], userId: string
   )
     throw new DomainError('invalid_credentials');
 }
-export async function reauthenticate(ctx: IdentityContext, actor: UserActor, password: string) {
+/**
+ * Current-password checks outside login use the login throttle keys (account, email
+ * digest, client prefix), so a stolen session cannot guess the password without limit
+ * (identity §12).
+ */
+export async function throttledPasswordCheck<T>(
+  ctx: IdentityContext,
+  userId: string,
+  prefix: string,
+  check: () => Promise<T>,
+): Promise<T> {
+  const [user] = await ctx.runtime.db
+    .select({ email: schema.user.email })
+    .from(schema.user)
+    .where(eq(schema.user.id, userId));
+  if (!user) throw new DomainError('session_expired');
+  await ctx.throttle.admit(user.email, prefix, undefined, userId);
+  try {
+    const result = await check();
+    await ctx.throttle.success(user.email, prefix, userId);
+    return result;
+  } catch (error) {
+    if (error instanceof DomainError && error.code === 'invalid_credentials') {
+      await ctx.throttle.failure(user.email, prefix, userId);
+      await securityEvent(ctx.runtime.db, userId, 'reauth_failed', prefix);
+    }
+    throw error;
+  }
+}
+export async function reauthenticate(
+  ctx: IdentityContext,
+  actor: UserActor,
+  password: string,
+  prefix: string,
+) {
   if (actor.accountKind !== 'member') throw new DomainError('passkey_required');
-  await ctx.runtime.transaction(async (tx) => {
-    await lockActor(tx, actor);
-    await verifyCurrent(tx, actor.userId, password);
-    await tx
-      .update(schema.policy)
-      .set({ reauthenticatedAt: new Date() })
-      .where(eq(schema.policy.sessionId, actor.sessionId));
-    await securityEvent(tx, actor.userId, 'reauthenticated');
-  });
+  await throttledPasswordCheck(ctx, actor.userId, prefix, () =>
+    ctx.runtime.transaction(async (tx) => {
+      await lockActor(tx, actor);
+      await verifyCurrent(tx, actor.userId, password);
+      await tx
+        .update(schema.policy)
+        .set({ reauthenticatedAt: new Date() })
+        .where(eq(schema.policy.sessionId, actor.sessionId));
+      await securityEvent(tx, actor.userId, 'reauthenticated');
+    }),
+  );
 }
 export async function changePassword(
   ctx: IdentityContext,

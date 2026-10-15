@@ -45,7 +45,32 @@ Provider-independent registry, adapters, strict response handling and verificati
 
 ## Decision
 
-Owner approved the proposed Free-provider direction via explicit asynchronous reply on2026-10-14. Actual Alchemy plan/history evidence, both RPC credentials, independent secondary selection and Claude review remain pending. O-3 is not closed and no live provider is activated. This ADR does not change chain evidence, privacy, moderation, risk, authentication, paid hosting or live deployment policies.
+Owner approved the proposed Free-provider direction via explicit asynchronous reply on 2026-10-14. Actual Alchemy plan/history evidence, both RPC credentials, independent secondary selection and Claude review remain pending. O-3 is not closed and no live provider is activated. This ADR does not change chain evidence, privacy, moderation, risk, authentication, paid hosting or live deployment policies.
+
+## Recommendation (Claude)
+
+**Amend, then accept as provisional single-source display providers** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md) CR-03, CR-06–CR-08). Helius Free and Alchemy Free tagged `unknown-upstream`, all capability flags off by default, no change to chain-data semantics. Amendments:
+1. State that without a documented independent secondary, cross-verification is always `unavailable`, which blocks pinning transaction evidence and creating scoring signals; name that as a dependency of those phases.
+2. Define the budget: a window matching the provider plan (not a lifetime counter), a per-request cap on provider calls, and the API/worker split.
+3. Make CR-03, CR-06, CR-07 and CR-08 conditions for setting `RESEARCH_ENABLED=true`.
+4. Remove or justify the public `api.mainnet-beta.solana.com` endpoint in the allowlist.
+5. Move the Render environment-group narrative into operations docs.
+
+The provider code was merged while this ADR is Proposed (AGENTS §6); record that as an explicit owner waiver. O-3 stays open.
+
+**Outstanding provider verification (2026-10-15).** All of these must be documented before `RPC_PLAN_VERIFIED`, `RESEARCH_ENABLED` or any capability flag is set to `true`. None is closed by the sampled probes above.
+
+| # | Requirement | Helius (Solana) | Alchemy (Ethereum) |
+|---|---|---|---|
+| 1 | Current Free plan limits and per-method credit costs, from the owner's actual account | Pricing page retrieved (1M credits/month, 10 RPS); per-method costs for the methods used still to confirm | **Unverified** (documentation returned 403 here) |
+| 2 | Terms allow this use: public display, short-lived caching, storing normalized fields in receipts, commercial use | To confirm | To confirm |
+| 3 | History depth and archive coverage for the history and transaction methods used | Retention for `getSignaturesForAddress` and old transactions to probe | Archive entitlement to confirm. `alchemy_getAssetTransfers` entitlement is required before `ALCHEMY_INDEXED_HISTORY_VERIFIED=true`; token balances before `ALCHEMY_TOKEN_BALANCES_VERIFIED=true` |
+| 4 | An independent secondary provider in a different independence group, with documented upstream independence | None selected | None selected |
+| 5 | Budget split: per-window budget sized to the plan (`RPC_API_TOTAL_REQUEST_BUDGET` × windows per month ≤ plan), API-only keys, worker allocation zero or explicit | To set | To set |
+| 6 | Key handling: keys only on the API service, never in the mixed operator group link, a rotation owner and a rotation procedure | Saved in an unlinked Render group; move to API-only on rollout | Same |
+| 7 | Remove `api.mainnet-beta.solana.com` from the production allowlist, or justify keeping it as evaluation-only | Open (C-7) | n/a |
+
+Until row 4 is met, cross-verification is always `unavailable`. That blocks pinning moderator transaction evidence and creating scoring signals. Single-source display stays possible once rows 1–3 and 5–7 are met and the owner accepts this ADR.
 
 ## Protocol inspection follow-up
 

@@ -243,6 +243,29 @@ describe('on-demand pinned-fact reconciliation on isolated PostgreSQL', () => {
       expect(
         (await h.runtime.query('SELECT normalized FROM blacklist.chain_transactions')).rows[0]?.normalized,
       ).toEqual(normalized);
+      // CR-14 D-1: the database itself refuses invalidations that are forged, unpinned or repeated.
+      const [row] = (
+        await h.runtime.query<{ chain_id: string; fact_ref: { subject: string; receiptDigests: string[] } }>(
+          'SELECT chain_id,fact_ref FROM blacklist.chain_fact_invalidations',
+        )
+      ).rows;
+      if (!row) throw new Error('fixture_invalid');
+      const insert = (factRef: unknown, factType = 'transaction') =>
+        h.runtime.query(
+          `INSERT INTO blacklist.chain_fact_invalidations(chain_id,fact_type,fact_ref,reason,recorded_by)
+           VALUES($1,$2,$3,'direct_insert_attempt','cli:test')`,
+          [row.chain_id, factType, factRef],
+        );
+      await expect(insert(row.fact_ref)).rejects.toMatchObject({ code: '23505' });
+      await expect(
+        insert({ ...row.fact_ref, receiptDigests: ['a'.repeat(64), 'a'.repeat(64)] }),
+      ).rejects.toMatchObject({ code: '23514' });
+      await expect(insert({ ...row.fact_ref, subject: '0x' + 'd'.repeat(64) })).rejects.toMatchObject({
+        code: '23514',
+      });
+      await expect(insert({ ...row.fact_ref, extra: true })).rejects.toMatchObject({ code: '23514' });
+      await expect(insert(row.fact_ref, 'account_info')).rejects.toMatchObject({ code: '23514' });
+      expect((await h.runtime.query('SELECT id FROM blacklist.chain_fact_invalidations')).rowCount).toBe(1);
       const missing = evmAdapter.parseTxHash('0x' + 'd'.repeat(64));
       if (!missing) throw new Error('fixture_invalid');
       expect(

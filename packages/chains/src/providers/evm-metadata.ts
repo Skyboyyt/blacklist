@@ -81,9 +81,22 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
         return { data: null, provenance: provenance(ref, options, query, 'token_metadata', { code }) };
       const call = (data: string, schema: z.ZodType) =>
         rpc.call('eth_call', [{ to: ref.address, data }, query.selector], schema, options.signal);
-      const [decimals, supply] = await Promise.all([call('0x313ce567', word), call('0x18160ddd', word)]);
-      if (typeof decimals !== 'string' || typeof supply !== 'string' || BigInt(decimals) > 255n)
-        throw new ProviderFault('not_supported');
+      // A contract without the ERC-20 views is "not a token", not a provider failure.
+      const view = async (data: string): Promise<string | null> => {
+        try {
+          const result = await call(data, bytes);
+          return typeof result === 'string' && word.safeParse(result).success ? result : null;
+        } catch (error) {
+          if (error instanceof ProviderFault && error.kind === 'not_supported') return null;
+          throw error;
+        }
+      };
+      const [decimals, supply] = await Promise.all([view('0x313ce567'), view('0x18160ddd')]);
+      if (decimals === null || supply === null || BigInt(decimals) > 255n)
+        return {
+          data: null,
+          provenance: provenance(ref, options, query, 'token_metadata', { code, standard: 'none' }),
+        };
       const optional = async (data: string): Promise<string | null> => {
         try {
           const result = await call(data, bytes);

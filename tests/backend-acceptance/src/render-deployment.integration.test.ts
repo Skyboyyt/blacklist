@@ -56,7 +56,7 @@ afterAll(async () => {
 });
 
 describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)', () => {
-  it('provisions with a non-superuser owner, preserves credentials and applies ten forward migrations', async () => {
+  it('provisions with a non-superuser owner, preserves credentials and applies eleven forward migrations', async () => {
     await provisionCloudRoles(adminUrl, { runtime: runtimePassword, migrator: migratorPassword });
     await provisionCloudRoles(adminUrl, {
       runtime: randomBytes(32).toString('base64url'),
@@ -68,7 +68,7 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
     try {
       expect(
         (await migrator.query('SELECT count(*)::int AS n FROM blacklist_migrations.applied')).rows[0]?.n,
-      ).toBe(10);
+      ).toBe(11);
       expect(
         (
           await migrator.query(
@@ -201,6 +201,59 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
       expect(observedPrefix).toBe('ip4:198.51.100.7');
     } finally {
       await app.close();
+    }
+  });
+  it('separates visitors behind the web gateway only when the forwarding secret proves the client IP', async () => {
+    if (!ctx) throw new Error('fixture_runtime_missing');
+    const forwardingToken = randomBytes(32).toString('base64url');
+    const settings = config({ CLIENT_IP_FORWARDING_TOKEN: forwardingToken });
+    const app = createServer(ctx, settings, false);
+    let observedPrefix: string | undefined;
+    app.addHook('preHandler', async (request) => {
+      observedPrefix = request.clientPrefix;
+    });
+    const gate = { 'x-blacklist-staging-access': stagingToken };
+    const visit = async (headers: Record<string, string>) => {
+      const result = await app.inject({ url: '/api/v1/viewer', remoteAddress: '192.0.2.9', headers });
+      expect(result.statusCode).toBe(200);
+      expect(result.body).not.toContain(forwardingToken);
+      return observedPrefix;
+    };
+    try {
+      const proven = (ip: string) => ({
+        ...gate,
+        'x-bl-client-ip': ip,
+        'x-bl-client-ip-token': forwardingToken,
+      });
+      expect(await visit(proven('198.51.100.7'))).toBe('ip4:198.51.100.7');
+      expect(await visit(proven('203.0.113.8'))).toBe('ip4:203.0.113.8');
+      expect(await visit(proven('2001:db8:1:2:3::9'))).toBe('ip6:2001:db8:1:2::/64');
+      // A browser or direct caller cannot choose its own bucket without the secret.
+      for (const token of [undefined, 'wrong', `${forwardingToken}x`])
+        expect(
+          await visit({
+            ...gate,
+            'x-bl-client-ip': '198.51.100.7',
+            ...(token ? { 'x-bl-client-ip-token': token } : {}),
+          }),
+        ).toBe('ip4:192.0.2.9');
+      expect(await visit(proven('not-an-ip'))).toBe('ip4:192.0.2.9');
+    } finally {
+      await app.close();
+    }
+    const unconfigured = createServer(ctx, config(), false);
+    unconfigured.addHook('preHandler', async (request) => {
+      observedPrefix = request.clientPrefix;
+    });
+    try {
+      await unconfigured.inject({
+        url: '/api/v1/viewer',
+        remoteAddress: '192.0.2.9',
+        headers: { ...gate, 'x-bl-client-ip': '198.51.100.7', 'x-bl-client-ip-token': forwardingToken },
+      });
+      expect(observedPrefix).toBe('ip4:192.0.2.9');
+    } finally {
+      await unconfigured.close();
     }
   });
   it('measures a private peer with expiring operator credentials without bypassing route authorization', async () => {

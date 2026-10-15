@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| Status | **Revision 3 — final Phase 0 closure corrections (Codex re-review V2-01–V2-05, owner decisions E-1 and P-11, frontend-first).** Awaiting a final Codex closure check. Phase 1 is **not** authorized |
-| Stage | Pre-development / Architecture |
+| Status | **Revision 3** (Phase 0 closure), amended by accepted ADRs. Implementation through Phase 8 is merged on `main`; see AI_HANDOFF for the authorized phase |
+| Stage | Implementation (frontend Phases 1–6; backend Phases 7–8 merged, research off by default) |
 | Author | Claude (primary engineer) |
 | Reviewer | Codex: [review](docs/reviews/2026-10-04-phase-0-codex-review.md) and [re-review](docs/reviews/2026-10-04-phase-0-codex-rereview.md) (APPROVED AFTER ADDITIONAL REQUIRED FIXES); this revision responds to both |
-| Last updated | 2026-10-04 |
+| Last updated | 2026-10-15 (status and consistency pass; no design change) |
 | Companion docs | [PRD.md](PRD.md) · [ARCHITECTURE-ESSENTIALS.md](ARCHITECTURE-ESSENTIALS.md) · [THREAT-MODEL.md](THREAT-MODEL.md) · [docs/data-model.md](docs/data-model.md) · [docs/testing-strategy.md](docs/testing-strategy.md) · [docs/dependency-policy.md](docs/dependency-policy.md) |
 | Normative design docs | [docs/design/identity.md](docs/design/identity.md) · [docs/design/moderation.md](docs/design/moderation.md) · [docs/design/chain-data.md](docs/design/chain-data.md) |
-| Decisions | §34 (D-001…D-052) · [docs/adr/](docs/adr/README.md) (ADR 0001–0008) |
+| Decisions | §34 (D-001…D-052) · [docs/adr/](docs/adr/README.md) (ADR 0001–0018; statuses in the index) |
 
-> This document specifies the approved architecture, not a completion inventory. Phase7 implementation is merged; Phase8 is owner-authorized on a separate review branch and remains undeployed/provider-validation-blocked. Latest [AI_HANDOFF.md](AI_HANDOFF.md) and [Phase8 report](docs/reviews/2026-10-14-phase8-implementation.md) record actual results. Where a section says "Normative detail: docs/design/…", that design document is the single source of truth and this section only summarizes it.
+> This document specifies the approved architecture, not a completion inventory. Phase 7 and Phase 8 implementations are merged on `main`; research stays disabled until O-3 and ADR 0018 close. Latest [AI_HANDOFF.md](AI_HANDOFF.md) and [Phase8 report](docs/reviews/2026-10-14-phase8-implementation.md) record actual results. Where a section says "Normative detail: docs/design/…", that design document is the single source of truth and this section only summarizes it.
 
 ### Revision history
 
@@ -156,14 +156,14 @@ Every major dependency has a reason. Versions are pinned when each package is fi
 | Password hashing | **Argon2id** (`@node-rs/argon2`) via Better Auth hash/verify hooks | OWASP-recommended; no install scripts | bcrypt (72-byte truncation) |
 | Staff WebAuthn | `@simplewebauthn/server` / `browser` | Focused, maintained; staff assurance is Blacklist policy | Better Auth passkey plugin (semantics don't match staff assurance) |
 | Validation | **Zod** (4) | Shared runtime validation and types | — |
-| Database | **PostgreSQL 17 or 18** (chosen with hosting) | Constraints, composite FKs, partial indexes, CTEs, FTS + trigram | MongoDB; graph DB |
+| Database | **PostgreSQL 17 or 18** (chosen with hosting; staging runs Neon PostgreSQL 18, ADR 0014) | Constraints, composite FKs, partial indexes, CTEs, FTS + trigram | MongoDB; graph DB |
 | Data access | **Drizzle + drizzle-kit**, committed SQL migrations, **conditional on acceptance checks D1–D9** (ADR 0007) | Typed SQL-shaped queries; reviewable SQL | Kysely (fallback if checks fail); Prisma |
 | Jobs | **pg-boss** with transactional enqueue (proven by check D6) | No extra infrastructure; jobs commit or roll back with state | Redis + BullMQ |
-| Cache / shared limits | **None in V1** | Single instance per process at launch | Redis on day one |
+| Cache / shared limits | **No cache service in V1.** Phase 8 added a disposable PostgreSQL table `research_cache` (public chain data only, 15-second expiry); it still needs a data-model/ADR decision (review CR-12) | Single instance per process at launch | Redis on day one |
 | Object storage | **S3-compatible** (MinIO locally) | Portable; versioning and object lock | DB blobs |
 | Image sanitizing | **sharp (libvips)**, only inside `apps/evidence-processor` | Strict decode/re-encode; native code confined to an isolated, credential-free process | Processing in the general worker (credential exposure) |
 | Malware scanning | **Deferred** (ADR 0004) | Image-only input, re-encoded, originals never rendered | ClamAV in V1 (little value for re-encoded images) |
-| Email | SMTP provider (O-7); **Mailpit** locally | Provider-agnostic | Provider SDK lock-in |
+| Email | SMTP provider (O-7) or the Resend HTTPS API (staging, ADR 0014); **Mailpit** locally | Provider-agnostic | Provider SDK lock-in |
 | EVM / Solana | **viem** / **@solana/kit** | Typed, maintained | ethers; web3.js v1 |
 | UI | **Tailwind CSS** + **Radix** primitives | Accessible primitives; no runtime CSS-in-JS | Heavy component frameworks |
 | Client data / forms | **TanStack Query** (client components) · **React Hook Form** + Zod | Interactive views (search, report forms, staff queues) | Global stores |

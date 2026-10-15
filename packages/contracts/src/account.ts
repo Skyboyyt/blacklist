@@ -23,6 +23,10 @@ export const accountErrorCodeSchema = z.enum([
   'cannot_revoke_current_session',
   /** Staff enrollment activation before the bound flow has a password and two authenticators. */
   'enrollment_incomplete',
+  /** The new password failed the length/character policy or the common-password check. */
+  'password_policy_rejected',
+  /** The new password appears in a known breach corpus. */
+  'password_breached',
 ]);
 export type AccountErrorCode = z.infer<typeof accountErrorCodeSchema>;
 

@@ -72,6 +72,16 @@ describe('EVM transfer evidence is separate from authorization', () => {
       decodeEvmTransaction(chain.chainId, call, receipt, new Date(), new Set([known])).transfers[0],
     ).toMatchObject({ authorization: 'delegated', authority: spender, from: sender });
   });
+  it('leaves an owner calling transferFrom on their own tokens unclassified, not delegated', () => {
+    const call = {
+      ...tx,
+      from: sender,
+      input: '0x23b872dd' + topic(sender).slice(2) + topic(recipient).slice(2) + amount.slice(2),
+    };
+    expect(
+      decodeEvmTransaction(chain.chainId, call, receipt, new Date(), new Set([known])).transfers[0],
+    ).toMatchObject({ authorization: 'unknown', authority: null, from: sender, topLevel: true });
+  });
   it('does not create transfers from failed execution or orphaned/mismatched receipts', () => {
     expect(
       decodeEvmTransaction(chain.chainId, tx, { ...receipt, status: '0x0' }, new Date()).transfers,

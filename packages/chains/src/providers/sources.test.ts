@@ -90,6 +90,69 @@ describe('real-protocol source clients use validated mainnet/snapshot reads', ()
       ).fetchTransaction({ chainId: ethRef.chainId, txHash }, opts),
     ).rejects.toMatchObject({ kind: 'history_pruned' });
   });
+  it('digests only the specified transaction comparison fields, so an optional log field cannot cause a false conflict', async () => {
+    const hash = '0x' + 'a'.repeat(64),
+      blockHash = '0x' + 'b'.repeat(64);
+    const txHash = evmAdapter.parseTxHash(hash);
+    if (!txHash) throw new Error('fixture_invalid');
+    const log = {
+      address: '0x' + '3'.repeat(40),
+      topics: ['0x' + 'c'.repeat(64)],
+      data: '0x',
+      logIndex: '0x0',
+      transactionHash: hash,
+      blockHash,
+    };
+    const digest = async (withRemoved: boolean) => {
+      const source = createEvmRpcSource(
+        'node-a',
+        'infra-a',
+        rpc((method, params) => {
+          if (method === 'eth_chainId') return '0x1';
+          if (method === 'eth_getTransactionByHash')
+            return {
+              hash,
+              from: '0x' + '1'.repeat(40),
+              to: '0x' + '2'.repeat(40),
+              value: '0x0',
+              input: '0x',
+              blockHash,
+              blockNumber: '0x10',
+              transactionIndex: '0x0',
+            };
+          if (method === 'eth_getTransactionReceipt')
+            return {
+              transactionHash: hash,
+              blockHash,
+              blockNumber: '0x10',
+              transactionIndex: '0x0',
+              status: '0x1',
+              gasUsed: '0x5208',
+              effectiveGasPrice: '0x1',
+              logs: [withRemoved ? { ...log, removed: false } : log],
+            };
+          if (method === 'eth_getBlockByNumber')
+            return params[0] === 'finalized'
+              ? { number: '0x20', hash: '0x' + 'd'.repeat(64), timestamp: '0x65000000' }
+              : { number: '0x10', hash: blockHash, timestamp: '0x65000000' };
+          throw new ProviderFault('not_supported');
+        }),
+      );
+      const result = await source.fetchTransaction(
+        { chainId: ethRef.chainId, txHash },
+        { commitment: 'finalized' },
+      );
+      const [receipt] = result.provenance.receipts ?? [];
+      if (!receipt) throw new Error('receipt_missing');
+      expect(Object.keys(receipt.normalizedFields).sort()).toEqual([
+        'comparison',
+        'execution',
+        'normalizedTransaction',
+      ]);
+      return receipt.fieldsDigest;
+    };
+    expect(await digest(true)).toBe(await digest(false));
+  });
   it('keeps case-preserved Solana mainnet context slots and enforces the lower bound', async () => {
     const transport = rpc((method) =>
       method === 'getGenesisHash'

@@ -147,7 +147,11 @@ export function createRpcTransport(
         )
           throw new ProviderFault('invalid_response');
         if (parsed.data.error) {
-          const code = parsed.data.error.code;
+          const { code, message } = parsed.data.error;
+          // An execution revert is an answer about the queried contract, not a provider outage:
+          // it is not retried and does not count toward the provider's circuit.
+          if (code === 3 || (code === -32000 && /execution reverted/iu.test(message)))
+            throw new ProviderFault('not_supported');
           throw new ProviderFault(
             code === 429 || code === -32005
               ? 'rate_limited'

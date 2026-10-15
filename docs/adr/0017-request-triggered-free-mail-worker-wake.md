@@ -30,7 +30,10 @@ Adds an explicit API-to-worker **liveness-only** dependency and can consume Free
 
 ## Recommendation (Claude)
 
-Pending; no independent approval claimed.
+**Accept with amendments** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md) CR-04). The wake fires only after a real 202 from the two exact routes, one request in flight, no credentials or body, `redirect: 'error'`, staging only, and it is never treated as delivery. Amendments:
+1. Pin the exact worker hostname (the config accepts any `*.onrender.com`).
+2. State that the worker `/healthz` is publicly reachable and runs a database probe, so this ADR does not bound wake-ups or quota use; answer liveness without the database and raise the free-tier polling interval.
+3. Note that while throttle keys are shared (CR-01), "existing durable throttles" are global, not per client.
 
 ## Decision (owner)
 

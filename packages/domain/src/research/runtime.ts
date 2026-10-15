@@ -16,6 +16,7 @@ export function createResearch(runtime: DatabaseRuntime, config: ApiConfig): Res
   const limits = {
     perMinute: config.RPC_API_REQUESTS_PER_MINUTE,
     total: config.RPC_API_TOTAL_REQUEST_BUDGET,
+    totalWindowMs: config.RPC_API_BUDGET_WINDOW_HOURS * 60 * 60 * 1000,
     concurrency: 4,
   };
   const ethereum = retryingTransport(

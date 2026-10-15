@@ -48,6 +48,14 @@ const apiSchema = shared.extend({
   API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).default('127.0.0.1'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4107),
   INTERNAL_API_TOKEN: z.string().min(32),
+  /**
+   * Shared with the web tier only. The web proxy sends the visitor's IP with this secret
+   * so per-client throttles do not collapse into the gateway's one address.
+   */
+  CLIENT_IP_FORWARDING_TOKEN: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{32,128}$/u)
+    .optional(),
   RESEARCH_ENABLED: z.enum(['true', 'false']).default('false'),
   RPC_PLAN_VERIFIED: z.enum(['true', 'false']).default('false'),
   ALCHEMY_INDEXED_HISTORY_VERIFIED: z.enum(['true', 'false']).default('false'),
@@ -66,6 +74,8 @@ const apiSchema = shared.extend({
     .optional(),
   RPC_API_REQUESTS_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(30),
   RPC_API_TOTAL_REQUEST_BUDGET: z.coerce.number().int().min(1).max(10000).default(100),
+  /** The total budget is spent per window and then restored (default one day). */
+  RPC_API_BUDGET_WINDOW_HOURS: z.coerce.number().int().min(1).max(744).default(24),
   MAIL_WORKER_HEALTH_URL: z
     .string()
     .url()
@@ -164,6 +174,13 @@ export const readApiConfig = (env = process.env) => {
       config.STAGING_ACCESS_TOKEN === config.INTERNAL_API_TOKEN)
   )
     throw new Error('STAGING_ACCESS_TOKEN requires an independent staging secret');
+  if (
+    config.CLIENT_IP_FORWARDING_TOKEN &&
+    [config.BETTER_AUTH_SECRET, config.INTERNAL_API_TOKEN, config.STAGING_ACCESS_TOKEN].includes(
+      config.CLIENT_IP_FORWARDING_TOKEN,
+    )
+  )
+    throw new Error('CLIENT_IP_FORWARDING_TOKEN requires an independent secret');
   if (config.NODE_ENV === 'production' && new URL(config.APP_ORIGIN).protocol !== 'https:')
     throw new Error('APP_ORIGIN requires HTTPS in production');
   if (new URL(config.APP_ORIGIN).hostname !== config.WEBAUTHN_RP_ID)

@@ -2,7 +2,10 @@ import { randomBytes } from 'node:crypto';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { cookies } from 'next/headers';
 import { liveResearchApi } from './research';
-vi.mock('next/headers', () => ({ cookies: vi.fn(async () => ({ get: () => undefined })) }));
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => ({ get: () => undefined })),
+  headers: vi.fn(async () => new Headers({ 'x-real-ip': '198.51.100.7' })),
+}));
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
@@ -25,7 +28,9 @@ describe('non-mock server research adapter', () => {
     const [url, options] = fetcher.mock.calls[0] ?? [];
     expect(String(url)).toBe('http://localhost:4107/api/internal/v1/addresses/ethereum/0x' + '1'.repeat(40));
     expect(options).toMatchObject({ method: 'GET', cache: 'no-store', redirect: 'error' });
-    expect(Object.keys(options.headers)).toEqual(['x-bl-internal-token']);
+    // The visitor's edge IP travels with the internal token, so research limits are per visitor.
+    expect(options.headers).toMatchObject({ 'x-bl-client-ip': '198.51.100.7' });
+    expect(Object.keys(options.headers).sort()).toEqual(['x-bl-client-ip', 'x-bl-internal-token']);
     expect(JSON.stringify(options)).not.toMatch(/ALCHEMY|HELIUS|DATABASE_URL/u);
   });
   it('keeps unavailable separate from absent data and refuses extra output fields', async () => {

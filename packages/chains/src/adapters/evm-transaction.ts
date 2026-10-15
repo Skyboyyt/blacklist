@@ -116,12 +116,15 @@ export function decodeEvmTransaction(
         sender === from &&
         '0x' + tx.input.slice(34, 74) === recipient &&
         BigInt('0x' + tx.input.slice(74)) === BigInt(log.data);
-      const delegated =
+      const transferFromCall =
         /^0x23b872dd[\da-f]{192}$/u.test(tx.input) &&
         tx.to?.toLowerCase() === emitter &&
         '0x' + tx.input.slice(34, 74) === sender &&
         '0x' + tx.input.slice(98, 138) === recipient &&
         BigInt('0x' + tx.input.slice(138)) === BigInt(log.data);
+      // Delegation is a third party moving the owner's tokens (chain-data §2.3). The owner
+      // calling transferFrom on their own balance fits neither rule, so it stays unknown.
+      const delegated = transferFromCall && sender !== from;
       if (evidenceLevel === 'asset_contract_log' && direct) {
         authorization = 'subject_signed_direct';
         authority = from;
@@ -140,7 +143,7 @@ export function decodeEvmTransaction(
         evidenceLevel,
         authorization,
         authority,
-        topLevel: direct || delegated,
+        topLevel: direct || transferFromCall,
       });
     }
   }

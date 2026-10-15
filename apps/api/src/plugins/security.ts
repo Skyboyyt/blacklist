@@ -91,7 +91,14 @@ export function installSecurity(app: FastifyInstance, ctx: IdentityContext, conf
     // A configured proxy supplies one canonical IP; multi-hop lists are rejected.
     const forwarded = trusted ? req.headers['x-forwarded-for'] : undefined;
     const ssr = policy?.auth === 'internal' && internal ? req.headers['x-bl-client-ip'] : undefined;
-    const candidate = ssr ?? forwarded;
+    // Browser traffic reaches the API through the web proxy, which replaces any
+    // browser-supplied value with the visitor's IP and proves it with its own secret.
+    const gateway =
+      config.CLIENT_IP_FORWARDING_TOKEN &&
+      equalSecret(req.headers['x-bl-client-ip-token'], config.CLIENT_IP_FORWARDING_TOKEN)
+        ? req.headers['x-bl-client-ip']
+        : undefined;
+    const candidate = ssr ?? gateway ?? forwarded;
     const address = typeof candidate === 'string' && isIP(candidate) ? candidate : raw;
     req.clientPrefix = ipPrefix(address);
     if (!policy) return reply.code(404).send({ code: 'not_found' });

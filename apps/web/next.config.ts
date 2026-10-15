@@ -37,7 +37,9 @@ const nextConfig: NextConfig = {
     const base = process.env['API_INTERNAL_URL'];
     if (!base || mockMode) return [];
     const url = new URL(base);
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/')
+    // Session cookies and the staging credential travel on this hop: HTTPS unless loopback.
+    const loopback = url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    if ((url.protocol !== 'https:' && !loopback) || url.username || url.password || url.pathname !== '/')
       throw new Error('Invalid API_INTERNAL_URL');
     return [{ source: '/api/v1/:path*', destination: `${url.origin}/api/v1/:path*` }];
   },

@@ -7,6 +7,7 @@ import { LoadingStatus } from '@/components/states/skeletons';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { getModerationApi } from '@/lib/api/browser';
 import { formatDateTimeUtc } from '@/lib/format/date';
 import { moderationErrorAlert } from '@/lib/staff/errors';
@@ -28,7 +29,8 @@ export function RecoveryVerificationView() {
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [alert, setAlert] = useState<FormAlertState>({ kind: 'none' });
   const [methods, setMethods] = useState<Readonly<Record<string, string>>>({});
-  const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const [rationales, setRationales] = useState<Readonly<Record<string, string>>>({});
+  const [errors, setErrors] = useState<Readonly<Record<string, { method?: string; rationale?: string }>>>({});
   const [pending, setPending] = useState<string | null>(null);
 
   const fetchCases = useCallback(async () => {
@@ -51,15 +53,31 @@ export function RecoveryVerificationView() {
   async function verify(event: FormEvent<HTMLFormElement>, r: RecoveryCase) {
     event.preventDefault();
     if (pending) return;
-    const parsed = recoveryVerificationSchema.safeParse({ method: methods[r.id] ?? '' });
+    const parsed = recoveryVerificationSchema.safeParse({
+      method: methods[r.id] ?? '',
+      rationale: rationales[r.id] ?? '',
+    });
     if (!parsed.success) {
-      setErrors({ ...errors, [r.id]: 'Describe how you verified identity (at least 5 characters).' });
+      const fields = new Set(parsed.error.issues.map((issue) => issue.path[0]));
+      setErrors({
+        ...errors,
+        [r.id]: {
+          ...(fields.has('method')
+            ? { method: 'Say how you verified identity (at least 5 characters).' }
+            : {}),
+          ...(fields.has('rationale')
+            ? { rationale: 'Say why you are confident it is them (at least 10 characters).' }
+            : {}),
+        },
+      });
       return;
     }
-    setErrors({ ...errors, [r.id]: '' });
+    setErrors({ ...errors, [r.id]: {} });
     setPending(r.id);
     try {
-      const result = await (await getModerationApi()).verifyRecoveryIdentity(r.id, parsed.data.method);
+      const result = await (
+        await getModerationApi()
+      ).verifyRecoveryIdentity(r.id, parsed.data.method, parsed.data.rationale);
       if (result.kind === 'ok') {
         setAlert({
           kind: 'warning',
@@ -70,6 +88,7 @@ export function RecoveryVerificationView() {
               : 'One more staff member must verify; at least one of the two must be an administrator.',
         });
         setMethods({ ...methods, [r.id]: '' });
+        setRationales({ ...rationales, [r.id]: '' });
       } else setAlert(moderationErrorAlert(result));
       await fetchCases();
     } catch {
@@ -119,17 +138,12 @@ export function RecoveryVerificationView() {
                     ))}
                   </ul>
                 ) : null}
-                <form
-                  noValidate
-                  onSubmit={(e) => void verify(e, r)}
-                  className="flex flex-col gap-2 sm:flex-row sm:items-start"
-                >
+                <form noValidate onSubmit={(e) => void verify(e, r)} className="flex flex-col gap-3">
                   <Field
                     id={`verify-${r.id}`}
                     label="How did you verify identity?"
-                    hint="Staff only. Recorded in the audit history."
-                    error={errors[r.id] || undefined}
-                    className="min-w-0 flex-1"
+                    hint="For example: video call, call-back to the number on file."
+                    error={errors[r.id]?.method}
                   >
                     {(control) => (
                       <Input
@@ -139,7 +153,21 @@ export function RecoveryVerificationView() {
                       />
                     )}
                   </Field>
-                  <Button type="submit" size="sm" className="w-fit sm:mt-7" disabled={pending === r.id}>
+                  <Field
+                    id={`rationale-${r.id}`}
+                    label="Why are you confident it is them?"
+                    hint="Staff only. Recorded in the audit history."
+                    error={errors[r.id]?.rationale}
+                  >
+                    {(control) => (
+                      <Textarea
+                        {...control}
+                        value={rationales[r.id] ?? ''}
+                        onChange={(e) => setRationales({ ...rationales, [r.id]: e.target.value })}
+                      />
+                    )}
+                  </Field>
+                  <Button type="submit" size="sm" className="w-fit" disabled={pending === r.id}>
                     {pending === r.id ? 'Saving…' : 'Record verification'}
                     <span className="sr-only"> for {r.subject.handle}</span>
                   </Button>

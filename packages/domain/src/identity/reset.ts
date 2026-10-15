@@ -68,6 +68,14 @@ export async function resetPassword(
   assertion?: AssertionInput,
 ) {
   await admitTokenAction(ctx, 'password_reset.complete', rawToken, prefix);
+  // Cheap token pre-check before Argon2 and the breach lookup (CR-15.2); the locked
+  // re-check in the transaction stays authoritative.
+  const [candidate] = await ctx.runtime.db
+    .select({ state: schema.tokens.state, expiresAt: schema.tokens.expiresAt })
+    .from(schema.tokens)
+    .where(and(eq(schema.tokens.tokenHash, digest(rawToken)), eq(schema.tokens.purpose, 'password_reset')));
+  if (!candidate || candidate.state !== 'active' || candidate.expiresAt.getTime() <= Date.now())
+    throw new DomainError('token_invalid');
   const stored = await preparePassword(password, ctx.breachCheck);
   let proof: VerifiedAssertion | undefined;
   if (assertion) {

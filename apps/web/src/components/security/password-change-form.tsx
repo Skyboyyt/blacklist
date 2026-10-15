@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { PasswordInput } from '@/components/ui/password-input';
 import { getAccountApi } from '@/lib/api/browser';
-import { NEW_PASSWORD_HINT } from '@/lib/auth/password-copy';
+import { NEW_PASSWORD_HINT, passwordRejectionMessage } from '@/lib/auth/password-copy';
 import { focusFirstError, readFields, validateForm, type FieldErrors } from '@/lib/forms/validate';
 import { SessionExpiredPanel } from './session-expired-panel';
 
@@ -65,6 +65,11 @@ export function PasswordChangeForm() {
           field.value = '';
           field.focus();
         }
+      } else if (res.code === 'password_policy_rejected' || res.code === 'password_breached') {
+        setErrors({
+          newPassword: passwordRejectionMessage(res.code === 'password_breached' ? 'breached' : 'policy'),
+        });
+        focusFirstError(form, { newPassword: 'rejected' }, FIELDS);
       } else setAlert(accountErrorAlert(res));
     } catch {
       setAlert(unexpectedAlert('client-error'));

@@ -19,6 +19,31 @@ describe('provider request budgets and retries', () => {
     await expect(rpc.call('getSlot', [], z.number())).rejects.toMatchObject({ kind: 'rate_limited' });
     expect(fn).toHaveBeenCalledTimes(2);
   });
+  it('restores the total budget once its window has passed', async () => {
+    let now = 0;
+    const fn = vi.fn().mockResolvedValue(1),
+      rpc = budgetedTransport(
+        { call: fn } as RpcTransport,
+        { perMinute: 10, total: 1, concurrency: 1, totalWindowMs: 3_600_000 },
+        () => now,
+      );
+    await rpc.call('getSlot', [], z.number());
+    await expect(rpc.call('getSlot', [], z.number())).rejects.toMatchObject({
+      kind: 'rate_limited',
+      retryAfterMs: 3_600_000,
+    });
+    now = 3_600_000;
+    await rpc.call('getSlot', [], z.number());
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(() =>
+      budgetedTransport({ call: fn } as RpcTransport, {
+        perMinute: 1,
+        total: 1,
+        concurrency: 1,
+        totalWindowMs: 0,
+      }),
+    ).toThrow('provider_budget_invalid');
+  });
   it('caps transient retries at2 and refuses waits beyond the bounded retry budget', async () => {
     const fn = vi.fn().mockRejectedValue(new ProviderFault('unavailable')),
       retry = retryingTransport({ call: fn } as RpcTransport);

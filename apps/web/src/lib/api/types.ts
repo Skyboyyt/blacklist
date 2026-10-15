@@ -287,7 +287,11 @@ export interface ModerationApi {
   /** Open staff recovery cases collecting identity verifications (identity §10.11 step 2). */
   listRecoveryVerifications(): Promise<ModerationResult<readonly RecoveryCase[]>>;
   /** Record how the caller verified the subject's identity; the subject never verifies. */
-  verifyRecoveryIdentity(id: string, method: string): Promise<ModerationResult<RecoveryCase>>;
+  verifyRecoveryIdentity(
+    id: string,
+    method: string,
+    rationale: string,
+  ): Promise<ModerationResult<RecoveryCase>>;
 }
 
 /** Result of a member submission call. */
@@ -355,7 +359,7 @@ export interface AdminApi {
   listRecoveries(): Promise<ModerationResult<readonly RecoveryCase[]>>;
   /** Step-up `staff.recovery.open` on the subject. */
   openRecovery(staffId: string): Promise<ModerationResult<RecoveryCase>>;
-  verifyRecovery(id: string, method: string): Promise<ModerationResult<RecoveryCase>>;
+  verifyRecovery(id: string, method: string, rationale: string): Promise<ModerationResult<RecoveryCase>>;
   /** Step-up `staff.recovery.approve`. */
   approveRecovery(id: string): Promise<ModerationResult<RecoveryCase>>;
   completeRecovery(id: string): Promise<ModerationResult<RecoveryCompletion>>;

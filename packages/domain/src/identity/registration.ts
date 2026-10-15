@@ -44,6 +44,19 @@ export async function completeRegistration(
 ) {
   await admitTokenAction(ctx, 'registration.complete', rawToken, prefix);
   const handle = validateHandle(handleInput);
+  // Cheap token pre-check before Argon2 and the breach lookup (CR-15.2); the locked
+  // re-check below stays authoritative.
+  const [candidate] = await ctx.runtime.db
+    .select({ state: schema.intents.state, expiresAt: schema.intents.expiresAt })
+    .from(schema.intents)
+    .where(eq(schema.intents.tokenHash, digest(rawToken)));
+  if (
+    !candidate ||
+    candidate.state !== 'issued' ||
+    !candidate.expiresAt ||
+    candidate.expiresAt.getTime() <= Date.now()
+  )
+    throw new DomainError('token_invalid');
   const stored = await preparePassword(password, ctx.breachCheck);
   try {
     await ctx.runtime.transaction(async (tx) => {

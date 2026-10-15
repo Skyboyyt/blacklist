@@ -1,0 +1,16 @@
+{
+  "comment": "Single apply order for every database (review CR-14 D-2). Append new migrations at the end; never reorder or remove entries. This matches the order already applied to staging: generated 0000-0004 and hand 0001-0002 (Phase 7), then Phase 8.",
+  "files": [
+    "generated/0000_fixed_alex_wilder.sql",
+    "generated/0001_rich_tomorrow_man.sql",
+    "generated/0002_material_thunderbird.sql",
+    "generated/0003_absurd_miek.sql",
+    "generated/0004_harsh_molten_man.sql",
+    "0001_security_boundaries.sql",
+    "0002_identity_guards.sql",
+    "generated/0005_violet_stardust.sql",
+    "0003_chain_research_foundation.sql",
+    "0004_pinned_transaction_time.sql",
+    "0005_invalidation_guard.sql"
+  ]
+}
