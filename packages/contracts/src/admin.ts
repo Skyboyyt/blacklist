@@ -98,8 +98,10 @@ export type RecoveryCase = z.infer<typeof recoveryCaseSchema>;
 export const recoveryCompletionSchema = recoveryCaseSchema.extend({ enrollmentCode: z.string() });
 export type RecoveryCompletion = z.infer<typeof recoveryCompletionSchema>;
 
+/** Identity §10.11 step 2: each verifier records the method and, separately, the rationale. */
 export const recoveryVerificationSchema = z.strictObject({
-  method: z.string().trim().min(10, 'Describe how and why identity was verified.').max(100),
+  method: z.string().trim().min(5, 'Say how you verified identity.').max(100),
+  rationale: z.string().trim().min(10, 'Say why you are confident it is them.').max(1000),
 });
 
 export const memberAccountSchema = z.strictObject({

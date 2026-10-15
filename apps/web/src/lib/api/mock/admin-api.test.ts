@@ -213,12 +213,30 @@ describe('staff suspension, offboarding and recovery', () => {
       ),
     );
     expect(store.staff.find((s) => s.id === 'stf_mod_c')?.status).toBe('suspended');
-    ok(await admin.verifyRecovery(opened.id, 'Video call with ID check.'));
-    expect(code(await admin.verifyRecovery(opened.id, 'Second check by the same person.'))).toBe(
-      'not_eligible',
+    ok(
+      await admin.verifyRecovery(
+        opened.id,
+        'Video call with ID check.',
+        'Matched the staff photo and the known phone number.',
+      ),
     );
+    expect(
+      code(
+        await admin.verifyRecovery(
+          opened.id,
+          'Second check by the same person.',
+          'Matched the staff photo and the known phone number.',
+        ),
+      ),
+    ).toBe('not_eligible');
     as('admin_b');
-    const verified = ok(await admin.verifyRecovery(opened.id, 'Call-back to the number on file.'));
+    const verified = ok(
+      await admin.verifyRecovery(
+        opened.id,
+        'Call-back to the number on file.',
+        'Matched the staff photo and the known phone number.',
+      ),
+    );
     expect(verified.state).toBe('awaiting_approval');
     as('admin');
     expect(
@@ -249,19 +267,57 @@ describe('staff suspension, offboarding and recovery', () => {
     );
     as('moderator');
     expect(ok(await staff.listRecoveryVerifications()).map((r) => r.id)).toEqual([opened.id]);
-    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'abc'))).toBe('invalid_transition');
-    ok(await staff.verifyRecoveryIdentity(opened.id, 'Video call; matched the staff photo.'));
-    as('moderator_b');
-    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'Call-back to the number on file.'))).toBe(
-      'not_eligible',
+    expect(
+      code(
+        await staff.verifyRecoveryIdentity(
+          opened.id,
+          'abc',
+          'Matched the staff photo and the known phone number.',
+        ),
+      ),
+    ).toBe('invalid_transition');
+    // Identity §10.11 step 2: the rationale is recorded separately and is required.
+    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'Video call with the subject.', 'short'))).toBe(
+      'invalid_transition',
     );
+    ok(
+      await staff.verifyRecoveryIdentity(
+        opened.id,
+        'Video call; matched the staff photo.',
+        'Matched the staff photo and the known phone number.',
+      ),
+    );
+    as('moderator_b');
+    expect(
+      code(
+        await staff.verifyRecoveryIdentity(
+          opened.id,
+          'Call-back to the number on file.',
+          'Matched the staff photo and the known phone number.',
+        ),
+      ),
+    ).toBe('not_eligible');
     for (const viewer of ['appeal_reviewer', 'member', 'anonymous']) {
       as(viewer);
       expect(code(await staff.listRecoveryVerifications())).toBe('forbidden');
-      expect(code(await staff.verifyRecoveryIdentity(opened.id, 'Not allowed to verify.'))).toBe('forbidden');
+      expect(
+        code(
+          await staff.verifyRecoveryIdentity(
+            opened.id,
+            'Not allowed to verify.',
+            'Matched the staff photo and the known phone number.',
+          ),
+        ),
+      ).toBe('forbidden');
     }
     as('admin_b');
-    const verified = ok(await staff.verifyRecoveryIdentity(opened.id, 'Call-back to the number on file.'));
+    const verified = ok(
+      await staff.verifyRecoveryIdentity(
+        opened.id,
+        'Call-back to the number on file.',
+        'Matched the staff photo and the known phone number.',
+      ),
+    );
     expect(verified.state).toBe('awaiting_approval');
     expect(verified.verifications.map((v) => v.verifier.handle)).toEqual(['demo_moderator', 'demo_admin_b']);
     as('moderator');
@@ -275,12 +331,28 @@ describe('staff suspension, offboarding and recovery', () => {
       ),
     );
     as('moderator');
-    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'I am who I say I am.'))).toBe('forbidden');
+    expect(
+      code(
+        await staff.verifyRecoveryIdentity(
+          opened.id,
+          'I am who I say I am.',
+          'Matched the staff photo and the known phone number.',
+        ),
+      ),
+    ).toBe('forbidden');
     store.staff.forEach((m) => {
       if (m.id === 'stf_mod_a') m.status = 'active';
     });
     expect(ok(await staff.listRecoveryVerifications())).toEqual([]);
-    expect(code(await staff.verifyRecoveryIdentity(opened.id, 'I am who I say I am.'))).toBe('not_eligible');
+    expect(
+      code(
+        await staff.verifyRecoveryIdentity(
+          opened.id,
+          'I am who I say I am.',
+          'Matched the staff photo and the known phone number.',
+        ),
+      ),
+    ).toBe('not_eligible');
   });
 });
 

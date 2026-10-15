@@ -87,8 +87,15 @@ export function staffRoutes(app: FastifyInstance, ctx: IdentityContext) {
     '/api/v1/mod/recoveries/verify',
     { config: { security: { auth: 'staff', permission: 'staff:recovery:verify', mutation: true } } },
     async (req) => {
-      const input = z.strictObject({ id: z.uuid(), method: z.string().min(10).max(100) }).parse(req.body);
-      await verifyRecoveryIdentity(ctx, actor(req), input.id, input.method, input.method);
+      // Identity §10.11 step 2: method and rationale are recorded separately.
+      const input = z
+        .strictObject({
+          id: z.uuid(),
+          method: z.string().min(5).max(100),
+          rationale: z.string().min(10).max(1000),
+        })
+        .parse(req.body);
+      await verifyRecoveryIdentity(ctx, actor(req), input.id, input.method, input.rationale);
       return { kind: 'ok' };
     },
   );

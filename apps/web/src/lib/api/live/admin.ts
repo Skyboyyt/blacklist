@@ -162,9 +162,9 @@ export const liveAdminApi: AdminApi = {
       });
       return find(await recoveries(), response.id);
     }),
-  verifyRecovery: (id, method) =>
+  verifyRecovery: (id, method, rationale) =>
     result(async () => {
-      await mutate('/admin/recoveries/verify', { id, method, rationale: method });
+      await mutate('/admin/recoveries/verify', { id, method, rationale });
       return find(await recoveries(), id);
     }),
   approveRecovery: (id) =>

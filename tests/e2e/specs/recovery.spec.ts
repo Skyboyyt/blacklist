@@ -29,6 +29,9 @@ async function openRecovery(page: Page, handle: string) {
 async function verify(page: Page, method: string) {
   await page.goto('/mod/recovery');
   await page.getByLabel('How did you verify identity?').fill(method);
+  await page
+    .getByLabel('Why are you confident it is them?')
+    .fill('Matched the staff photo and the known phone number.');
   await page.getByRole('button', { name: /^Record verification/ }).click();
 }
 

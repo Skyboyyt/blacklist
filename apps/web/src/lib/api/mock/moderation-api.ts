@@ -1300,7 +1300,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
       );
     },
 
-    async verifyRecoveryIdentity(id, method) {
+    async verifyRecoveryIdentity(id, method, rationale) {
       await wait();
       const who = identity();
       if (!who || !hasPermission(who.role, 'staff:recovery:verify')) {
@@ -1311,6 +1311,7 @@ export function createMockModerationApi(options: MockModerationOptions): Moderat
         id,
         { ref: who.ref, isAdmin: who.role === 'admin' },
         method,
+        rationale,
         at(),
       );
     },

@@ -91,6 +91,7 @@ export function StaffAdmin() {
   const [roleTarget, setRoleTarget] = useState('');
   const [role, setRole] = useState<StaffRole>('moderator');
   const [methods, setMethods] = useState<Record<string, string>>({});
+  const [rationales, setRationales] = useState<Record<string, string>>({});
 
   const report = useCallback(
     async (result: ModerationResult<unknown>, success: string, message?: string) => {
@@ -238,7 +239,7 @@ export function StaffAdmin() {
 
   async function verify(r: RecoveryCase) {
     await report(
-      await (await getAdminApi()).verifyRecovery(r.id, methods[r.id] ?? ''),
+      await (await getAdminApi()).verifyRecovery(r.id, methods[r.id] ?? '', rationales[r.id] ?? ''),
       'Verification recorded',
     );
   }
@@ -513,13 +514,22 @@ export function StaffAdmin() {
                     : ''}
                 </p>
                 {r.state === 'verifying' ? (
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="flex flex-col gap-2">
                     <Field id={`verify-${r.id}`} label="How did you verify identity?">
                       {(control) => (
                         <Input
                           {...control}
                           value={methods[r.id] ?? ''}
                           onChange={(e) => setMethods({ ...methods, [r.id]: e.target.value })}
+                        />
+                      )}
+                    </Field>
+                    <Field id={`rationale-${r.id}`} label="Why are you confident it is them?">
+                      {(control) => (
+                        <Input
+                          {...control}
+                          value={rationales[r.id] ?? ''}
+                          onChange={(e) => setRationales({ ...rationales, [r.id]: e.target.value })}
                         />
                       )}
                     </Field>

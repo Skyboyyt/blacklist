@@ -11,9 +11,13 @@ export const liveModerationApi: ModerationApi = {
       return { kind: 'error', code: 'temporarily_unavailable' };
     }
   },
-  async verifyRecoveryIdentity(id, method) {
+  async verifyRecoveryIdentity(id, method, rationale) {
     try {
-      const result = await request('/mod/recoveries/verify', accountActionResultSchema, { id, method });
+      const result = await request('/mod/recoveries/verify', accountActionResultSchema, {
+        id,
+        method,
+        rationale,
+      });
       if (result.kind !== 'ok') return { kind: 'error', code: 'temporarily_unavailable' };
       const cases = await this.listRecoveryVerifications();
       if (cases.kind === 'error') return cases;

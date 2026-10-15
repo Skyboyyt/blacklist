@@ -229,7 +229,7 @@ The main problems are availability on the public deployment and process:
 - **Severity:** Low / Info
 - **Category:** correctness / hardening
 - **Items:**
-  1. The moderator recovery verification stores `method` twice instead of method plus rationale (`apps/api/src/routes/staff.ts:91`; identity §10.11 needs both).
+  1. ~~The moderator recovery verification stores `method` twice.~~ **Fixed 2026-10-15:** the contract, both screens, the mock and live adapters and the API moderator route now carry a separate rationale (10–1000 characters). Mock unit test and Chromium E2E pass.
   2. Invalid tokens trigger Argon2 and an HIBP call before the token is checked (`registration.ts:45-47`, `reset.ts:70-71`).
   3. `MAIL_WORKER_HEALTH_URL` accepts any `*.onrender.com` host.
   4. ~~`API_INTERNAL_URL` accepts `http:` for non-loopback hosts.~~ **Fixed 2026-10-15:** HTTPS is required except for loopback, in the rewrite and both SSR adapters (`internal-url.ts`, with a test).

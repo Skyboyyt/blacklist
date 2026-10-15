@@ -12,11 +12,16 @@ export function addRecoveryVerification(
   id: string,
   verifier: { readonly ref: StaffRef; readonly isAdmin: boolean },
   method: string,
+  rationale: string,
   at: string,
 ): ModerationResult<RecoveryCase> {
-  const parsed = recoveryVerificationSchema.safeParse({ method });
+  const parsed = recoveryVerificationSchema.safeParse({ method, rationale });
   if (!parsed.success)
-    return { kind: 'error', code: 'invalid_transition', detail: 'Describe how identity was verified.' };
+    return {
+      kind: 'error',
+      code: 'invalid_transition',
+      detail: 'Say how you verified identity and why you are confident it is them.',
+    };
   const r = store.recoveries.find((x) => x.id === id);
   if (!r) return { kind: 'error', code: 'not_found' };
   if (r.state !== 'verifying') {

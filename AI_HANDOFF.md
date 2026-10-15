@@ -42,9 +42,8 @@ This file holds the **current state only**. Each session adds one short entry un
 6. An independent security review of Phase 7 (CR-11). R-04 is the priority.
 
 **Claude**
-1. CR-15.1: recovery verification needs a separate rationale (identity §10.11).
-2. CR-05: a real bundled common-password list, pending an owner-approved source.
-3. Responses still pending in earlier review files (see review CR-11).
+1. CR-05: a real bundled common-password list, pending an owner-approved source.
+2. Responses still pending in earlier review files (see review CR-11).
 
 ## Session log
 
@@ -57,7 +56,7 @@ This file holds the **current state only**. Each session adds one short entry un
   - CR-03 (part): RPC budget window.
   - CR-06: reverts and item failures no longer trip the circuit; non-tokens are reported as such.
   - CR-08: `delegated` labelling.
-  - CR-15: password-change rejections, error mapping per api-integration-contracts §7, HTTPS for the internal URL.
+  - CR-15: password-change rejections, error mapping per api-integration-contracts §7, HTTPS for the internal URL, and a separate recovery-verification rationale (identity §10.11; Chromium E2E for recovery and admin: 52 passed, 14 skipped by design).
   - CR-12: documentation consistency pass (AGENTS §1, ARCHITECTURE header and stack table, ESSENTIALS, THREAT-MODEL, data-model, chain-data deviation note, ADR index, ADR 0001 supersession note, README, phase7-acceptance, dependency policy).
   - CR-13: this handoff reset, with the history archived.
 - **Actual checks (last full run):**
