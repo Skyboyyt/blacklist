@@ -1,5 +1,5 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import {
   addressResearchSchema,
   transactionResearchSchema,
@@ -17,6 +17,7 @@ import type { ResearchApi } from '../types';
 import { notConnectedResearchApi } from '../not-connected';
 import { getLiveViewer } from './server-viewer';
 import { stagingAccessHeaders } from '../../security/staging-gateway';
+import { ssrClientIpHeaders } from '../../security/client-ip';
 async function read<S extends z.ZodType>(path: string, schema: S): Promise<z.output<S>> {
   const base = process.env['API_INTERNAL_URL'],
     token = process.env['INTERNAL_API_TOKEN'];
@@ -35,6 +36,7 @@ async function read<S extends z.ZodType>(path: string, schema: S): Promise<z.out
     signal: AbortSignal.timeout(20000),
     headers: {
       ...stagingAccessHeaders(),
+      ...ssrClientIpHeaders(await headers()),
       'x-bl-internal-token': token,
       ...(cookie ? { cookie: `__Host-bl_session=${cookie}` } : {}),
     },

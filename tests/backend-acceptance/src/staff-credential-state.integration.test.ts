@@ -24,6 +24,7 @@ afterAll(async () => {
   if (f) await f.stop();
 });
 const replacement = 'new synthetic staff passphrase';
+const prefix = 'ip4:192.0.2.71';
 describe('staff credential intents and mandatory action-bound assertions', () => {
   it('rejects unassured actors, incorrect current credentials and absent credential hashes', async () => {
     const staff = await addAssuredStaff(f);
@@ -33,6 +34,7 @@ describe('staff credential intents and mandatory action-bound assertions', () =>
         { ...staff.actor, staffAssured: false },
         syntheticPassword,
         replacement,
+        prefix,
       ),
     ).rejects.toThrow('forbidden');
     await expect(
@@ -41,23 +43,30 @@ describe('staff credential intents and mandatory action-bound assertions', () =>
         { ...staff.actor, accountKind: 'member' },
         syntheticPassword,
         replacement,
+        prefix,
       ),
     ).rejects.toThrow('forbidden');
     await expect(
-      prepareStaffPasswordChange(f.ctx, staff.actor, 'incorrect current passphrase', replacement),
+      prepareStaffPasswordChange(f.ctx, staff.actor, 'incorrect current passphrase', replacement, prefix),
     ).rejects.toThrow('invalid_credentials');
     await f.ctx.runtime.db
       .update(schema.account)
       .set({ password: null })
       .where(eq(schema.account.userId, staff.user.id));
     await expect(
-      prepareStaffPasswordChange(f.ctx, staff.actor, syntheticPassword, replacement),
+      prepareStaffPasswordChange(f.ctx, staff.actor, syntheticPassword, replacement, prefix),
     ).rejects.toThrow('invalid_credentials');
   });
   for (const failure of ['missing', 'owner', 'session', 'revision', 'consumed', 'expired'] as const) {
     it(`rejects ${failure} password intents without consuming account authority`, async () => {
       const staff = await addAssuredStaff(f),
-        prepared = await prepareStaffPasswordChange(f.ctx, staff.actor, syntheticPassword, replacement);
+        prepared = await prepareStaffPasswordChange(
+          f.ctx,
+          staff.actor,
+          syntheticPassword,
+          replacement,
+          prefix,
+        );
       let id = prepared.intentId;
       if (failure === 'missing') id = randomUUID();
       if (failure === 'owner')
@@ -113,7 +122,13 @@ describe('staff credential intents and mandatory action-bound assertions', () =>
   it('applies a signed prepared password intent atomically, retains the current session and refuses assertion replay', async () => {
     const staff = await addAssuredStaff(f);
     await signIn(f.ctx, staff.user.email, syntheticPassword);
-    const prepared = await prepareStaffPasswordChange(f.ctx, staff.actor, syntheticPassword, replacement);
+    const prepared = await prepareStaffPasswordChange(
+      f.ctx,
+      staff.actor,
+      syntheticPassword,
+      replacement,
+      prefix,
+    );
     const proof = await staff.proof(prepared.action);
     await changeStaffPassword(f.ctx, staff.actor, prepared.intentId, proof);
     const [credential] = await f.ctx.runtime.db

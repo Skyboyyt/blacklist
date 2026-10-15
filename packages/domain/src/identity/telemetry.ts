@@ -3,6 +3,7 @@ const kinds = [
   'login_succeeded',
   'login_failed',
   'reauthenticated',
+  'reauth_failed',
   'password_changed',
   'password_reset',
   'email_change_requested',

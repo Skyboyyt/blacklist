@@ -1,7 +1,8 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { viewerSchema, type Viewer } from '@blacklist/contracts';
 import { stagingAccessHeaders } from '../../security/staging-gateway';
+import { ssrClientIpHeaders } from '../../security/client-ip';
 export async function getLiveViewer(): Promise<Viewer> {
   const base = process.env['API_INTERNAL_URL'],
     token = process.env['INTERNAL_API_TOKEN'];
@@ -21,6 +22,7 @@ export async function getLiveViewer(): Promise<Viewer> {
       signal: AbortSignal.timeout(5000),
       headers: {
         ...stagingAccessHeaders(),
+        ...ssrClientIpHeaders(await headers()),
         'x-bl-internal-token': token,
         ...(cookie ? { cookie: `__Host-bl_session=${cookie}` } : {}),
       },

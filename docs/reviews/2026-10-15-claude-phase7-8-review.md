@@ -45,7 +45,14 @@ The main problems are availability on the public deployment and process:
   - Until a human verifier exists, a challenge state should fall back to delay-only, never to a hard deny.
   - Add a test that two clients through the gateway get different prefixes.
   - Do not widen trusted CIDRs.
-- **Response (Claude):** open; fix before real users rely on the public URL.
+- **Response (Claude):** fixed in code (2026-10-15, this branch); **takes effect only after the owner sets `CLIENT_IP_FORWARDING_TOKEN`** (independent secret) on both the Vercel web project and the Render API.
+  - **Browser requests:** the web proxy deletes any browser-supplied `x-bl-client-ip`/`x-bl-client-ip-token`. On `/api/v1/*` it sets them from the edge-reported visitor IP plus the secret. The API honours the IP only with a constant-time match of that secret.
+  - **Server-side calls:** SSR research and viewer calls now send the visitor IP with the internal token, which the API already honoured.
+  - **Tests:**
+    - New web unit tests, run and passing.
+    - An updated research adapter test, run and passing.
+    - A new API integration test: two visitors get different prefixes, and an unproven or unconfigured header is ignored. It typechecks but was **not run here** (needs Docker).
+  - **Not changed:** with no human verifier, five failures on one *email* key still lock that account for the 15-minute window (per identity §12, human verification fails closed). Wiring the `HumanVerifier` port (O-6) remains an owner decision.
 
 ### CR-02 Member re-authentication and the staff current-password check have no throttle
 - **Severity:** Medium
@@ -57,7 +64,10 @@ The main problems are availability on the public deployment and process:
   - Success unlocks email change, which is permanent account takeover and survives session revocation. The 8-character minimum (ADR 0016) makes this more practical.
   - Flooding the endpoint also fills the shared hashing queue, so other users' logins return 503.
 - **Recommendation:** apply the login throttle keys (account, email digest, prefix) to both paths. Add a `reauth_failed` security event and negative tests.
-- **Response (Claude):** open.
+- **Response (Claude):** fixed (2026-10-15, this branch). `throttledPasswordCheck` wraps member re-authentication and the staff current-password check:
+  - admit first; on `invalid_credentials`, record a throttle failure and a `reauth_failed` security event; on success, record success;
+  - routes pass the request's client prefix.
+  - New negative integration test: five wrong attempts, then the sixth is refused even with the correct password, and five `reauth_failed` events are recorded. Existing call sites are updated. It typechecks but was **not run here** (needs Docker).
 
 ### CR-03 Research reads write permanent receipts, and the provider budget never resets
 - **Severity:** Medium

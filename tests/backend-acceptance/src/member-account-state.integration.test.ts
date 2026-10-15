@@ -18,6 +18,8 @@ import {
 } from './application-fixture.ts';
 import { addAssuredStaff } from './application-staff-fixture.ts';
 import { verifyPassword } from '../../../packages/domain/src/identity/password.ts';
+
+const reauthPrefix = 'ip4:192.0.2.61';
 let f: ApplicationFixture;
 beforeAll(async () => {
   f = await startApplicationFixture();
@@ -51,19 +53,41 @@ describe('member account transitions preserve reauthentication, ownership and cu
       requestEmailChange(f.ctx, m.actor, 'synthetic-next@example.test', 'ip4:192.0.2.60'),
     ).rejects.toThrow('reauth_required');
     await expect(revokeAllSessions(f.ctx, m.actor)).rejects.toThrow('reauth_required');
-    await expect(reauthenticate(f.ctx, m.actor, 'wrong synthetic phrase')).rejects.toThrow(
+    await expect(reauthenticate(f.ctx, m.actor, 'wrong synthetic phrase', reauthPrefix)).rejects.toThrow(
       'invalid_credentials',
     );
     await f.ctx.runtime.db
       .update(schema.account)
       .set({ password: 'malformed-fixture-hash' })
       .where(eq(schema.account.userId, m.user.id));
-    await expect(reauthenticate(f.ctx, m.actor, syntheticPassword)).rejects.toThrow('invalid_credentials');
+    await expect(reauthenticate(f.ctx, m.actor, syntheticPassword, reauthPrefix)).rejects.toThrow(
+      'invalid_credentials',
+    );
     await f.ctx.runtime.db
       .update(schema.account)
       .set({ password: null })
       .where(eq(schema.account.userId, m.user.id));
-    await expect(reauthenticate(f.ctx, m.actor, syntheticPassword)).rejects.toThrow('invalid_credentials');
+    await expect(reauthenticate(f.ctx, m.actor, syntheticPassword, reauthPrefix)).rejects.toThrow(
+      'invalid_credentials',
+    );
+  });
+  it('throttles repeated wrong re-authentication like login and records each failure', async () => {
+    const m = await member(),
+      prefix = 'ip4:192.0.2.62';
+    for (let i = 0; i < 5; i++)
+      await expect(reauthenticate(f.ctx, m.actor, 'wrong synthetic phrase', prefix)).rejects.toThrow(
+        'invalid_credentials',
+      );
+    // The sixth attempt is refused before the password is checked, even when it is correct.
+    await expect(reauthenticate(f.ctx, m.actor, syntheticPassword, prefix)).rejects.toThrow(
+      /rate_limited|human_verification_required|temporarily_unavailable/,
+    );
+    const failures = await f.ctx.runtime.db
+      .select()
+      .from(schema.securityEvents)
+      .where(eq(schema.securityEvents.userId, m.user.id));
+    expect(failures.filter((e) => e.eventType === 'reauth_failed')).toHaveLength(5);
+    expect(failures.some((e) => e.eventType === 'reauthenticated')).toBe(false);
   });
   it('changes password only with current proof, updates the surviving session version and enforces email cooling', async () => {
     const m = await member();
@@ -71,7 +95,7 @@ describe('member account transitions preserve reauthentication, ownership and cu
     const initial = await accountSecurity(f.ctx, m.actor);
     expect(initial.passwordChangedAt).toBeNull();
     expect(initial.reauthValidUntil).toBeNull();
-    await reauthenticate(f.ctx, m.actor, syntheticPassword);
+    await reauthenticate(f.ctx, m.actor, syntheticPassword, reauthPrefix);
     await expect(
       changePassword(f.ctx, m.actor, 'wrong synthetic phrase', 'new synthetic member password'),
     ).rejects.toThrow('invalid_credentials');
@@ -142,7 +166,7 @@ describe('member account transitions preserve reauthentication, ownership and cu
         .from(schema.session)
         .where(eq(schema.session.id, other.actor.sessionId)),
     ).toHaveLength(1);
-    await reauthenticate(f.ctx, m.actor, syntheticPassword);
+    await reauthenticate(f.ctx, m.actor, syntheticPassword, reauthPrefix);
     await revokeSessions(f.ctx, m.actor, 'others');
     await revokeAllSessions(f.ctx, m.actor);
     expect(
@@ -154,7 +178,9 @@ describe('member account transitions preserve reauthentication, ownership and cu
   });
   it('staff sensitive changes and bulk revocation require signed passkey proof, never member password proof', async () => {
     const staff = await addAssuredStaff(f);
-    await expect(reauthenticate(f.ctx, staff.actor, syntheticPassword)).rejects.toThrow('passkey_required');
+    await expect(reauthenticate(f.ctx, staff.actor, syntheticPassword, reauthPrefix)).rejects.toThrow(
+      'passkey_required',
+    );
     await expect(
       changePassword(f.ctx, staff.actor, syntheticPassword, 'another synthetic password'),
     ).rejects.toThrow('passkey_required');

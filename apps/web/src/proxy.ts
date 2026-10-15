@@ -6,6 +6,7 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { stagingGatewayHeaders } from './lib/security/staging-gateway';
+import { clientIpGatewayHeaders } from './lib/security/client-ip';
 import { canonicalRedirectUrl } from './lib/security/canonical-origin';
 import {
   buildContentSecurityPolicy,
@@ -46,7 +47,10 @@ export function proxy(request: NextRequest) {
     request.nextUrl.hostname,
   );
 
-  const requestHeaders = stagingGatewayHeaders(request.nextUrl.pathname, request.headers);
+  const requestHeaders = clientIpGatewayHeaders(
+    request.nextUrl.pathname,
+    stagingGatewayHeaders(request.nextUrl.pathname, request.headers),
+  );
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
 

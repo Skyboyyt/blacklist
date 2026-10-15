@@ -250,7 +250,13 @@ export function staffRoutes(app: FastifyInstance, ctx: IdentityContext) {
     { config: { security: { auth: 'staff', mutation: true } } },
     async (req) => {
       const input = passwordChangeFormSchema.parse(req.body);
-      return prepareStaffPasswordChange(ctx, actor(req), input.currentPassword, input.newPassword);
+      return prepareStaffPasswordChange(
+        ctx,
+        actor(req),
+        input.currentPassword,
+        input.newPassword,
+        req.clientPrefix,
+      );
     },
   );
   app.post(

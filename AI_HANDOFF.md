@@ -55,6 +55,25 @@ Read this first at the start of every session. Update it at the end of every ses
   5. Documentation consistency pass and handoff reset.
   6. Pending finding responses, R-04 first.
 
+## Claude fixes for CR-01 and CR-02 — 2026-10-15
+
+- **Owner instruction:** "do it", i.e. open the review PR and fix the lockout.
+- **CR-01 (verified client IP behind the web gateway):** new `apps/web/src/lib/security/client-ip.ts`.
+  - The web proxy replaces any browser-supplied `x-bl-client-ip`/`x-bl-client-ip-token` with the edge-reported IP plus `CLIENT_IP_FORWARDING_TOKEN`, on `/api/v1/*` only.
+  - SSR research and viewer calls send the visitor IP with the internal token.
+  - The API (`plugins/security.ts`) honours the gateway IP only with a constant-time secret match.
+  - The config requires the secret to be independent of the other secrets. It is added to `.env.example` and the mock-exclusion server-only names.
+  - **Owner action required:** set the same new secret on the Vercel web project and the Render API. Until then, behaviour is unchanged.
+- **CR-02:** `throttledPasswordCheck` (identity `account.ts`) now guards `reauthenticate` and `prepareStaffPasswordChange`. A new security event kind is `reauth_failed`.
+- **Actual checks:**
+  - `pnpm check` exit 0: 81 contract, 61 chain, 52 backend non-database and 409 web tests, plus lint, types and build.
+  - The backend-acceptance typecheck passes (it includes the new integration tests).
+  - `build:mock` and `check:mock-exclusion` pass, 4/4.
+  - **Not run:** the database integration tests, including the two new ones (no Docker here). Codex or CI must run `pnpm --filter @blacklist/backend-acceptance test:integration` before merge.
+- **Still open:**
+  - no human verifier (O-6), so one email key can still be locked for 15 minutes;
+  - CR-03 to CR-15.
+
 ## Phase8 final continuation — coverage and conflict evidence — 2026-10-14
 
 **Authorization/status:** owner explicitly replied “Merge PR #12 into main despite the disclosed blockers” after being told main may trigger Vercel deployment. This supersedes review-only/no-merge instructions for PR12 specifically. Complete local checks/secret scan, commit/push, then merge exact reviewed head. No backend activation/cloud migration/paid resource/Phase9 or readiness claim. Actual publication/merge receipt follows, never assume it happened. Owner's hosted activation/login/logout/reset results are still pending.

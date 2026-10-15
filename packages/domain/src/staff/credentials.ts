@@ -4,6 +4,7 @@ import { DomainError } from '../shared/errors.ts';
 import { preparePassword } from '../identity/password-policy.ts';
 import { verifyPassword } from '../identity/password.ts';
 import { lockActor } from '../identity/sessions.ts';
+import { throttledPasswordCheck } from '../identity/account.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { appendAudit } from '../audit/service.ts';
 import { withStepup, type AssertionInput } from './webauthn.ts';
@@ -12,41 +13,44 @@ export async function prepareStaffPasswordChange(
   actor: UserActor,
   currentPassword: string,
   password: string,
+  prefix: string,
 ) {
   if (actor.accountKind !== 'staff' || !actor.staffAssured) throw new DomainError('forbidden');
   const hash = await preparePassword(password, ctx.breachCheck);
-  return ctx.runtime.transaction(async (tx) => {
-    const { state } = await lockActor(tx, actor);
-    const [credential] = await tx
-      .select()
-      .from(schema.account)
-      .where(and(eq(schema.account.userId, actor.userId), eq(schema.account.providerId, 'credential')));
-    if (
-      !credential?.password ||
-      !(await verifyPassword({ hash: credential.password, password: currentPassword }).catch(() => false))
-    )
-      throw new DomainError('invalid_credentials');
-    const [intent] = await tx
-      .insert(schema.credentialIntents)
-      .values({
-        userId: actor.userId,
-        sessionId: actor.sessionId,
-        securityVersion: state.securityVersion,
-        passwordHash: hash,
-        expiresAt: new Date(Date.now() + 300_000),
-      })
-      .returning({ id: schema.credentialIntents.id });
-    if (!intent) throw new Error('credential_intent_creation_failed');
-    return {
-      intentId: intent.id,
-      action: {
-        action: 'account.password_changed',
-        targetType: 'account',
-        targetId: 'me',
-        parameters: { intentId: intent.id },
-      },
-    };
-  });
+  return throttledPasswordCheck(ctx, actor.userId, prefix, () =>
+    ctx.runtime.transaction(async (tx) => {
+      const { state } = await lockActor(tx, actor);
+      const [credential] = await tx
+        .select()
+        .from(schema.account)
+        .where(and(eq(schema.account.userId, actor.userId), eq(schema.account.providerId, 'credential')));
+      if (
+        !credential?.password ||
+        !(await verifyPassword({ hash: credential.password, password: currentPassword }).catch(() => false))
+      )
+        throw new DomainError('invalid_credentials');
+      const [intent] = await tx
+        .insert(schema.credentialIntents)
+        .values({
+          userId: actor.userId,
+          sessionId: actor.sessionId,
+          securityVersion: state.securityVersion,
+          passwordHash: hash,
+          expiresAt: new Date(Date.now() + 300_000),
+        })
+        .returning({ id: schema.credentialIntents.id });
+      if (!intent) throw new Error('credential_intent_creation_failed');
+      return {
+        intentId: intent.id,
+        action: {
+          action: 'account.password_changed',
+          targetType: 'account',
+          targetId: 'me',
+          parameters: { intentId: intent.id },
+        },
+      };
+    }),
+  );
 }
 export function changeStaffPassword(
   ctx: IdentityContext,
