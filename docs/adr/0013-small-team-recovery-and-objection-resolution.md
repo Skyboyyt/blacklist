@@ -34,11 +34,43 @@ Claude should define the operator's permitted verification role and the distinct
 
 ## Recommendation and decision
 
-**Amend before any decision; keep today's fail-closed behaviour until then** (Claude, 2026-10-15; [review](../reviews/2026-10-15-claude-phase7-8-review.md) CR-09).
+**Claude's recommendation (2026-10-15): adopt the transition model below as an amendment, then accept. Until the owner accepts it, today's fail-closed behaviour stays: sole-admin recovery and objected cases remain unavailable.** No requirement is removed. Every path still needs WebAuthn re-enrollment, two independently recorded verifications, a separate approver, the 24-hour objection window, and mailbox plus out-of-band code proof.
 
-The problem is real and visible in code: `approveTx` requires an admin verifier, so when the subject is the only admin the operator branch can never run, and `objected` is terminal (offboarding is the only exit). The ADR should state a concrete transition model:
-1. The operator counts as the admin verifier only when the subject is the sole active admin, together with a separately recorded, named second human under P-13; fix `approveTx` to match.
-2. An objection closes the case; a new case needs a fresh opening by an admin other than the objector, with step-up, and restarts verification and the 24-hour window.
-3. Objections need step-up (`objectRecovery` takes none today, so one compromised admin can block every recovery).
-4. The suspended subject's objection channel: a POST-only fragment-token link to the account email that records an objection and grants nothing.
-5. Negative tests for each.
+### A. Ordinary recovery (unchanged)
+Identity §10.11 as implemented:
+- an admin other than the subject opens the case;
+- two different staff verify, at least one an admin, with method and rationale recorded separately;
+- an admin other than the opener approves;
+- a 24-hour objection window, notifying all admins and the subject's email;
+- re-enrollment with the emailed token plus an out-of-band code, a new password and two new authenticators.
+
+### B. Sole active administrator is the subject
+1. **Opening.** Only the operator CLI may open the case (`staff:recovery:open --operator <named person> --incident <ref>`). It is recorded under the named operator, not a generic "cli" label. All staff and the subject's email are notified at once.
+2. **Verification.** Two verifications are still required:
+   - **The named operator.** They count as the admin-equivalent verifier **only in this case**, and only when the P-13 record names a human operator who is not the subject.
+   - **One other active staff member** (any role, not the subject), through the normal staff screen.
+3. **No second staff member.** If no other active staff member exists, recovery through the application is **not available**. The path is a fresh bootstrap of a new administrator account under identity §10.13 break-glass, plus offboarding of the old account. A label never stands in for a second person.
+4. **Approval** by the operator CLI (identity §10.11 step 3 already allows this when the subject is the only admin), recorded with the operator's name. The operator who opened may approve only when P-13 names a single operator. That fact is recorded in the case and in the post-recovery review.
+5. **Objection window, notifications and re-enrollment** as in A. A mandatory post-recovery review is recorded, as for break-glass.
+
+### C. Objections
+1. **Staff objection** requires an action-bound step-up (`staff.recovery.object`) and a reason. Today `objectRecovery` takes none, which lets one compromised admin block every recovery.
+2. **Subject objection.** The objection notice includes a single-use, POST-only, fragment-token link that records an objection and grants nothing else. It works while the subject's sessions are suspended.
+3. **Effect.** The case moves to `objected`, which stays terminal, so history is preserved. Nothing is re-enrolled.
+4. **Resolution means a new case.** It must be opened by an admin other than the objector (or by the operator under B), with step-up, and must reference the objected case. Verification and the 24-hour window restart. The objector cannot verify or approve the new case and is notified.
+5. **Withdrawal.** The objector may withdraw within the window with step-up (staff) or the same single-use link (subject). The window then restarts for 24 hours.
+6. **Abuse signal.** Two or more objections by the same staff member within 30 days alert all admins and the owner.
+
+### D. Implementation and tests required before enabling
+- Fix `approveTx`: it requires an admin verifier, so the operator branch at `recovery.ts:121-142` can never run. The operator verification should count only under B.
+- Add step-up to objections, the subject's objection link, case reopening with a reference, and withdrawal.
+- Audit events: `staff.recovery.{opened,verified,approved,objected,withdrawn,reopened,completed}`.
+- Negative tests:
+  - the operator cannot verify outside B;
+  - no recovery path exists with no second human;
+  - the objector cannot verify or approve the reopened case;
+  - a staff objection without step-up is refused;
+  - the subject's link is single use and grants nothing;
+  - verification and the window restart after reopening.
+
+**Owner decisions required:** accept this amendment; record P-13 (who the operator is, and whether a second person must approve operator actions).

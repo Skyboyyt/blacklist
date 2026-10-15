@@ -52,6 +52,7 @@ No service, database, billing change or production Vercel setting has been creat
 2. Make a verified per-client IP (or a working human verifier) a precondition of public exposure (CR-01).
 3. Record the anonymous quota-burn path through the public worker `/healthz` (CR-04).
 4. Give the ADR a valid status from `docs/adr/README.md` and a title that covers the Neon decision.
+5. **Scope: staging only.** Free Render (API and worker) and free Neon PostgreSQL stay the **staging** platform, as the owner decided. This ADR does not select production hosting. Production (O-4) needs its own ADR covering managed backups and restore, retention, monitoring, paid capacity and the Phase 11 gates. No production data or launch is authorized by this ADR.
 
 ## Owner decision
 

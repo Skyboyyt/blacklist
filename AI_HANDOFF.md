@@ -44,6 +44,16 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-15: Claude, ADR 0013–0018 decision brief (owner task 2)
+
+- **Owner reported** setting `CLIENT_IP_FORWARDING_TOKEN` on Vercel and Render. Claude could **not** verify it: this environment's egress policy blocks `*.vercel.app` and `*.onrender.com` (not bypassed). The forwarding code is only on PR #14, which is not merged, so the deployed services do not use the secret yet. A safe owner check is in the brief.
+- **Wrote** [docs/reviews/2026-10-15-adr-0013-0018-decision-brief.md](docs/reviews/2026-10-15-adr-0013-0018-decision-brief.md).
+- **ADR 0013:** concrete sole-admin and objection transition model; nothing weakened.
+- **ADR 0014:** explicit staging-only scope.
+- **ADR 0018:** a seven-row provider verification table.
+- **Statuses unchanged.** No infrastructure change, merge or deploy.
+
+
 ### 2026-10-15: Claude, Phase 7–8 review and follow-up (PR #14)
 
 - **Review:** [docs/reviews/2026-10-15-claude-phase7-8-review.md](docs/reviews/2026-10-15-claude-phase7-8-review.md), CR-01 to CR-15. ADR recommendations are recorded in ADRs 0013–0018.
