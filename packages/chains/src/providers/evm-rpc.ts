@@ -22,7 +22,7 @@ import {
   hash,
 } from '../adapters/evm-transaction.ts';
 import { ProviderFault, type RpcTransport } from './rpc-transport.ts';
-import { readReceipt } from './read-receipt.ts';
+import { readReceipt, providerFieldsDigest } from './read-receipt.ts';
 import { createEvmMetadataReader } from './evm-metadata.ts';
 import { createAlchemyHistory } from './alchemy-history.ts';
 import { createAlchemyBalances } from './alchemy-balances.ts';
@@ -247,8 +247,22 @@ export function createEvmRpcSource(
               fetchedAt: source.fetchedAt,
               normalizedFields: {
                 normalizedTransaction: { ...data, blockTime: data.blockTime?.toISOString() ?? null },
-                receipt,
-                transaction: tx,
+                // chain-data §5.4 comparison fields only. Raw provider objects are not digested:
+                // optional fields such as log `removed` would make honest providers disagree (CR-07).
+                comparison: {
+                  blockHash: receipt.blockHash.toLowerCase(),
+                  blockNumber: BigInt(receipt.blockNumber).toString(),
+                  transactionIndex: BigInt(receipt.transactionIndex).toString(),
+                  status: receipt.status,
+                  logsDigest: providerFieldsDigest(
+                    receipt.logs.map((log) => ({
+                      address: log.address.toLowerCase(),
+                      topics: log.topics.map((topic) => topic.toLowerCase()),
+                      data: log.data.toLowerCase(),
+                      logIndex: BigInt(log.logIndex).toString(),
+                    })),
+                  ),
+                },
                 execution: {
                   txHash: data.txHash,
                   block: data.block,
@@ -257,7 +271,7 @@ export function createEvmRpcSource(
                 },
               },
               decoderVersion,
-              comparisonSpecVersion: 'evm-transaction-v1',
+              comparisonSpecVersion: 'evm-transaction-v2',
             }),
           ],
         },

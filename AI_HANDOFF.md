@@ -33,13 +33,10 @@ This file holds the **current state only**. Each session adds one short entry un
 7. Pagination model; correction and response status sets; `staff:recovery:verify` in ARCHITECTURE §9.2; `research_cache` (data-model or ADR).
 8. Canonical branch (above); CI workflow (none exists).
 
-**Codex: needs database integration tests (Docker)**
-1. Run `pnpm --filter @blacklist/backend-acceptance test:integration` on PR #14. Its new integration tests typecheck but were not run.
-2. CR-03 receipt policy: write receipts only for verification flows; ordinary reads go to cache only.
-3. CR-07 digest fields.
-4. CR-14 D-1 invalidation INSERT guard and D-2 single migration order (before the next migration run).
-5. CR-15.2: check the token before Argon2 and HIBP.
-6. An independent security review of Phase 7 (CR-11). R-04 is the priority.
+**Codex**
+1. An independent security review of Phase 7 and of PR #14 (CR-11). R-04 is the priority.
+2. CR-07 for Solana: raw instruction encoding for the instruction digest.
+3. CR-14 D-3 to D-5: grants in migrations, enum CHECKs, migration-safety style.
 
 **Claude**
 1. CR-05: a real bundled common-password list, pending an owner-approved source.
@@ -59,11 +56,19 @@ This file holds the **current state only**. Each session adds one short entry un
   - CR-15: password-change rejections, error mapping per api-integration-contracts §7, HTTPS for the internal URL, and a separate recovery-verification rationale (identity §10.11; Chromium E2E for recovery and admin: 52 passed, 14 skipped by design).
   - CR-12: documentation consistency pass (AGENTS §1, ARCHITECTURE header and stack table, ESSENTIALS, THREAT-MODEL, data-model, chain-data deviation note, ADR index, ADR 0001 supersession note, README, phase7-acceptance, dependency policy).
   - CR-13: this handoff reset, with the history archived.
+- **Database work (2026-10-15, Docker started in this environment):**
+  - CR-03 receipts are written only for verification reads.
+  - CR-07: the EVM digest uses only the spec fields.
+  - CR-14 D-1: invalidation guard migration `0005_invalidation_guard.sql`.
+  - CR-14 D-2: single `migrations/order.json`.
+  - CR-15.2: token pre-check before password work.
 - **Actual checks (last full run):**
-  - `pnpm check` exit 0: 81 contract, 68 chain, 52 backend non-database and 411 web tests, plus format, lint, types and Next build.
+  - `pnpm check` exit 0: 81 contract, 69 chain, 54 backend non-database and 411 web tests, plus format, lint, types and Next build.
   - Backend-acceptance typecheck passes.
   - Chain coverage: 81.72% branches against the 75% floor.
   - `build:mock` and `check:mock-exclusion` pass, 4/4.
   - `pnpm audit --prod` is clean. The full audit has one high, dev-only advisory (`braces`).
-  - **Not run:** database integration tests (no Docker in this environment), E2E, and anything against Render, Vercel, Neon or providers.
+  - **Backend coverage run, including all database integration tests: 39 files and 194 tests passing; 83.61% branches; all floors pass.** The browser-dependent tests needed `/usr/bin/chromium`, which I symlinked to the pre-installed Chromium (an environment change, not a repo change).
+  - Chain coverage: 81.93% branches.
+  - **Not run:** anything against Render, Vercel, Neon or providers. The new migration has not been applied in the cloud.
 - **Next:** owner decisions 1–4 above; Codex runs the integration suite on PR #14.

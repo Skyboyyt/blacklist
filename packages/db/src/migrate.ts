@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { Pool } from 'pg';
 import { PgBoss } from 'pg-boss';
 import { executor } from './client.ts';
 import { identityQueues } from './queues.ts';
+import { orderedMigrationFiles } from './migration-order.ts';
 
 // Operator command only. Never called from API/worker startup.
 export async function migrate(connectionString: string, runtimeRole: string) {
@@ -20,18 +21,7 @@ export async function migrate(connectionString: string, runtimeRole: string) {
     await client.query(
       'CREATE TABLE IF NOT EXISTS blacklist_migrations.applied (name text PRIMARY KEY, sha256 text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())',
     );
-    const root = new URL('../migrations/', import.meta.url);
-    const generated = new URL('generated/', root);
-    const files = [
-      ...(await readdir(generated))
-        .filter((f) => f.endsWith('.sql'))
-        .sort()
-        .map((f) => new URL(f, generated)),
-      ...(await readdir(root))
-        .filter((f) => f.endsWith('.sql'))
-        .sort()
-        .map((f) => new URL(f, root)),
-    ];
+    const files = await orderedMigrationFiles();
     for (const file of files) {
       const name = file.pathname.split('/').pop();
       const source = await readFile(file, 'utf8');

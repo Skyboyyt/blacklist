@@ -86,7 +86,7 @@ The main problems are availability on the public deployment and process:
   - Charge the edge limiter per provider call.
 - **Response (Claude):** partly fixed (2026-10-15).
   - **Fixed:** the total budget is now spent per `RPC_API_BUDGET_WINDOW_HOURS` window (default 24) and then restored. Unit test added; the ops doc and `.env.example` are updated.
-  - **Still open, Codex to implement with database tests:** write receipts only for cross-verify, pinning and operator flows, on finalized data, with §5.4 fields. Ordinary reads go to `research_cache` only. `research.integration.test.ts` currently asserts receipts on single-source reads and must change with it.
+  - **Fixed (2026-10-15, database tests run):** `recordChainRead` writes receipts only for a cross-verified read (two receipts). Single-source display reads go to `research_cache` only. `research.integration.test.ts` now asserts zero receipts and a cache row for ordinary reads.
   - **Still open:** charge the edge limiter per provider call.
 
 ### CR-04 The worker `/healthz` is public and probes the database, so anonymous traffic can burn free quotas
@@ -130,7 +130,8 @@ The main problems are availability on the public deployment and process:
 - **Evidence:** the digests cover the optional log `removed` field, the raw receipt and transaction, and Solana's version-dependent `jsonParsed` output.
 - **Impact:** genuine matches between two providers would be reported as `data_conflict`.
 - **Recommendation:** digest exactly the chain-data §5.4 fields.
-- **Response (Claude):** open. It is latent until a second provider exists, and it changes receipt digests, so it should be done with CR-03's receipt change and the reconciliation database tests (Codex).
+- **Response (Claude):** fixed for EVM (2026-10-15). The transaction receipt digests only the §5.4 fields (`comparison`: block hash, number, index, status and a logs digest over `{address, topics, data, logIndex}`) plus the decoded transaction. Raw receipt and transaction objects are no longer stored, and the spec version is bumped to `evm-transaction-v2`. A test proves that a log with and without `removed:false` gives the same digest.
+  - **Still open:** the Solana instruction digest still uses `jsonParsed` output. Fixing it means switching to raw encoding in the Solana source; it is latent until a second provider exists.
 
 ### CR-08 An owner calling `transferFrom` on their own tokens is labelled `delegated`
 - **Severity:** Low
@@ -223,14 +224,17 @@ The main problems are availability on the public deployment and process:
   - **D-3:** runtime grants are allow-by-default followed by a hand-kept revoke list. Move grants into migrations and add a catalog test.
   - **D-4:** about 11 enum columns lack the CHECKs data-model §1 requires. Hashes are hex `text`, not `bytea`. Several columns are undocumented.
   - **D-5:** NOT VALID plus VALIDATE in one transaction, and a timezone-dependent cast in a CHECK.
-- **Response (Claude):** open.
+- **Response (Claude):** D-1 and D-2 fixed (2026-10-15, database tests run).
+  - **D-1:** new hand migration `0005_invalidation_guard.sql`. A BEFORE INSERT guard requires a pinned transaction and an `agree` verification whose receipts carry the cited digests, the pin's decoder version and a transaction different from the pin. A unique index allows one invalidation per fact. Tests show that forged, unpinned, extra-field, wrong-type and duplicate inserts are refused.
+  - **D-2:** `migrations/order.json` is the single apply order, matching the order staging used, and is used by both the runner and the operator. An unlisted, missing or duplicate file stops the run. The operator's hard-coded count of 10 is removed.
+  - **Still open:** D-3 to D-5.
 
 ### CR-15 Smaller issues
 - **Severity:** Low / Info
 - **Category:** correctness / hardening
 - **Items:**
   1. ~~The moderator recovery verification stores `method` twice.~~ **Fixed 2026-10-15:** the contract, both screens, the mock and live adapters and the API moderator route now carry a separate rationale (10–1000 characters). Mock unit test and Chromium E2E pass.
-  2. Invalid tokens trigger Argon2 and an HIBP call before the token is checked (`registration.ts:45-47`, `reset.ts:70-71`).
+  2. ~~Invalid tokens trigger Argon2 and an HIBP call before the token is checked.~~ **Fixed 2026-10-15:** a cheap token pre-check now runs before password work, and the locked re-check stays authoritative. An integration test shows the breach service is not called for an unknown token.
   3. `MAIL_WORKER_HEALTH_URL` accepts any `*.onrender.com` host.
   4. ~~`API_INTERNAL_URL` accepts `http:` for non-loopback hosts.~~ **Fixed 2026-10-15:** HTTPS is required except for loopback, in the rewrite and both SSR adapters (`internal-url.ts`, with a test).
   5. `NODE_EXTRA_CA_CERTS` is passed to the runtime.

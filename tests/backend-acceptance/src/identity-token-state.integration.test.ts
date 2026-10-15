@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { beforeAll, afterAll, describe, it, expect } from 'vitest';
+import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
 import { schema, eq } from '@blacklist/db';
 import {
   issueIdentityToken,
@@ -292,5 +292,30 @@ describe('application token proof, revision and mailbox invariants', () => {
       .where(eq(schema.intents.id, latest.id));
     expect(after?.state).toBe('requested');
     expect(after?.tokenHash).toBeNull();
+  });
+});
+
+describe('token checks happen before password work (CR-15.2)', () => {
+  it('refuses an unknown token without hashing the password or calling the breach service', async () => {
+    const original = f.ctx.breachCheck;
+    const breach = vi.fn(async () => false);
+    f.ctx.breachCheck = breach;
+    try {
+      await expect(
+        resetPassword(f.ctx, 'unknown-reset-token-' + randomUUID(), newPassword, 'ip4:192.0.2.81'),
+      ).rejects.toThrow('token_invalid');
+      await expect(
+        completeRegistration(
+          f.ctx,
+          'unknown-registration-token-' + randomUUID(),
+          'fresh_handle',
+          newPassword,
+          'ip4:192.0.2.82',
+        ),
+      ).rejects.toThrow('token_invalid');
+      expect(breach).not.toHaveBeenCalled();
+    } finally {
+      f.ctx.breachCheck = original;
+    }
   });
 });

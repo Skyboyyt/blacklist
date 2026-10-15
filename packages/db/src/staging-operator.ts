@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { TLSSocket } from 'node:tls';
 import { Pool, type PoolClient } from 'pg';
 import { identityQueues } from './queues.ts';
+import { orderedMigrationFiles } from './migration-order.ts';
 
 export async function withVerifiedOperatorConnection<T>(
   url: string,
@@ -98,19 +99,7 @@ export async function verifyOperatorRoles(client: PoolClient) {
 }
 
 export async function operatorMigrationManifest() {
-  const root = new URL('../migrations/', import.meta.url);
-  const generated = new URL('generated/', root);
-  const files = [
-    ...(await readdir(generated))
-      .filter((f) => f.endsWith('.sql'))
-      .sort()
-      .map((f) => new URL(f, generated)),
-    ...(await readdir(root))
-      .filter((f) => f.endsWith('.sql'))
-      .sort()
-      .map((f) => new URL(f, root)),
-  ];
-  if (files.length !== 10) throw new Error('operator_migration_count_invalid');
+  const files = await orderedMigrationFiles();
   return Promise.all(
     files.map(async (file) => ({
       name: file.pathname.split('/').pop(),
