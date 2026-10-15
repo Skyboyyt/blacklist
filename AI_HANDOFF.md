@@ -55,6 +55,31 @@ Read this first at the start of every session. Update it at the end of every ses
   5. Documentation consistency pass and handoff reset.
   6. Pending finding responses, R-04 first.
 
+## Claude review follow-up, batch 2 — 2026-10-15
+
+- **Fixed:**
+  - CR-06: reverts are not provider outages; non-ERC-20 contracts are "not a token"; only transport failures open the circuit.
+  - CR-08: an owner's own `transferFrom` is `unknown`.
+  - CR-03 (part): the total RPC budget resets per `RPC_API_BUDGET_WINDOW_HOURS`, a new config key with default 24.
+  - CR-15:
+    - password-change rejections are shown, with new account error codes;
+    - member and admin error mapping follows api-integration-contracts §7;
+    - HTTPS is required for non-loopback `API_INTERNAL_URL`.
+- **Actual checks:**
+  - `pnpm check` exit 0: 81 contract, 68 chain, 52 backend non-database and 411 web tests, plus lint, types and build.
+  - Backend-acceptance typecheck passes.
+  - Chain coverage: 81.72% branches against the 75% floor.
+  - No database integration run (no Docker).
+- **Left for Codex (needs database tests):**
+  - CR-03 receipt policy (receipts only for verification flows);
+  - CR-07 digest fields;
+  - CR-14 D-1 invalidation guard and D-2 migration order.
+- **Left for the owner:** CR-04 (ADR 0017 wake design), CR-05 (bundled denylist source), CR-09/ADR 0013, CR-10, CR-11.
+- **Left for Claude:**
+  - recovery rationale field (CR-15.1);
+  - CR-12 documentation consistency pass;
+  - CR-13 handoff reset.
+
 ## Claude fixes for CR-01 and CR-02 — 2026-10-15
 
 - **Owner instruction:** "do it", i.e. open the review PR and fix the lockout.

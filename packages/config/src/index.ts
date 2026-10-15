@@ -74,6 +74,8 @@ const apiSchema = shared.extend({
     .optional(),
   RPC_API_REQUESTS_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(30),
   RPC_API_TOTAL_REQUEST_BUDGET: z.coerce.number().int().min(1).max(10000).default(100),
+  /** The total budget is spent per window and then restored (default one day). */
+  RPC_API_BUDGET_WINDOW_HOURS: z.coerce.number().int().min(1).max(744).default(24),
   MAIL_WORKER_HEALTH_URL: z
     .string()
     .url()

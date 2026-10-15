@@ -154,7 +154,9 @@ export function createChainDataService(
           return result;
         } catch (error) {
           const fault = error instanceof ProviderFault ? error : new ProviderFault('invalid_response');
-          if (['unavailable', 'timeout', 'invalid_response'].includes(fault.kind)) {
+          // Only transport failures open the circuit. Size or schema failures caused by one
+          // queried item must not let any caller switch a capability off for everyone.
+          if (['unavailable', 'timeout'].includes(fault.kind)) {
             const count = (circuit?.failures ?? 0) + 1;
             circuits.set(circuitKey, { failures: count, until: count >= 3 ? now() + 30000 : 0 });
           }

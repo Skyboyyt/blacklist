@@ -76,6 +76,16 @@ describe('live adapters preserve contracts and never invent success', () => {
       ).toEqual({ kind: 'password_rejected', reason });
     }
   });
+  it('reports password rejections and stale admin changes instead of a false outage', async () => {
+    for (const code of ['password_breached', 'password_policy_rejected'] as const) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ code }, 400)));
+      expect(await liveAccountApi.reauthenticate({ password: 'test8888' })).toEqual({ kind: 'error', code });
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ code: 'conflict' }, 409)));
+    expect(await liveAdminApi.listStaff()).toMatchObject({ kind: 'error', code: 'invalid_transition' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ code: 'not_eligible' }, 409)));
+    expect(await liveAdminApi.listStaff()).toMatchObject({ kind: 'error', code: 'not_eligible' });
+  });
   it('bounds auth cold-start waiting without changing non-auth request deadlines', async () => {
     const timeout = vi.spyOn(AbortSignal, 'timeout');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ kind: 'accepted' })));

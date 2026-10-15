@@ -11,7 +11,31 @@ const replying = (result: unknown) =>
     if (!input || typeof input !== 'object' || !('id' in input)) throw new Error('fixture_invalid');
     return response({ jsonrpc: '2.0', id: input.id, result });
   });
+const failing = (error: { code: number; message: string }) =>
+  vi.fn<typeof fetch>().mockImplementation(async (_url, init) => {
+    const input: unknown = JSON.parse(String(init?.body));
+    if (!input || typeof input !== 'object' || !('id' in input)) throw new Error('fixture_invalid');
+    return response({ jsonrpc: '2.0', id: input.id, error });
+  });
 describe('credential-isolated bounded JSON-RPC', () => {
+  it('reports execution reverts as not supported by the queried contract, not as an outage', async () => {
+    for (const error of [
+      { code: 3, message: 'execution reverted' },
+      { code: -32000, message: 'Execution reverted: no data' },
+    ])
+      await expect(
+        createRpcTransport(endpoint, failing(error)).call('getSlot', [], z.number()),
+      ).rejects.toMatchObject({
+        kind: 'not_supported',
+      });
+    await expect(
+      createRpcTransport(endpoint, failing({ code: -32000, message: 'header not found' })).call(
+        'getSlot',
+        [],
+        z.number(),
+      ),
+    ).rejects.toMatchObject({ kind: 'unavailable' });
+  });
   it('rejects credential reflection even inside a syntactically valid provider result', async () => {
     const key = randomBytes(32).toString('hex');
     await expect(

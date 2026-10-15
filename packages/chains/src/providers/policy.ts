@@ -2,16 +2,31 @@ import type { RpcTransport } from './rpc-transport.ts';
 import { ProviderFault } from './rpc-transport.ts';
 import { setTimeout as delay } from 'node:timers/promises';
 
-/** Per-process, per-key cap. Operator must split verified plan credits statically API/worker (O-3). */
+/**
+ * Per-process, per-key cap. `total` is spent per `totalWindowMs` (default one day) so an
+ * exhausted budget recovers instead of disabling research until restart. The operator
+ * splits verified plan credits statically between API and worker (O-3).
+ */
 export function budgetedTransport(
   rpc: RpcTransport,
-  limits: { readonly perMinute: number; readonly total: number; readonly concurrency: number },
+  limits: {
+    readonly perMinute: number;
+    readonly total: number;
+    readonly concurrency: number;
+    readonly totalWindowMs?: number;
+  },
   now = Date.now,
 ): RpcTransport {
-  if (Object.values(limits).some((n) => !Number.isSafeInteger(n) || n < 1))
+  const totalWindowMs = limits.totalWindowMs ?? 24 * 60 * 60 * 1000;
+  if (
+    [limits.perMinute, limits.total, limits.concurrency, totalWindowMs].some(
+      (n) => !Number.isSafeInteger(n) || n < 1,
+    )
+  )
     throw new Error('provider_budget_invalid');
   let window = now(),
     windowCalls = 0,
+    totalWindow = now(),
     total = 0,
     inFlight = 0;
   return {
@@ -20,7 +35,13 @@ export function budgetedTransport(
         window = now();
         windowCalls = 0;
       }
-      if (windowCalls >= limits.perMinute || total >= limits.total || inFlight >= limits.concurrency)
+      if (now() - totalWindow >= totalWindowMs) {
+        totalWindow = now();
+        total = 0;
+      }
+      if (total >= limits.total)
+        throw new ProviderFault('rate_limited', Math.max(1000, totalWindowMs - (now() - totalWindow)));
+      if (windowCalls >= limits.perMinute || inFlight >= limits.concurrency)
         throw new ProviderFault('rate_limited', Math.max(1000, 60000 - (now() - window)));
       ++windowCalls;
       ++total;

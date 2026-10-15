@@ -4,6 +4,7 @@
  */
 import type { AccountError } from '@blacklist/contracts';
 import { formatDateTimeUtc } from '@/lib/format/date';
+import { passwordRejectionMessage } from './password-copy';
 
 export interface ErrorCopy {
   readonly title: string;
@@ -64,6 +65,10 @@ export function accountErrorCopy(error: AccountError): ErrorCopy {
         title: 'This is your current session',
         body: 'Use Sign out to end the session you are using now.',
       };
+    case 'password_policy_rejected':
+      return { title: 'Choose a different password', body: passwordRejectionMessage('policy') };
+    case 'password_breached':
+      return { title: 'Choose a different password', body: passwordRejectionMessage('breached') };
     case 'enrollment_incomplete':
       return {
         title: 'Enrollment isn’t finished',

@@ -23,6 +23,8 @@ async function action(path: string, body: unknown): Promise<AccountActionResult>
       'session_not_found',
       'cannot_revoke_current_session',
       'enrollment_incomplete',
+      'password_policy_rejected',
+      'password_breached',
     ];
     const result = accountActionResultSchema.safeParse({
       kind: 'error',
@@ -70,7 +72,20 @@ export const liveAccountApi: AccountApi = {
         intentId: intent.intentId,
         assertion: { challengeId: challenge.challengeId, response },
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiFailure && error.code === 'invalid_credentials')
+        return { kind: 'error', code: 'current_password_incorrect' };
+      if (
+        error instanceof ApiFailure &&
+        ['password_policy_rejected', 'password_breached', 'rate_limited'].includes(error.code)
+      ) {
+        const parsed = accountActionResultSchema.safeParse({
+          kind: 'error',
+          code: error.code,
+          ...(error.code === 'rate_limited' ? { retryAfterSeconds: error.retryAfterSeconds } : {}),
+        });
+        if (parsed.success) return parsed.data;
+      }
       return { kind: 'error', code: 'temporarily_unavailable' };
     }
   },

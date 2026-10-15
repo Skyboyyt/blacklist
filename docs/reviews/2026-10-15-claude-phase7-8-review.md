@@ -84,7 +84,10 @@ The main problems are availability on the public deployment and process:
   - Write receipts only for cross-verify, pinning and operator flows, on finalized data, with normalized fields limited to the §5.4 set.
   - Use a budget window matching the provider plan.
   - Charge the edge limiter per provider call.
-- **Response (Claude):** open; a condition for `RESEARCH_ENABLED=true`.
+- **Response (Claude):** partly fixed (2026-10-15).
+  - **Fixed:** the total budget is now spent per `RPC_API_BUDGET_WINDOW_HOURS` window (default 24) and then restored. Unit test added; the ops doc and `.env.example` are updated.
+  - **Still open, Codex to implement with database tests:** write receipts only for cross-verify, pinning and operator flows, on finalized data, with §5.4 fields. Ordinary reads go to `research_cache` only. `research.integration.test.ts` currently asserts receipts on single-source reads and must change with it.
+  - **Still open:** charge the edge limiter per provider call.
 
 ### CR-04 The worker `/healthz` is public and probes the database, so anonymous traffic can burn free quotas
 - **Severity:** Medium
@@ -95,7 +98,7 @@ The main problems are availability on the public deployment and process:
   - Free instance-hours and compute can run out, suspending the services for the month.
   - ADR 0017's gating does not bound this.
 - **Recommendation:** answer liveness without a database query (or rate-limit it), raise the free-tier polling interval, and add quota alerts.
-- **Response (Claude):** open.
+- **Response (Claude):** not changed in code. A public health check keeps the free worker awake, and its queue polling keeps the database awake, whatever the endpoint itself does. The real fix is an ADR 0017 amendment (authenticate the wake, or drop the public listener), which is an owner decision; see the ADR 0017 recommendation.
 
 ### CR-05 The offline password denylist has 20 entries but is documented as "expanded"
 - **Severity:** Low
@@ -114,7 +117,11 @@ The main problems are availability on the public deployment and process:
   - Oversized receipts and schema failures count the same way.
 - **Impact:** three views of any non-token contract shut off token metadata for all users for 30 seconds, repeatably, at three times the provider cost. A non-token contract is reported as "unavailable" instead of "not a token".
 - **Recommendation:** give execution reverts their own error kind that is not retried and not counted. Return `standard: 'unknown'` for non-ERC-20 contracts. Count only transport failures.
-- **Response (Claude):** open; a condition for `RESEARCH_ENABLED=true`.
+- **Response (Claude):** fixed (2026-10-15).
+  - JSON-RPC code 3, and -32000 "execution reverted", map to `not_supported`, which is not retried and does not count toward the circuit.
+  - A contract without ERC-20 views returns `data: null` (not a token).
+  - The router counts only `unavailable`/`timeout` toward the circuit.
+  - New tests: transport revert mapping, router circuit, token metadata. Chain coverage is 81.7% branches against the 75% floor.
 
 ### CR-07 Digest inputs include fields that legitimately differ between providers
 - **Severity:** Low (latent until a second provider exists)
@@ -123,7 +130,7 @@ The main problems are availability on the public deployment and process:
 - **Evidence:** the digests cover the optional log `removed` field, the raw receipt and transaction, and Solana's version-dependent `jsonParsed` output.
 - **Impact:** genuine matches between two providers would be reported as `data_conflict`.
 - **Recommendation:** digest exactly the chain-data §5.4 fields.
-- **Response (Claude):** open.
+- **Response (Claude):** open. It is latent until a second provider exists, and it changes receipt digests, so it should be done with CR-03's receipt change and the reconciliation database tests (Codex).
 
 ### CR-08 An owner calling `transferFrom` on their own tokens is labelled `delegated`
 - **Severity:** Low
@@ -131,7 +138,7 @@ The main problems are availability on the public deployment and process:
 - **Location:** `packages/chains/src/evm-transaction.ts:119-130`
 - **Evidence:** there is no `sender !== from` check. ADR 0003 / chain-data §2.3 define `delegated` as a third-party `transferFrom`.
 - **Recommendation:** require `sender !== from`, otherwise `unknown`, and add a test.
-- **Response (Claude):** open.
+- **Response (Claude):** fixed (2026-10-15): `delegated` now requires `sender !== from`, otherwise `unknown` (still marked top level). Test added.
 
 ### CR-09 ADR 0013 gaps visible in code: the sole-admin recovery path is dead and objections are unrecoverable
 - **Severity:** Medium
@@ -222,10 +229,10 @@ The main problems are availability on the public deployment and process:
   1. The moderator recovery verification stores `method` twice instead of method plus rationale (`apps/api/src/routes/staff.ts:91`; identity §10.11 needs both).
   2. Invalid tokens trigger Argon2 and an HIBP call before the token is checked (`registration.ts:45-47`, `reset.ts:70-71`).
   3. `MAIL_WORKER_HEALTH_URL` accepts any `*.onrender.com` host.
-  4. `API_INTERNAL_URL` accepts `http:` for non-loopback hosts (`next.config.ts:40`, `live/research.ts:25`).
+  4. ~~`API_INTERNAL_URL` accepts `http:` for non-loopback hosts.~~ **Fixed 2026-10-15:** HTTPS is required except for loopback, in the rewrite and both SSR adapters (`internal-url.ts`, with a test).
   5. `NODE_EXTRA_CA_CERTS` is passed to the runtime.
-  6. Password change maps `password_breached` to "temporarily unavailable" (`live/account.ts:16-36`). The contract has no rejection code.
-  7. Admin and member live adapters map `conflict` and `session_expired` to `temporarily_unavailable` (api-integration-contracts §7).
+  6. ~~Password change maps `password_breached` to "temporarily unavailable".~~ **Fixed 2026-10-15:** the account contract gains `password_policy_rejected`/`password_breached`, and the member and staff paths and the form show the rejection on the new-password field.
+  7. ~~Admin and member live adapters map `conflict` and `session_expired` to `temporarily_unavailable`.~~ **Fixed 2026-10-15:** member `session_expired` maps to `sign_in_required`; admin `conflict`/`invalid_request` map to `invalid_transition`, and `not_eligible` is kept. Admin `session_expired` to `forbidden` already matched §7.
   8. The research view renders `incomplete` sections as complete zeros (latent; today's API sends `unavailable`).
   9. `allowBuilds` still lists `esbuild@0.18.20`, which is gone from the lockfile.
   10. The mock-exclusion check is not in `pnpm check` and there is no CI.
