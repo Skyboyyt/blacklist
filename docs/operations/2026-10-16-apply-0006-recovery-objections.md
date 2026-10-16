@@ -5,7 +5,7 @@
 | Prepared by | Claude, 2026-10-16 |
 | Target | Neon staging database (ledger at 11 entries after the 0005 runbook) |
 | Change | One generated migration for ADR 0013 C: tables `staff_recovery_objections` and `staff_recovery_objection_links`, column `staff_recovery_cases.reopens_case_id`, and `one_open_recovery` rebuilt to exclude `objected` cases |
-| Status | **Prepared, not applied.** Apply only after the owner approves and **before** the API and worker are deployed with this branch's code |
+| Status | **Applied to Neon staging by the owner on 2026-10-16.** Owner-reported ledger: 12 rows, all `ok`. Claude has not seen the other Step 4 output (tables, grants, counts) |
 
 ## Order matters
 
@@ -136,7 +136,34 @@ COMMIT;
 
 ## Step 4: verify
 
-Run the ledger query again with this row added to `expected`: `(12, '0006_easy_impossible_man.sql', '8421e441188518328d9b42c2218ab011b227c9da4971fdf5f152c0dd626592ca')`. Expect **12 rows `ok`**. Then:
+Run this ledger query (the 0005 runbook's query lists only 11 files, so it would mark row 12 `UNEXPECTED`). Expect **12 rows `ok`**:
+
+```sql
+WITH expected(ord, name, sha256) AS (VALUES
+  (1, '0000_fixed_alex_wilder.sql', '775f41df461cb2702685ae670216b272173ec14365999bd7f08b7bac3dcdaf29'),
+  (2, '0001_rich_tomorrow_man.sql', 'f0e67d86f1c92eb764ef7cd541b3eef6eb39a36b3f5d30e3a986d2014edbe39d'),
+  (3, '0002_material_thunderbird.sql', '8746fa0feb13db7fbca15952a1f0a96bb8ef207267471243e69a9ff35aa19cce'),
+  (4, '0003_absurd_miek.sql', '54aa4549df9cc82ac2d4a5b61eb1dd3c4283fe16e233fcefce8d7f6713ca9c28'),
+  (5, '0004_harsh_molten_man.sql', 'e46d1bcd6639a185009d2ddda6cad46a04b5933398e58e0db7987890a8d96eca'),
+  (6, '0001_security_boundaries.sql', 'eccc90e793edf9a2bec8241b1527dc46d4e5990cb43567611c0426f6fe088642'),
+  (7, '0002_identity_guards.sql', '197cd3b5cee18ed91ba6e12712740a96d0f7bd535b47d3e197ca11fdb60178c1'),
+  (8, '0005_violet_stardust.sql', '0a29d177b7cb422cdbc4669f2d91ff9efe7568f93e905c9db0b5b28c23a8fffe'),
+  (9, '0003_chain_research_foundation.sql', 'bac2ce3aa9fc0a80cb249d0a8205f892f50b3d1ffb6caa75410a54646a6c0d7b'),
+  (10, '0004_pinned_transaction_time.sql', '4543f992ecbbdb7ecd0e62530dd59499641d7ec10614f369f4089f1655819db2'),
+  (11, '0005_invalidation_guard.sql', '2e7b8e5a0247bdc472958a8c9350523c3231b3b4cae36a7a2cb3b7168fcfdfa6'),
+  (12, '0006_easy_impossible_man.sql', '8421e441188518328d9b42c2218ab011b227c9da4971fdf5f152c0dd626592ca')
+)
+SELECT coalesce(e.ord, 99) AS ord, coalesce(e.name, a.name) AS name,
+  CASE WHEN a.name IS NULL THEN 'MISSING'
+       WHEN e.name IS NULL THEN 'UNEXPECTED'
+       WHEN a.sha256 = e.sha256 THEN 'ok'
+       ELSE 'CHECKSUM MISMATCH' END AS status,
+  a.applied_at
+FROM expected e FULL JOIN blacklist_migrations.applied a ON a.name = e.name
+ORDER BY 1, 2;
+```
+
+Then:
 
 ```sql
 SELECT count(*) AS tables FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace

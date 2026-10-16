@@ -24,7 +24,7 @@ This file holds the **current state only**. Each session adds one short entry un
 ## Open work, by owner
 
 **Owner decisions and actions**
-1. **To deploy this branch:** merge the PR, then apply migration 0006 to Neon ([runbook](docs/operations/2026-10-16-apply-0006-recovery-objections.md)) **before** deploying the Render API and worker. Set `REGISTRATION_INVITE_EMAILS_SHA256` on **both** the API and worker (digests from `node scripts/registration-invite-hash.mjs <email>`); without it, hosted sign-up sends no links to anyone.
+1. **To deploy:** PR #15 is merged and 0006 is applied to Neon; finish the runbook's other Step 4 checks, then deploy the Render API and worker and Vercel. Set `REGISTRATION_INVITE_EMAILS_SHA256` on **both** the API and worker (digests from `node scripts/registration-invite-hash.mjs <email>`); without it, hosted sign-up sends no links to anyone.
 2. **P-13:** name the recovery operator and decide whether a second person approves operator actions. Until then sole-admin recovery is break-glass only.
 3. ADRs 0014, 0015 and 0017: Claude's amendments still await decisions. Record the Phase 6 sign-off, Phase 7 closure, and waivers for going live (review CR-11).
 4. Run the two-network lockout test (decision brief §3) and report the result.
@@ -53,7 +53,7 @@ This file holds the **current state only**. Each session adds one short entry un
 - **Migration:** `generated/0006_easy_impossible_man.sql` (12 entries, 36 tables). Neon runbook prepared and rehearsed on disposable PostgreSQL 18; **not applied**.
 - **Docs:** identity §3, §4.3, §10.11.1, §10.14; data model; THREAT-MODEL T-01/T-17; ARCHITECTURE and ESSENTIALS summaries; api-integration-contracts; `.env.example`.
 - **Checks (actual):** `pnpm check` exit 0 (contracts 82, chains 69, backend non-database 56, web 414; format, lint, types, build). Backend coverage with all database integration tests: 40 files, 200 tests passed, 83.66% branches, floors pass. Chromium E2E on the mock build: 420 passed, 84 skipped (desktop-only specs in the mobile project), 0 failed. 0006 runbook rehearsed on disposable PostgreSQL 18. **Not run:** anything against Render, Vercel or Neon.
-- **Merged** as [PR #15](https://github.com/Skyboyyt/blacklist/pull/15) on the owner's instruction ("open the pr and merged"). **Not deployed; 0006 not applied to Neon.**
+- **Merged** as [PR #15](https://github.com/Skyboyyt/blacklist/pull/15) on the owner's instruction ("open the pr and merged"). **0006 applied to Neon by the owner (2026-10-16): ledger 12 rows, all `ok` (owner-reported).** Not yet deployed.
 
 ### 2026-10-16: Claude, Neon migration `0005_invalidation_guard.sql` (applied by the owner)
 
