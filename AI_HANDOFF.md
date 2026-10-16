@@ -44,6 +44,14 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-16: Claude, prepared the Neon migration for `0005_invalidation_guard.sql` (not applied)
+
+- The owner reports the Neon staging ledger at 10 entries; `main` expects 11.
+- Runbook: [docs/operations/2026-10-16-apply-0005-invalidation-guard.md](docs/operations/2026-10-16-apply-0005-invalidation-guard.md). It contains read-only checks, an expected checksum for every file, a restore-point branch, an atomic apply script run as `blacklist_migrator`, verification queries and rollback notes.
+- Rehearsed on disposable PostgreSQL 18 at the same 10-entry state: success as the migrator, success as an owner role with ADMIN (temporary SET revoked), refusal on re-run, full rollback with duplicates, existing records untouched, the repository runner accepting all 11 checksums.
+- **Waiting for owner approval.** Claude has no Neon access from this environment; the owner runs the SQL.
+
+
 ### 2026-10-15: Claude, ADR 0013–0018 decision brief (owner task 2)
 
 - **Owner reported** setting `CLIENT_IP_FORWARDING_TOKEN` on Vercel and Render. Claude could **not** verify it: this environment's egress policy blocks `*.vercel.app` and `*.onrender.com` (not bypassed). The forwarding code is only on PR #14, which is not merged, so the deployed services do not use the secret yet. A safe owner check is in the brief.
