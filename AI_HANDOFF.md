@@ -44,6 +44,14 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-16: Claude, Phase 9a slice 1 (data model and permission catalog)
+
+- Plan: [docs/phase9a-plan.md](docs/phase9a-plan.md) (five slices; interim decisions on response/correction statuses, standing proof contract, projects, member notices, error codes).
+- Migrations `generated/0007_wonderful_boomerang.sql` + `0007_moderation_guards.sql`: 19 tables, append-only triggers, publication guard (14 ledger entries, 55 tables). **Not applied to Neon**: [runbook](docs/operations/2026-10-16-apply-0007-phase9a.md), rehearsed on disposable PostgreSQL 18.
+- **Bug found and fixed:** a CHECK of the form `x = 'a' OR char_length(y) BETWEEN …` passes when `y` is NULL. The 0006 recovery objection reason CHECK had this flaw (the domain always required a reason); 0007 replaces it.
+- Permission catalog extended per ARCHITECTURE §9.2: member, moderator, appeal_reviewer (queue limited to appeals by the domain), admin. Member permissions are member-account only.
+- Staging operator checks expect 55 tables and no UPDATE/DELETE on the history tables.
+
 ### 2026-10-16: Claude, public registration (owner decision)
 
 - **Merged** as PR #16 (`3558cc2`). **Deployed by the owner (2026-10-16):** Render API and worker on `main`, Vercel redeployed, `REGISTRATION_MODE` open on both services (owner-reported). Claude has no access to Render, Vercel or Neon and has not observed the live result.

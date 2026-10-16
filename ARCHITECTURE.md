@@ -469,7 +469,7 @@ Defined in code (`domain/access`). Only assignments are stored in the database.
 |---|---|
 | `member` | `research:read`, `report:create`, `report:read:own`, `evidence:upload`, `standing:prove`, `response:create`, `appeal:create`, `correction:create`, `notification:read:own`, `profile:update:own`, `session:manage:own` |
 | `moderator` | `moderation:queue:read`, `moderation:case:read`, `moderation:case:assign`, `finding:propose`, `finding:publish`, `finding:approve_severe`, `finding:suspend`, `standing:decide`, `appeal:decide`, `response:moderate`, `correction:decide`, `evidence:read_derivative`, `evidence:redact`, `report:read:any`, `staff:recovery:verify` (identity verification in a recovery case, identity §10.11) |
-| `appeal_reviewer` | `moderation:case:read` (appeal cases only), `appeal:decide`, `evidence:read_derivative` (appeal scope) |
+| `appeal_reviewer` | `moderation:queue:read` and `moderation:case:read` (appeal cases only, enforced by the domain), `appeal:decide`, `evidence:read_derivative` (appeal scope) |
 | `admin` | moderator permissions + `staff:invite`, `staff:role:request`, `staff:role:approve`, `staff:suspend`, `staff:recovery:*`, `staff:offboard`, `user:suspend`, `project:manage`, `label:manage`, `signal:suppress`, `audit:read`, `config:manage`, `evidence:unpublish`, `evidence:purge:request` |
 | Operator CLI (never web) | `staff:bootstrap`, `staff:approve-invitation` (< 2 admins), `staff:break-glass`, `evidence:purge:execute`, `evidence:forensic_export` |
 

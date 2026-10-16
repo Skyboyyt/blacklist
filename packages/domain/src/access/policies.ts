@@ -1,8 +1,39 @@
 import { DomainError } from '../shared/errors.ts';
-import type { UserActor } from './types.ts';
-// Only Phase 7 permissions are executable. Later-phase services must extend this
-// catalog with their scope/conflict rules before registering routes.
-const staff = ['staff:recovery:verify'] as const;
+import type { UserActor, StaffRole } from './types.ts';
+// Permission catalog (ARCHITECTURE §9.2). Scope and conflict rules (own records, appeal
+// cases only, independence) are enforced again by each domain service.
+const member = [
+  'report:create',
+  'report:read:own',
+  'standing:prove',
+  'response:create',
+  'appeal:create',
+  'correction:create',
+  'notification:read:own',
+] as const;
+const moderator = [
+  'moderation:queue:read',
+  'moderation:case:read',
+  'moderation:case:assign',
+  'report:read:any',
+  'finding:propose',
+  'finding:publish',
+  'finding:approve_severe',
+  'finding:suspend',
+  'standing:decide',
+  'appeal:decide',
+  'response:moderate',
+  'correction:decide',
+  'evidence:read_derivative',
+  'staff:recovery:verify',
+] as const;
+// The queue is readable so reviewers see appeal cases; the domain limits it to appeals.
+const appealReviewer = [
+  'moderation:queue:read',
+  'moderation:case:read',
+  'appeal:decide',
+  'evidence:read_derivative',
+] as const;
 const admin = [
   'staff:invite',
   'staff:role:request',
@@ -15,19 +46,30 @@ const admin = [
   'audit:read',
   'user:suspend',
 ] as const;
+const own = ['session:manage:own', 'profile:update:own'] as const;
 export type Permission =
-  (typeof staff)[number] | (typeof admin)[number] | 'session:manage:own' | 'profile:update:own';
-const catalog = new Set<string>([...staff, ...admin, 'session:manage:own', 'profile:update:own']);
+  | (typeof member)[number]
+  | (typeof moderator)[number]
+  | (typeof appealReviewer)[number]
+  | (typeof admin)[number]
+  | (typeof own)[number];
+const catalog = new Set<string>([...member, ...moderator, ...appealReviewer, ...admin, ...own]);
+const byRole: Record<StaffRole, ReadonlySet<string>> = {
+  moderator: new Set(moderator),
+  appeal_reviewer: new Set(appealReviewer),
+  admin: new Set([...moderator, ...admin]),
+};
+const memberSet = new Set<string>(member);
 export const isPermission = (value: unknown): value is Permission =>
   typeof value === 'string' && catalog.has(value);
 export function hasPermission(actor: UserActor, permission: Permission): boolean {
   if (!isPermission(permission)) return false;
-  if (permission === 'session:manage:own' || permission === 'profile:update:own')
+  if ((own as readonly string[]).includes(permission))
     return actor.accountKind === 'member' || actor.staffAssured;
+  // Staff use dedicated accounts; member permissions belong to member accounts only.
+  if (memberSet.has(permission)) return actor.accountKind === 'member';
   if (actor.accountKind !== 'staff' || !actor.staffAssured || !actor.staffPermissionsActive) return false;
-  return actor.roles.some(
-    (role) => role === 'admin' || (role === 'moderator' && (staff as readonly string[]).includes(permission)),
-  );
+  return actor.roles.some((role) => byRole[role].has(permission));
 }
 export function requirePermission(actor: UserActor, permission: Permission) {
   if (!hasPermission(actor, permission)) throw new DomainError('forbidden');

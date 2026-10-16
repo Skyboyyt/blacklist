@@ -223,7 +223,7 @@ export const recoveryObjections = bl.table(
     check('recovery_objector_kind_valid', sql`${t.objectorKind} in ('staff','subject','operator')`),
     check(
       'recovery_staff_objection_reason',
-      sql`${t.objectorKind} = 'subject' or char_length(${t.reason}) between 10 and 1000`,
+      sql`${t.objectorKind} = 'subject' or coalesce(char_length(${t.reason}), 0) between 10 and 1000`,
     ),
     index('recovery_objections_by_objector').on(t.objector, t.createdAt),
   ],

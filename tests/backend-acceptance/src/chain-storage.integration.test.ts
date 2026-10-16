@@ -175,7 +175,7 @@ describe('Phase8 receipt and pinned-fact SQL security boundaries', () => {
       expect(
         (await h.migrator.query('SELECT name,sha256 FROM blacklist_migrations.applied ORDER BY name')).rows,
       ).toEqual(before);
-      expect(before).toHaveLength(12);
+      expect(before).toHaveLength(14);
       const client = await h.runtime.connect();
       try {
         await client.query('BEGIN');

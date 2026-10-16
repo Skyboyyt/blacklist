@@ -77,7 +77,7 @@ describe('operator catalog rehearsal on disposable PostgreSQL18 (TLS production 
     await migrate(migrationUrl, 'blacklist_app');
     const client = await migrator.connect();
     try {
-      expect(await verifyOperatorMigrations(client)).toMatchObject({ migrations: 12, tables: 36 });
+      expect(await verifyOperatorMigrations(client)).toMatchObject({ migrations: 14, tables: 55 });
     } finally {
       client.release();
     }
