@@ -24,7 +24,7 @@ This file holds the **current state only**. Each session adds one short entry un
 ## Open work, by owner
 
 **Owner decisions and actions**
-1. **To deploy:** PR #15 is merged and 0006 is applied to Neon; finish the runbook's other Step 4 checks, then deploy the Render API and worker and Vercel. PRs #15 and #16 are deployed and registration is public (owner-reported). Next: confirm a fresh sign-up receives its email and needs 12 characters.
+1. **Deployed (owner-reported):** PRs #15 and #16 are live, 0006 is on Neon, and registration is public. Next: confirm a fresh sign-up receives its email and needs 12 characters, and share the runbook's remaining Step 4 output if convenient.
 2. **P-13:** name the recovery operator and decide whether a second person approves operator actions. Until then sole-admin recovery is break-glass only.
 3. ADRs 0014, 0015 and 0017: Claude's amendments still await decisions. Record the Phase 6 sign-off, Phase 7 closure, and waivers for going live (review CR-11).
 4. Run the two-network lockout test (decision brief §3) and report the result.
