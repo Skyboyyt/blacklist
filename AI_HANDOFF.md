@@ -52,7 +52,8 @@ This file holds the **current state only**. Each session adds one short entry un
 - **ADR 0013 C/D:** staff objection with step-up bound to the reason; the subject's single-use, POST-only link (`/recovery/object`; redeemable only after `accepted_for_delivery`; records an objection and, once, its withdrawal); withdrawal by the objector within 24 hours; resolution as a new case referencing the objected one, never verified or approved by an objector; a pattern alert on repeated objections; the dead operator approval branch replaced by an explicit refusal until P-13. Admin UI actions and mock support.
 - **Migration:** `generated/0006_easy_impossible_man.sql` (12 entries, 36 tables). Neon runbook prepared and rehearsed on disposable PostgreSQL 18; **not applied**.
 - **Docs:** identity §3, §4.3, §10.11.1, §10.14; data model; THREAT-MODEL T-01/T-17; ARCHITECTURE and ESSENTIALS summaries; api-integration-contracts; `.env.example`.
-- **Checks:** see "Actual checks" in the PR. **Not run:** anything against Render, Vercel or Neon.
+- **Checks (actual):** `pnpm check` exit 0 (contracts 82, chains 69, backend non-database 56, web 414; format, lint, types, build). Backend coverage with all database integration tests: 40 files, 200 tests passed, 83.66% branches, floors pass. Chromium E2E on the mock build: 420 passed, 84 skipped (desktop-only specs in the mobile project), 0 failed. 0006 runbook rehearsed on disposable PostgreSQL 18. **Not run:** anything against Render, Vercel or Neon.
+- **Merged** as [PR #15](https://github.com/Skyboyyt/blacklist/pull/15) on the owner's instruction ("open the pr and merged"). **Not deployed; 0006 not applied to Neon.**
 
 ### 2026-10-16: Claude, Neon migration `0005_invalidation_guard.sql` (applied by the owner)
 
