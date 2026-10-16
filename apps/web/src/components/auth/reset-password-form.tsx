@@ -13,7 +13,7 @@ import { Field } from '@/components/ui/field';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Spinner } from '@/components/ui/spinner';
 import { getAuthApi } from '@/lib/api/browser';
-import { NEW_PASSWORD_HINT, passwordRejectionMessage } from '@/lib/auth/password-copy';
+import { RESET_PASSWORD_HINT, passwordRejectionMessage } from '@/lib/auth/password-copy';
 import { useFragmentToken } from '@/lib/auth/use-fragment-token';
 import { focusFirstError, readFields, validateForm, type FieldErrors } from '@/lib/forms/validate';
 import { webAuthnSupported, type PasskeyCeremonyState } from '@/lib/security/use-passkey-ceremony';
@@ -165,7 +165,7 @@ export function ResetPasswordForm() {
   return (
     <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
       <FormAlert state={alert} />
-      <Field id="reset-password" label="New password" hint={NEW_PASSWORD_HINT} error={errors['password']}>
+      <Field id="reset-password" label="New password" hint={RESET_PASSWORD_HINT} error={errors['password']}>
         {(control) => (
           <PasswordInput {...control} name="password" autoComplete="new-password" showRequirement required />
         )}

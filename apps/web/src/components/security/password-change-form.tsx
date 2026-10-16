@@ -1,6 +1,6 @@
 'use client';
 
-import { passwordChangeFormSchema } from '@blacklist/contracts';
+import { MEMBER_PASSWORD_MIN_CODE_POINTS, passwordChangeFormSchema } from '@blacklist/contracts';
 import { useState, type FormEvent } from 'react';
 import {
   accountErrorAlert,
@@ -92,6 +92,7 @@ export function PasswordChangeForm() {
             name="newPassword"
             autoComplete="new-password"
             showRequirement
+            minimum={MEMBER_PASSWORD_MIN_CODE_POINTS}
             required
           />
         )}

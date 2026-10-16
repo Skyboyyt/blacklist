@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto';
-import { normalizePassword, hashPassword } from './password.ts';
+import {
+  normalizePassword,
+  hashPassword,
+  PASSWORD_MIN_CODE_POINTS,
+  type PasswordAccountKind,
+} from './password.ts';
 import { DomainError } from '../shared/errors.ts';
 
 // Bundled denylist applies even when the range service is unavailable. Context
@@ -48,10 +53,14 @@ export const checkBreach: BreachCheck = async (password) => {
   }
   return blocked.has(password.toLowerCase());
 };
-export async function preparePassword(input: string, breachCheck: BreachCheck = checkBreach) {
+export async function preparePassword(
+  input: string,
+  kind: PasswordAccountKind,
+  breachCheck: BreachCheck = checkBreach,
+) {
   let normalized: string;
   try {
-    normalized = normalizePassword(input);
+    normalized = normalizePassword(input, PASSWORD_MIN_CODE_POINTS[kind]);
   } catch {
     throw new DomainError('password_policy_rejected');
   }

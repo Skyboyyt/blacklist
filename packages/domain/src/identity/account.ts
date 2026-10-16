@@ -77,7 +77,7 @@ export async function changePassword(
   // Staff action-bound assertion is handled in the staff execution wrapper.
   if (actor.accountKind === 'staff') throw new DomainError('passkey_required');
   requirePermission(actor, 'session:manage:own');
-  const stored = await preparePassword(password, ctx.breachCheck);
+  const stored = await preparePassword(password, 'member', ctx.breachCheck);
   await ctx.runtime.transaction(async (tx, client) => {
     const { state, policy } = await lockActor(tx, actor);
     requireReauth(policy);

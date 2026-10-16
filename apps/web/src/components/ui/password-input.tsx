@@ -11,6 +11,8 @@ interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   readonly ref?: Ref<HTMLInputElement>;
   /** For new passwords: show the length requirement with a live character count. */
   readonly showRequirement?: boolean;
+  /** Minimum length shown with the requirement (members 12, staff 8; ADR 0016). */
+  readonly minimum?: number;
 }
 
 /**
@@ -21,6 +23,7 @@ interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
 export function PasswordInput({
   className,
   showRequirement = false,
+  minimum = PASSWORD_MIN_CODE_POINTS,
   onKeyDown,
   onKeyUp,
   onChange,
@@ -34,7 +37,7 @@ export function PasswordInput({
   const trackCaps = (event: KeyboardEvent<HTMLInputElement>) =>
     setCapsLock(event.getModifierState('CapsLock'));
   const capsId = rest.id ? `${rest.id}-caps` : undefined;
-  const met = length >= PASSWORD_MIN_CODE_POINTS;
+  const met = length >= minimum;
 
   return (
     <div>
@@ -84,7 +87,7 @@ export function PasswordInput({
           data-requirement={met ? 'met' : 'unmet'}
         >
           <Icon name={met ? 'check' : 'info'} className="size-3.5" />
-          At least {PASSWORD_MIN_CODE_POINTS} characters ({length}/{PASSWORD_MIN_CODE_POINTS})
+          At least {minimum} characters ({length}/{minimum})
         </p>
       ) : null}
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { registerCompleteFormSchema } from '@blacklist/contracts';
+import { MEMBER_PASSWORD_MIN_CODE_POINTS, registerCompleteFormSchema } from '@blacklist/contracts';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -121,7 +121,14 @@ export function RegisterCompleteForm() {
       </Field>
       <Field id="reg-password" label="Password" hint={NEW_PASSWORD_HINT} error={errors['password']}>
         {(control) => (
-          <PasswordInput {...control} name="password" autoComplete="new-password" showRequirement required />
+          <PasswordInput
+            {...control}
+            name="password"
+            autoComplete="new-password"
+            showRequirement
+            minimum={MEMBER_PASSWORD_MIN_CODE_POINTS}
+            required
+          />
         )}
       </Field>
       <Field id="reg-confirm" label="Confirm password" error={errors['confirmPassword']}>

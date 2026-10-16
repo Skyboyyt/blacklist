@@ -47,10 +47,21 @@ describe('runtime security/configuration boundaries', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('provider unavailable')));
     try {
       for (const value of ['password', '12345678', 'blacklist', 'qwertyui'])
-        await expect(preparePassword(value)).rejects.toThrow('password_breached');
+        await expect(preparePassword(value, 'staff')).rejects.toThrow('password_breached');
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+  it('requires 12 code points for member passwords and 8 for staff (ADR 0016 amendment)', async () => {
+    const accept = async () => false;
+    await expect(preparePassword('fictional11', 'member', accept)).rejects.toThrow(
+      'password_policy_rejected',
+    );
+    await expect(preparePassword('fictional112', 'member', accept)).resolves.toMatch(/^\$argon2id\$/);
+    await expect(preparePassword('fiction8', 'staff', accept)).resolves.toMatch(/^\$argon2id\$/);
+    await expect(preparePassword('fiction', 'staff', accept)).rejects.toThrow('password_policy_rejected');
+    // Existing member passwords of 8–11 characters still verify (no forced reset).
+    expect(normalizePassword('fiction8')).toBe('fiction8');
   });
   it('normalizes IPv6 /64 and mapped IPv4 buckets without admitting arbitrary prefixes', () => {
     expect(ipPrefix('2001:db8:1234:5678::1')).toBe(ipPrefix('2001:0db8:1234:5678:abcd:efab:0:2'));
@@ -88,10 +99,10 @@ describe('runtime security/configuration boundaries', () => {
     try {
       expect(await checkBreach('blacklistpassword')).toBe(true);
       expect(await checkBreach('fictional independent long phrase')).toBe(false);
-      await expect(preparePassword('blacklistpassword')).rejects.toThrow('password_breached');
-      await expect(preparePassword('fictional independent long phrase', async () => true)).rejects.toThrow(
-        'password_breached',
-      );
+      await expect(preparePassword('blacklistpassword', 'member')).rejects.toThrow('password_breached');
+      await expect(
+        preparePassword('fictional independent long phrase', 'member', async () => true),
+      ).rejects.toThrow('password_breached');
     } finally {
       vi.unstubAllGlobals();
     }

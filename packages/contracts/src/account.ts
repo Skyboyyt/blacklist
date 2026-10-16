@@ -7,7 +7,7 @@
  * information is a coarse summary (PRD §6.1 data minimization: no IPs or locations).
  */
 import { z } from './zod.ts';
-import { emailSchema, newPasswordSchema, normalizePassword } from './auth.ts';
+import { emailSchema, memberPasswordSchema, normalizePassword } from './auth.ts';
 import { isoDateTimeSchema } from './common.ts';
 
 /** Error codes the account/security UI can explain. Raw backend messages are never shown. */
@@ -113,7 +113,7 @@ export type ReauthRequest = z.infer<typeof reauthRequestSchema>;
 export const passwordChangeFormSchema = z
   .strictObject({
     currentPassword: z.string().min(1, 'Enter your current password.'),
-    newPassword: newPasswordSchema,
+    newPassword: memberPasswordSchema,
     confirmPassword: z.string().min(1, 'Confirm your new password.'),
   })
   .refine((v) => normalizePassword(v.newPassword) === normalizePassword(v.confirmPassword), {

@@ -9,11 +9,16 @@ export const ARGON2_POLICY = {
   parallelism: 1,
   outputLen: 32,
 } satisfies Options;
-export function normalizePassword(input: string) {
+// ADR 0016 (amended 2026-10-16): staff passwords are one factor beside two WebAuthn
+// authenticators; member passwords are the only factor, so their minimum is higher.
+// The lower bound also applies when verifying, so existing 8+ passwords keep working.
+export const PASSWORD_MIN_CODE_POINTS = { staff: 8, member: 12 } as const;
+export type PasswordAccountKind = keyof typeof PASSWORD_MIN_CODE_POINTS;
+export function normalizePassword(input: string, minimum: number = PASSWORD_MIN_CODE_POINTS.staff) {
   const normalized = input.normalize('NFKC');
   const length = [...normalized].length;
   if (
-    length < 8 ||
+    length < minimum ||
     length > 128 ||
     Buffer.byteLength(normalized, 'utf8') > 512 ||
     /[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]/u.test(normalized)

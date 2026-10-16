@@ -57,7 +57,7 @@ export async function completeRegistration(
     candidate.expiresAt.getTime() <= Date.now()
   )
     throw new DomainError('token_invalid');
-  const stored = await preparePassword(password, ctx.breachCheck);
+  const stored = await preparePassword(password, 'member', ctx.breachCheck);
   try {
     await ctx.runtime.transaction(async (tx) => {
       const [intent] = await tx
