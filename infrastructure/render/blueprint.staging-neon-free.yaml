@@ -42,9 +42,7 @@ services:
       - key: BREAK_GLASS_ENABLED
         value: 'false'
       - key: REGISTRATION_MODE
-        value: invite
-      - key: REGISTRATION_INVITE_EMAILS_SHA256
-        sync: false
+        value: open
   - type: web
     name: blacklist-staging-worker
     runtime: node
@@ -76,7 +74,5 @@ services:
       - key: WORKER_WEB_SERVICE
         value: 'true'
       - key: REGISTRATION_MODE
-        value: invite
-      - key: REGISTRATION_INVITE_EMAILS_SHA256
-        sync: false
+        value: open
     healthCheckPath: /healthz

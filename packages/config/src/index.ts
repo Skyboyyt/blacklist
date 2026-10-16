@@ -36,7 +36,7 @@ const shared = z.object({
   BREAK_GLASS_ENABLED: z.enum(['true', 'false']).default('false'),
   WEBAUTHN_RP_ID: z.string().min(1),
   WEBAUTHN_RP_NAME: z.string().min(1).default('Blacklist'),
-  /** ADR 0019: member sign-up is invite-only while staging holds real users. */
+  /** Member sign-up is public by default; `invite` is an opt-in gate (ADR 0019, superseded 2026-10-16). */
   REGISTRATION_MODE: z.enum(['open', 'invite']).optional(),
   /** Comma-separated SHA-256 hex digests of invited emails (trimmed, lower-cased). */
   REGISTRATION_INVITE_EMAILS_SHA256: z
@@ -149,13 +149,13 @@ const workerSchema = shared.omit({ BETTER_AUTH_SECRET: true }).extend({
 });
 export type RegistrationAccess =
   { readonly mode: 'open' } | { readonly mode: 'invite'; readonly emailDigests: ReadonlySet<string> };
-/** Invite-only unless explicitly opened when running as a hosted (production) service (ADR 0019). */
+/** Public unless `REGISTRATION_MODE=invite` is set explicitly (owner decision 2026-10-16; ADR 0019). */
 export function resolveRegistrationAccess(config: {
   readonly NODE_ENV: 'development' | 'test' | 'production';
   readonly REGISTRATION_MODE?: 'open' | 'invite' | undefined;
   readonly REGISTRATION_INVITE_EMAILS_SHA256: string;
 }): RegistrationAccess {
-  const mode = config.REGISTRATION_MODE ?? (config.NODE_ENV === 'production' ? 'invite' : 'open');
+  const mode = config.REGISTRATION_MODE ?? 'open';
   if (mode === 'open') return Object.freeze({ mode });
   const emailDigests = new Set(
     config.REGISTRATION_INVITE_EMAILS_SHA256.split(',')

@@ -51,4 +51,4 @@ No ADR status authorizes starting a phase. Phase authorization is always a separ
 | [0016](0016-owner-password-minimum-and-canonical-foundation-url.md) | Password minimum and canonical foundation URL | **Accepted, amended** (owner, 2026-10-16): staff 8, members 12 |
 | [0017](0017-request-triggered-free-mail-worker-wake.md) | Request-triggered free mail-worker wake | **Accepted by owner**; Claude: accept with amendments (2026-10-15) |
 | [0018](0018-phase8-provider-selection.md) | Phase 8 blockchain provider selection (O-3) | **Accepted provisionally** (owner, 2026-10-16); research off until provider verification is met |
-| [0019](0019-invite-only-member-registration-in-staging.md) | Invite-only member registration while staging holds real users | **Accepted** (owner, 2026-10-16) |
+| [0019](0019-invite-only-member-registration-in-staging.md) | Invite-only member registration while staging holds real users | **Superseded** (owner, 2026-10-16): registration is public; the invite gate is opt-in |

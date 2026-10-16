@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **Accepted (owner, 2026-10-16)** |
+| Status | **Superseded by owner decision (2026-10-16, later the same day): member registration is public.** The invite gate remains as an opt-in setting only |
 | Proposed by | Claude, 2026-10-15 (review CR-10) |
 | Reviewed by | Claude |
 | Decided by | Owner, 2026-10-16: "Invite-only sign-up" |
@@ -32,3 +32,12 @@ Until the owner lifts it, **member registration is invite-only**:
 - Keep public sign-up and record risk acceptance: rejected by the owner.
 - Restore Vercel visitor protection: hides the whole site, including public research.
 - An invitation table managed by admins: needs a migration and an admin UI. It is the right long-term shape, deferred to the member-invitation work.
+
+## Owner decision: public registration (2026-10-16)
+
+The owner instructed: "allow everyone to register without any needing approval, make it public registration".
+- `REGISTRATION_MODE` now defaults to `open` everywhere (including `NODE_ENV=production`); the Render blueprint sets `open` on the API and worker. The invite gate runs only when `REGISTRATION_MODE=invite` is set explicitly.
+- The sign-up page no longer mentions invitations.
+- **Risk acceptance (review CR-10):** the owner accepts real people registering into the free staging database before the Phase 11 privacy, retention, recovery and monitoring gates are done. Those gates still block production readiness.
+- Unchanged safeguards: email-first registration (no credential before mailbox proof), the uniform response, per-email and per-IP-prefix limits, the 12-character member minimum and breach checks. A human verifier (O-6) is still not configured.
+

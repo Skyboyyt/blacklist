@@ -20,14 +20,13 @@ const env = {
   WEBAUTHN_RP_ID: 'localhost',
 };
 describe('runtime security/configuration boundaries', () => {
-  it('defaults hosted services to invite-only registration and accepts only digest lists (ADR 0019)', () => {
+  it('keeps registration public by default, even in production, and accepts only digest lists for the opt-in gate (ADR 0019)', () => {
     const invited = 'a'.repeat(64);
     expect(resolveRegistrationAccess(readApiConfig(env))).toEqual({ mode: 'open' });
     const hosted = resolveRegistrationAccess(
       readApiConfig({ ...env, NODE_ENV: 'production', APP_ORIGIN: 'https://localhost' }),
     );
-    expect(hosted.mode).toBe('invite');
-    expect(hosted.mode === 'invite' && hosted.emailDigests.size).toBe(0);
+    expect(hosted).toEqual({ mode: 'open' });
     const listed = resolveRegistrationAccess(
       readApiConfig({
         ...env,
