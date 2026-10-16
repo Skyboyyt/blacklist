@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { describe, it, expect } from 'vitest';
 import { readApiConfig } from '@blacklist/config';
 import { schema, eq } from '@blacklist/db';
@@ -116,6 +116,173 @@ describe('Phase 9a slice 2: private reports and the staff case workflow', () => 
           )
         ).statusCode,
       ).toBe(400);
+
+      // Slice 4 redress routes: member accounts only; findingId must match the path.
+      const missing = '00000000-0000-4000-8000-000000000000';
+      const sol = 'So11111111111111111111111111111111111111112';
+      expect((await get(`/api/v1/findings/${missing}/appeal-target`)).statusCode).toBe(401);
+      expect((await get(`/api/v1/findings/${missing}/appeal-target`, staffCookie)).statusCode).toBe(403);
+      expect((await get(`/api/v1/findings/${missing}/appeal-target`, m.cookie)).statusCode).toBe(404);
+      expect((await post(`/api/v1/findings/${missing}/standing-challenges`, {}, m.cookie)).statusCode).toBe(
+        404,
+      );
+      expect(
+        (await post(`/api/v1/findings/${missing}/standing-challenges`, {}, staffCookie)).statusCode,
+      ).toBe(403);
+      const appeal = {
+        findingId: missing,
+        grounds: 'Fictional grounds that are long enough to validate.',
+        standing: {
+          mechanism: 'documentary',
+          explanation: 'Fictional records',
+          evidence: [],
+          urls: ['https://example.org'],
+        },
+      };
+      expect((await post(`/api/v1/findings/${randomUUID()}/appeals`, appeal, m.cookie)).statusCode).toBe(404);
+      expect(
+        (await post(`/api/v1/findings/${missing}/appeals`, { ...appeal, status: 'upheld' }, m.cookie))
+          .statusCode,
+      ).toBe(400);
+      expect((await post(`/api/v1/findings/${missing}/appeals`, appeal, staffCookie)).statusCode).toBe(403);
+      const target = await get(`/api/v1/responses/target?chain=solana&address=${sol}`, m.cookie);
+      expect(target.statusCode).toBe(200);
+      expect(target.json()).toMatchObject({ data: { alreadyResponding: false } });
+      expect(
+        (await get(`/api/v1/responses/target?chain=solana&address=${sol}`, staffCookie)).statusCode,
+      ).toBe(403);
+      const challenge = await post(
+        '/api/v1/responses/standing-challenges',
+        { kind: 'address', chain: 'solana', address: sol },
+        m.cookie,
+      );
+      expect(challenge.statusCode).toBe(200);
+      expect(challenge.body).toContain('does not authorize any transaction');
+      expect(
+        (
+          await post(
+            '/api/v1/responses',
+            {
+              target: { kind: 'address', chain: 'solana', address: sol },
+              body: 'x',
+              standing: appeal.standing,
+            },
+            m.cookie,
+          )
+        ).statusCode,
+      ).toBe(400);
+      expect((await post('/api/v1/responses', {}, staffCookie)).statusCode).toBe(403);
+
+      // Slice 3 finding routes over HTTP: accept, approve, revise, reject and suspend.
+      const data = <T>(r: { json: () => unknown }) => (r.json() as { data: T }).data;
+      const started = await post(
+        `/api/v1/mod/cases/${id}/decisions`,
+        { expectedVersion: 1, decision: { action: 'start_review' } },
+        staffCookie,
+      );
+      expect(started.statusCode).toBe(200);
+      const acceptDecision = {
+        action: 'accept_report',
+        severity: 'medium',
+        publicSummary: 'Fictional public summary long enough to validate.',
+        internalRationale: 'Fictional rationale long enough to validate.',
+      };
+      const startedVersion = data<{ version: number }>(started).version;
+      const accepted = await post(
+        `/api/v1/mod/cases/${id}/decisions`,
+        {
+          expectedVersion: startedVersion,
+          decision: acceptDecision,
+          assertion: await moderator.proof({
+            action: 'case.accept_report',
+            targetType: 'case',
+            targetId: id,
+            parameters: { version: startedVersion, decision: acceptDecision },
+          }),
+        },
+        staffCookie,
+      );
+      expect(accepted.statusCode).toBe(200);
+      expect((await get('/api/v1/mod/approvals', m.cookie)).statusCode).toBe(403);
+      const approvals = await get('/api/v1/mod/approvals', staffCookie);
+      expect(approvals.statusCode).toBe(200);
+      const [r1] = data<{ findingId: string; contentHash: string }[]>(approvals);
+      if (!r1) throw new Error('fixture_revision_missing');
+      const fid = r1.findingId;
+      const approvePath = `/api/v1/mod/findings/${fid}/approvals`;
+      expect(
+        (
+          await post(
+            approvePath,
+            { event: 'approve', revisionNumber: 1, contentHash: r1.contentHash },
+            staffCookie,
+          )
+        ).statusCode,
+      ).toBe(400);
+      const approved = await post(
+        approvePath,
+        {
+          event: 'approve',
+          revisionNumber: 1,
+          contentHash: r1.contentHash,
+          assertion: await moderator.proof({
+            action: 'finding.approve',
+            targetType: 'finding',
+            targetId: fid,
+            parameters: { revisionNumber: 1, contentHash: r1.contentHash },
+          }),
+        },
+        staffCookie,
+      );
+      expect(approved.statusCode).toBe(200);
+      expect(data<unknown[]>(await get('/api/v1/mod/findings', staffCookie))).toHaveLength(1);
+      expect((await get(`/api/v1/mod/findings/${fid}/revisions`, staffCookie)).statusCode).toBe(200);
+      const revised = await post(
+        `/api/v1/mod/findings/${fid}/revisions`,
+        {
+          base: { revisionNumber: 1, contentHash: r1.contentHash },
+          draft: {
+            severity: 'low',
+            publicSummary: 'Second fictional public summary text.',
+            internalRationale: 'Second fictional rationale text here.',
+          },
+        },
+        staffCookie,
+      );
+      expect(revised.statusCode).toBe(200);
+      const rationale = 'Fictional rejection rationale.';
+      const rejected = await post(
+        approvePath,
+        {
+          event: 'reject',
+          revisionNumber: 2,
+          rationale,
+          assertion: await moderator.proof({
+            action: 'finding.reject',
+            targetType: 'finding',
+            targetId: fid,
+            parameters: { revisionNumber: 2, rationale },
+          }),
+        },
+        staffCookie,
+      );
+      expect(rejected.statusCode).toBe(200);
+      const reason = 'Fictional suspension reason text.';
+      const suspended = await post(
+        `/api/v1/mod/findings/${fid}/suspend`,
+        {
+          reason,
+          assertion: await moderator.proof({
+            action: 'finding.suspend',
+            targetType: 'finding',
+            targetId: fid,
+            parameters: { reason },
+          }),
+        },
+        staffCookie,
+      );
+      expect(suspended.statusCode).toBe(200);
+      expect(data<{ type: string }>(suspended).type).toBe('suspension_review');
     } finally {
       await app.close();
       await f.stop();

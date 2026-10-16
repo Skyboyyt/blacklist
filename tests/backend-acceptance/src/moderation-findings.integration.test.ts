@@ -143,7 +143,7 @@ describe('Phase 9a slice 3: findings, approval and system publication (moderatio
       const { findingId, accepted, reporter, caseId } = await acceptedFinding(f, modA, 'high');
       expect((await getOwnSubmission(f.ctx, reporter, caseId)).publicLink).toBeNull();
       expect(accepted.status).toBe('accepted');
-      expect(await publicFindings(f.ctx.runtime.db, 'eip155:1', address)).toEqual({
+      expect(await publicFindings(f.ctx.runtime.db, 'eip155:1', address)).toMatchObject({
         findings: [],
         timeline: [],
       });

@@ -9,7 +9,7 @@ describe('Neon apply scripts embed the committed migrations exactly', () => {
   it('0007: both files verbatim, with matching ledger checksums', async () => {
     const script = await read('docs/operations/2026-10-16-apply-0007-phase9a.sql');
     for (const [path, name] of [
-      ['packages/db/migrations/generated/0007_mature_cammi.sql', '0007_mature_cammi.sql'],
+      ['packages/db/migrations/generated/0007_smiling_quentin_quire.sql', '0007_smiling_quentin_quire.sql'],
       ['packages/db/migrations/0007_moderation_guards.sql', '0007_moderation_guards.sql'],
     ] as const) {
       const source = await read(path);

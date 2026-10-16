@@ -17,3 +17,5 @@ export * from './research/index.ts';
 export * from './moderation/reports.ts';
 export * from './moderation/cases.ts';
 export * from './moderation/findings.ts';
+export * from './moderation/standing.ts';
+export * from './moderation/redress.ts';

@@ -18,7 +18,7 @@ This file holds the **current state only**. Each session adds one short entry un
 | Deployment | Free staging services are public on explicit owner instruction (2026-10-13): Vercel web, Render API and worker, Neon PostgreSQL 18 staging database. **Not production-ready**; Phase 11 gates (legal, retention, recovery, monitoring) remain |
 | Authorized now | **Phase 9a** (owner, 2026-10-16): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Phase 9b (image evidence, object storage, processor) waits for a hosting ADR. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9b cloud resources, Phase 10 or later, paid resources, cloud migrations, provider activation |
 | Primary / reviewer | Claude / Codex |
-| Last agent | Claude: owner decisions of 2026-10-16 implemented on `claude/amazing-goodall-drtbc9` (PR open, not merged or deployed) |
+| Last agent | Claude: Phase 9a slices 1–4 on `claude/amazing-goodall-drtbc9` (PR #17 open, not merged; 0007 not applied to Neon) |
 | Last updated | 2026-10-16 |
 
 ## Open work, by owner
@@ -44,6 +44,18 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-16: Claude, Phase 9a slice 4 (standing, appeals, responses)
+
+- Domain `packages/domain/src/moderation/standing.ts` and `redress.ts`, routes `apps/api/src/routes/redress.ts`. Standing challenges are built by the server (SIWE/SIWS-format text, 10 minutes, bound to member, session, purpose and target, single use). EVM (EIP-191, viem) and Solana (Ed25519, node:crypto) verification is in `packages/chains/src/signatures.ts`; no new dependency.
+- Documentary standing is decided by a non-participant standing reviewer, and a reply after a denial reopens it.
+- Appeals: `uphold`, `amend` (a new revision that still needs approval) and `reverse`. Deciding is bound to the appealed revision; a stale appeal gets `conflict`.
+- Responses are published as plain text with their standing mechanism and date.
+- Public address research shows `under_appeal`, published responses, and appeal and response timeline events.
+- Two interim rules for the owner: a standing reviewer decides without taking the case, and upholding an appeal does not make the reviewer a participant (plan interim decisions 6–7).
+- Deferred, with reasons in the plan: authority signatures (`temporarily_unavailable`); DNS standing and finding corrections (Phase 10, with projects); 14-day escalation and outcome notices (notifications table).
+- 0007 regenerated before any apply (adds `subject_responses.submitter_reason`), checksum `04d79a17…`. Runbook re-rehearsed on disposable PostgreSQL 18: all checks pass.
+- Tests: `moderation-redress.integration.test.ts` (4 tests: replay across nonce, session, member, purpose and target; edited text; wrong key; expiry; appeal reviewer independence; lost-key journey; amendment; stale appeal; responses) and HTTP guards for the new routes in `moderation-reports.integration.test.ts`. One behaviour change in a test: `publicFindings` now also returns `subjectId`.
+
 ### 2026-10-16: Claude, Phase 9a slice 3 (findings)
 
 - `packages/domain/src/moderation/findings.ts`, routes `apps/api/src/routes/findings.ts`: report acceptance authors revision 1; canonical content hashes; approve-and-publish in one locked transaction with §4.1 independence (self-approval only for non-severe; severe needs a non-author with `finding:approve_severe`; replacing a public severe revision also excludes its author and approver); rejection; new revisions of published findings (base hash, unchanged content refused); legal hold recorded as a blocked approval; emergency suspension with a `suspension_review` case (non-participant review; the severe suspender cannot reverse alone; severe suspension notifies admins); public findings and timeline on address research.
@@ -60,7 +72,7 @@ This file holds the **current state only**. Each session adds one short entry un
 ### 2026-10-16: Claude, Phase 9a slice 1 (data model and permission catalog)
 
 - Plan: [docs/phase9a-plan.md](docs/phase9a-plan.md) (five slices; interim decisions on response/correction statuses, standing proof contract, projects, member notices, error codes).
-- Migrations `generated/0007_mature_cammi.sql` + `0007_moderation_guards.sql`: 20 tables, append-only triggers, publication guard (14 ledger entries, 56 tables). **Not applied to Neon**: [runbook](docs/operations/2026-10-16-apply-0007-phase9a.md), rehearsed on disposable PostgreSQL 18.
+- Migrations `generated/0007_smiling_quentin_quire.sql` + `0007_moderation_guards.sql`: 20 tables, append-only triggers, publication guard (14 ledger entries, 56 tables). **Not applied to Neon**: [runbook](docs/operations/2026-10-16-apply-0007-phase9a.md), rehearsed on disposable PostgreSQL 18.
 - **Bug found and fixed:** a CHECK of the form `x = 'a' OR char_length(y) BETWEEN …` passes when `y` is NULL. The 0006 recovery objection reason CHECK had this flaw (the domain always required a reason); 0007 replaces it.
 - Permission catalog extended per ARCHITECTURE §9.2: member, moderator, appeal_reviewer (queue limited to appeals by the domain), admin. Member permissions are member-account only.
 - Staging operator checks expect 56 tables and no UPDATE/DELETE on the history tables.

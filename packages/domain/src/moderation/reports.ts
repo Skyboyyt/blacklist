@@ -7,6 +7,13 @@ import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
 import { addressSubject, addressOf, type ChainSlug } from './subjects.ts';
 import { defangUrl, REPORT_STATUS_LABEL, OPEN_REPORT_STATUSES } from './labels.ts';
+import {
+  ownedRedress,
+  redressDetail,
+  listOwnRedress,
+  withdrawRedress,
+  replyAfterDeniedStanding,
+} from './redress.ts';
 
 // Reports are private to the reporter and staff and change nothing public while
 // unreviewed (moderation §10; AGENTS §5.7). Member views carry no staff identities.
@@ -253,12 +260,15 @@ export async function listOwnSubmissions(ctx: IdentityContext, actor: UserActor)
     .where(eq(schema.reports.reporterUserId, actor.userId))
     .orderBy(desc(schema.reports.lastActivityAt))
     .limit(200);
-  return rows.map(({ c, r }) => summary(c, r));
+  const all = [...rows.map(({ c, r }) => summary(c, r)), ...(await listOwnRedress(ctx.runtime.db, actor))];
+  return all.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function getOwnSubmission(ctx: IdentityContext, actor: UserActor, caseId: string) {
   requirePermission(actor, 'report:read:own');
   return ctx.runtime.transaction(async (tx) => {
+    const redress = await ownedRedress(tx, actor, caseId);
+    if (redress) return redressDetail(tx, redress);
     const { c, r } = await ownedCase(tx, actor, caseId);
     return detail(tx, c, r);
   });
@@ -324,6 +334,14 @@ export async function withdrawOwnSubmission(
   requirePermission(actor, 'report:read:own');
   return ctx.runtime.transaction(async (tx) => {
     await lockActor(tx, actor);
+    const redress = await ownedRedress(tx, actor, caseId, true);
+    if (redress) {
+      requireVersion(redress.c, version);
+      await withdrawRedress(tx, actor, redress);
+      const fresh = await ownedRedress(tx, actor, caseId);
+      if (!fresh) throw new Error('redress_missing');
+      return redressDetail(tx, fresh);
+    }
     const { c, r } = await ownedCase(tx, actor, caseId, true);
     requireVersion(c, version);
     if (!OPEN_REPORT_STATUSES.includes(r.status))
@@ -348,6 +366,14 @@ export async function respondToInfoRequest(
   noImages(input.evidence);
   return ctx.runtime.transaction(async (tx) => {
     await lockActor(tx, actor);
+    const redress = await ownedRedress(tx, actor, caseId, true);
+    if (redress) {
+      requireVersion(redress.c, version);
+      await replyAfterDeniedStanding(tx, actor, redress, input.message);
+      const fresh = await ownedRedress(tx, actor, caseId);
+      if (!fresh) throw new Error('redress_missing');
+      return redressDetail(tx, fresh);
+    }
     const { c, r } = await ownedCase(tx, actor, caseId, true);
     requireVersion(c, version);
     if (r.status !== 'needs_info')

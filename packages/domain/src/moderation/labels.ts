@@ -24,3 +24,15 @@ export const OPEN_REPORT_STATUSES: readonly string[] = [
 export function defangUrl(value: string): string {
   return value.replace(/^http(s?):\/\//i, (_m, s: string) => `hxxp${s}://`).replace(/\./g, '[.]');
 }
+
+/** Member-facing status text for appeals and responses (matches the web mock). */
+export const REDRESS_STATUS_LABEL: Readonly<Record<string, string>> = {
+  submitted: 'Submitted',
+  in_review: 'In review',
+  upheld: 'Decided: finding upheld',
+  amended: 'Decided: finding amended',
+  reversed: 'Decided: finding reversed',
+  published: 'Published',
+  rejected: 'Not accepted',
+  withdrawn: 'Withdrawn',
+};

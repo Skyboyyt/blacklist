@@ -3,6 +3,7 @@ import {
   readResearchAddress,
   readResearchTransaction,
   publicFindings,
+  publicRedress,
   type ResearchReadOptions,
   type ResearchContext,
   type Actor,
@@ -32,6 +33,14 @@ export async function addressResearch(
   if (!data) return { kind: 'not_found' as const };
   // Published moderator findings only (moderation §4.2); reports never appear here.
   const published = await publicFindings(ctx.runtime.db, read.ref.chainId, data.address);
+  const redress = await publicRedress(
+    ctx.runtime.db,
+    published.subjectId,
+    published.findings.map((f) => f.id),
+  );
+  const findings = published.findings.map((f) =>
+    redress.underAppeal.has(f.id) ? { ...f, disputeState: 'under_appeal' as const } : f,
+  );
   const at = provenance.fetchedAt.toISOString();
   const snapshot =
     provenance.snapshot.kind === 'evm_block'
@@ -60,7 +69,7 @@ export async function addressResearch(
         assessment: 'unavailable',
         findings: 'available',
         labels: 'unavailable',
-        responses: 'unavailable',
+        responses: 'available',
         transfers: 'unavailable',
         evidence: 'unavailable',
         history: 'available',
@@ -72,10 +81,10 @@ export async function addressResearch(
         factors: [],
         confidence: 'low',
         coverage:
-          'Chain account data and published moderator findings. Evidence, responses and risk assessment are not connected.',
+          'Chain account data, published moderator findings and published responses. Evidence and risk assessment are not connected.',
         asOf: at,
         rulesetVersion: 'unavailable',
-        disputeState: 'none',
+        disputeState: findings.some((f) => f.disputeState === 'under_appeal') ? 'under_appeal' : 'none',
         suppressions: [],
       },
       facts: [
@@ -100,11 +109,11 @@ export async function addressResearch(
       ],
       disclosures: [],
       labels: [],
-      findings: published.findings,
-      responses: [],
+      findings,
+      responses: redress.responses,
       transfers: [],
       evidence: [],
-      timeline: published.timeline,
+      timeline: [...published.timeline, ...redress.timeline].sort((a, b) => a.at.localeCompare(b.at)),
     }),
   };
 }

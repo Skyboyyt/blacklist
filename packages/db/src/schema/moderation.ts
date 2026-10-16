@@ -11,6 +11,8 @@ import {
   unique,
   uniqueIndex,
   uuid,
+  timestamp,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { bl, id, at, optionalAt } from './columns.ts';
 import { user } from './auth.ts';
@@ -193,6 +195,8 @@ export const moderationCases = bl.table(
     subjectId: uuid('subject_id').references(() => subjects.id),
     reportId: uuid('report_id').references(() => reports.id),
     findingId: uuid('finding_id').references(() => findings.id),
+    appealId: uuid('appeal_id').references((): AnyPgColumn => appeals.id),
+    responseId: uuid('response_id').references((): AnyPgColumn => subjectResponses.id),
     status: text('status').notNull(),
     priority: text('priority').notNull().default('normal'),
     assignedToRef: text('assigned_to_ref'),
@@ -208,7 +212,11 @@ export const moderationCases = bl.table(
     ),
     check('case_priority_valid', sql`${t.priority} in ('low','normal','high','urgent')`),
     check('case_report_source', sql`(${t.caseType} = 'report_review') = (${t.reportId} is not null)`),
+    check('case_appeal_source', sql`(${t.caseType} = 'appeal_review') = (${t.appealId} is not null)`),
+    check('case_response_source', sql`(${t.caseType} = 'subject_response') = (${t.responseId} is not null)`),
     uniqueIndex('one_case_per_report').on(t.reportId),
+    uniqueIndex('one_case_per_appeal').on(t.appealId),
+    uniqueIndex('one_case_per_response').on(t.responseId),
     index('cases_queue').on(t.status, t.slaDueAt),
   ],
 );
@@ -467,5 +475,135 @@ export const staffConflicts = bl.table(
     check('conflict_scope_one', sql`num_nonnulls(${t.subjectId}, ${t.findingId}) = 1`),
     check('conflict_reason_valid', sql`${t.reason} in ('self_declared','admin_recorded','derived')`),
     index('conflicts_by_staff').on(t.staffRef),
+  ],
+);
+
+/**
+ * Server-built signature challenges (moderation §6.4): single use, bound to the member,
+ * session, purpose, target, chain and address, and valid for 10 minutes.
+ */
+export const standingChallenges = bl.table(
+  'standing_challenges',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id),
+    sessionId: text('session_id').notNull(),
+    purpose: text('purpose').notNull(),
+    findingId: uuid('finding_id').references(() => findings.id),
+    subjectId: uuid('subject_id')
+      .notNull()
+      .references(() => subjects.id),
+    mechanism: text('mechanism').notNull(),
+    chainId: text('chain_id')
+      .notNull()
+      .references(() => chains.chainId),
+    address: text('address').notNull(),
+    nonce: text('nonce').notNull().unique(),
+    message: text('message').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: optionalAt('consumed_at'),
+    createdAt: at('created_at'),
+  },
+  (t) => [
+    check('challenge_purpose_valid', sql`${t.purpose} in ('appeal','response')`),
+    check('challenge_mechanism_valid', sql`${t.mechanism} in ('signature','authority_signature')`),
+    check('challenge_appeal_has_finding', sql`(${t.purpose} = 'appeal') = (${t.findingId} is not null)`),
+  ],
+);
+/** What was proven, per case, and by which mechanism (moderation §6.3). Never a persistent link. */
+export const standingClaims = bl.table(
+  'standing_claims',
+  {
+    id: id(),
+    claimantUserId: uuid('claimant_user_id')
+      .notNull()
+      .references(() => user.id),
+    mechanism: text('mechanism').notNull(),
+    proofRefs: jsonb('proof_refs').notNull(),
+    decidedByRef: text('decided_by_ref'),
+    outcome: text('outcome').notNull(),
+    scopeStatement: text('scope_statement').notNull(),
+    decidedAt: optionalAt('decided_at'),
+    createdAt: at('created_at'),
+  },
+  (t) => [
+    check(
+      'claim_mechanism_valid',
+      sql`${t.mechanism} in ('signature','authority_signature','dns_txt','documentary')`,
+    ),
+    check('claim_outcome_valid', sql`${t.outcome} in ('granted','denied','pending')`),
+    check('claim_scope_length', sql`char_length(${t.scopeStatement}) between 1 and 2000`),
+  ],
+);
+export const appeals = bl.table(
+  'appeals',
+  {
+    id: id(),
+    findingId: uuid('finding_id')
+      .notNull()
+      .references(() => findings.id),
+    appealedRevisionId: uuid('appealed_revision_id')
+      .notNull()
+      .references(() => findingRevisions.id),
+    appellantUserId: uuid('appellant_user_id')
+      .notNull()
+      .references(() => user.id),
+    standingClaimId: uuid('standing_claim_id')
+      .notNull()
+      .references(() => standingClaims.id),
+    statement: text('statement').notNull(),
+    status: text('status').notNull(),
+    decisionId: uuid('decision_id').references(() => moderationDecisions.id),
+    escalatedAt: optionalAt('escalated_at'),
+    submittedAt: at('submitted_at'),
+    decidedAt: optionalAt('decided_at'),
+  },
+  (t) => [
+    check(
+      'appeal_status_valid',
+      sql`${t.status} in ('submitted','in_review','upheld','amended','reversed','withdrawn')`,
+    ),
+    check('appeal_statement_length', sql`char_length(${t.statement}) between 20 and 5000`),
+    uniqueIndex('one_open_appeal_per_member')
+      .on(t.findingId, t.appellantUserId)
+      .where(sql`${t.status} in ('submitted','in_review')`),
+  ],
+);
+/** Right of reply (moderation §9); statuses per plan interim decision 1. */
+export const subjectResponses = bl.table(
+  'subject_responses',
+  {
+    id: id(),
+    subjectId: uuid('subject_id')
+      .notNull()
+      .references(() => subjects.id),
+    authorUserId: uuid('author_user_id')
+      .notNull()
+      .references(() => user.id),
+    standingClaimId: uuid('standing_claim_id')
+      .notNull()
+      .references(() => standingClaims.id),
+    body: text('body').notNull(),
+    status: text('status').notNull(),
+    submitterReason: text('submitter_reason'),
+    publishedAt: optionalAt('published_at'),
+    createdAt: at('created_at'),
+  },
+  (t) => [
+    check(
+      'response_status_valid',
+      sql`${t.status} in ('submitted','in_review','published','rejected','withdrawn')`,
+    ),
+    check('response_body_length', sql`char_length(${t.body}) between 20 and 5000`),
+    check(
+      'response_submitter_reason_valid',
+      sql`${t.submitterReason} is null or ${t.submitterReason} in ('insufficient_evidence','out_of_scope','duplicate','not_reproducible','already_corrected')`,
+    ),
+    check('response_published_at', sql`(${t.status} = 'published') = (${t.publishedAt} is not null)`),
+    uniqueIndex('one_open_response_per_member')
+      .on(t.subjectId, t.authorUserId)
+      .where(sql`${t.status} in ('submitted','in_review')`),
   ],
 );

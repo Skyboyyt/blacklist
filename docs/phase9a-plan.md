@@ -19,6 +19,12 @@
 - Slice 1: data model and permission catalog, done (PR #17).
 - Slice 2: reports and cases on the server, done (same PR).
 - Slice 3: findings, approve-and-publish, rejection, revisions, emergency suspension and its review, public findings on address research; done (same PR). Risk signals from findings are Phase 10. Public findings appear only where research is enabled (`RESEARCH_ENABLED`).
+- Slice 4: standing (server-built challenges, EVM and Solana signature verification, documentary standing decided by a non-participant standing reviewer), appeals (uphold, amend through a new revision that still needs approval, reverse) and right-of-reply responses, the "under appeal" public state and published responses on address research; done (same PR). Deferred, with reasons:
+  - **Authority signatures** return `temporarily_unavailable`: they need a finalized chain read of the contract's authority, and chain research is off by default (O-3). Documentary standing covers the gap.
+  - **DNS TXT standing** applies to project domains only, so it arrives with project profiles (Phase 10). No resolver module exists yet.
+  - **Correction requests** against findings: the contract (`correctionRequestSchema`) models project-profile corrections only; finding corrections need a contract change, so they move to Phase 10 with projects. A member who disputes a finding uses an appeal.
+  - **14-day appeal escalation** to the owner: needs the notifications table (Phase 10). `escalated_at` exists; nothing sets it yet.
+  - **Member notices** still derive from report history only; appeal and response outcomes show on the submission page.
 
 ## Slices
 
@@ -39,6 +45,9 @@ Each slice is its own pull request with tests. It updates the data model and `AI
 3. **Projects.** Project suggestions and project-profile corrections need the `projects` tables, which belong with Phase 10 admin work. In 9a they keep their mock implementations. Corrections against findings and subjects are in scope.
 4. **Member notices.** The `notifications` table is Phase 10. In 9a, `listNotices` is derived read-only from the member's own case status history, carrying no staff identity.
 5. **Error codes.** The domain error union gains `invalid_transition`, `not_eligible`, `stepup_required` and `evidence_unavailable`, mapped to HTTP 409, 403, 403 and 409 respectively, matching `moderationErrorSchema`.
+
+6. **Standing reviewers and assignment.** Appeal reviewers cannot reassign cases (ARCHITECTURE §9.2), so a standing reviewer (`standing:decide`) decides standing without taking the case from its assigned reviewer. Every other decision still needs the assignee.
+7. **Who counts as a participant.** Authors, approvers, and suspension and reversal actors of a finding are participants (moderation §1). Upholding an appeal is review, not authorship, so the reviewer can decide a later appeal on the same finding. An amending reviewer authors a revision and becomes a participant.
 
 ## Risks
 

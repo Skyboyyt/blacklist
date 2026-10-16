@@ -10,6 +10,7 @@ import { addressOf, type ChainSlug } from './subjects.ts';
 import { staffRefs, submitterPseudonym, type StaffRefView } from './refs.ts';
 import { defangUrl } from './labels.ts';
 import { moveReport } from './reports.ts';
+import { decideRedress, redressCaseFields, syncRedressStatus } from './redress.ts';
 import {
   createFindingFromReport,
   decideSuspension,
@@ -19,7 +20,8 @@ import {
 } from './findings.ts';
 
 // Staff case workflow (moderation design; contracts moderation.ts). Phase 9a runs report
-// reviews and emergency-suspension reviews; other case types arrive with slice 4.
+// reviews, emergency-suspension reviews, appeals and right-of-reply responses. Corrections
+// and project suggestions arrive with project profiles (Phase 10).
 
 const CASE_TARGET = 'moderation_case';
 const PAGE_SIZE = 8;
@@ -60,9 +62,29 @@ const SUSPENSION_RULES: Readonly<Record<string, Rule>> = {
   reinstate_finding: { from: ['open'], to: 'reinstated', permission: 'finding:publish', stepUp: true },
   reverse_finding: { from: ['open'], to: 'reversed', permission: 'finding:publish', stepUp: true },
 };
+const STANDING_RULES: Readonly<Record<string, Rule>> = {
+  grant_standing: { from: ['in_review'], to: '', permission: 'standing:decide', stepUp: true },
+  deny_standing: { from: ['in_review'], to: '', permission: 'standing:decide', stepUp: true },
+};
+// `to` is decided by the redress workflow for outcomes (amend stays a pending revision).
+const APPEAL_RULES: Readonly<Record<string, Rule>> = {
+  start_review: { from: ['submitted'], to: 'in_review', permission: 'appeal:decide', stepUp: false },
+  ...STANDING_RULES,
+  uphold: { from: ['in_review'], to: 'upheld', permission: 'appeal:decide', stepUp: true },
+  amend: { from: ['in_review'], to: 'amended', permission: 'appeal:decide', stepUp: true },
+  reverse: { from: ['in_review'], to: 'reversed', permission: 'appeal:decide', stepUp: true },
+};
+const RESPONSE_RULES: Readonly<Record<string, Rule>> = {
+  start_review: { from: ['submitted'], to: 'in_review', permission: 'response:moderate', stepUp: false },
+  ...STANDING_RULES,
+  publish_response: { from: ['in_review'], to: 'published', permission: 'response:moderate', stepUp: true },
+  reject_response: { from: ['in_review'], to: 'rejected', permission: 'response:moderate', stepUp: true },
+};
 const RULES: Readonly<Record<string, Readonly<Record<string, Rule>>>> = {
   report_review: REPORT_RULES,
   suspension_review: SUSPENSION_RULES,
+  appeal_review: APPEAL_RULES,
+  subject_response: RESPONSE_RULES,
 };
 
 /** Appeal reviewers see appeal cases only (ARCHITECTURE §9.2); others never exist for them. */
@@ -116,6 +138,16 @@ function summaryOf(
       type: 'report_review' as const,
       status: r.status,
       category: r.category,
+    };
+  if (c.caseType === 'appeal_review' || c.caseType === 'subject_response')
+    return {
+      ...common,
+      title:
+        c.caseType === 'appeal_review' ? 'Appeal against a published finding' : 'Response about an address',
+      submittedAt: c.createdAt.toISOString(),
+      lastActivityAt: (c.closedAt ?? c.createdAt).toISOString(),
+      type: c.caseType,
+      status: c.status,
     };
   return {
     ...common,
@@ -246,6 +278,15 @@ async function detailOf(tx: Database, c: Case, r: Report | undefined) {
   };
   if (r)
     return { ...summaryOf(c, r, subject, refs), ...common, reporterRef: reporter, narrative: r.narrative };
+  const redress = await redressCaseFields(tx, c);
+  if (redress)
+    return {
+      ...summaryOf(c, null, subject, refs),
+      ...common,
+      type: redress.type,
+      title: redress.title,
+      ...redress.fields,
+    };
   return {
     ...summaryOf(c, null, subject, refs),
     ...common,
@@ -475,7 +516,12 @@ export async function decideCase(
         'invalid_transition',
         `A case that is “${status.replaceAll('_', ' ')}” cannot take this decision.`,
       );
-    if (decision.action === 'start_review') {
+    // A standing reviewer decides standing without taking the case from its assigned reviewer
+    // (appeal reviewers cannot reassign cases; ARCHITECTURE §9.2).
+    const standing = decision.action === 'grant_standing' || decision.action === 'deny_standing';
+    if (standing) {
+      // Independence and pending-claim checks run in the redress workflow.
+    } else if (decision.action === 'start_review') {
       if (c.assignedToRef && c.assignedToRef !== actor.actorRef)
         throw refuse('not_eligible', 'This case is assigned to another reviewer. Take it over first.');
     } else if (c.assignedToRef !== actor.actorRef)
@@ -487,6 +533,31 @@ export async function decideCase(
       );
     if (rule.stepUp && !assertion) throw new DomainError('stepup_required');
     const rationale = String(decision['internalRationale'] ?? '');
+    if (c.caseType === 'appeal_review' || c.caseType === 'subject_response') {
+      const to = await decideRedress(tx, actor, c, decision, assertion?.challengeId ?? null);
+      if (to === null) {
+        await bump(tx, c);
+        await appendAudit(tx, actor, 'moderation.case.standing_decided', CASE_TARGET, c.id, {
+          outcome: decision.action === 'grant_standing' ? 'granted' : 'denied',
+        });
+        return reload(tx, actor, caseId);
+      }
+      const closed = to !== 'in_review';
+      await syncRedressStatus(tx, c, to);
+      await tx
+        .update(schema.moderationCases)
+        .set({
+          status: to,
+          version: c.version + 1,
+          ...(closed ? { closedAt: new Date() } : { assignedToRef: actor.actorRef }),
+        })
+        .where(eq(schema.moderationCases.id, c.id));
+      await appendAudit(tx, actor, 'moderation.case.status_changed', CASE_TARGET, c.id, {
+        from: c.status,
+        to,
+      });
+      return reload(tx, actor, caseId);
+    }
     if (c.caseType === 'suspension_review') {
       const publicSummary = String(decision['publicSummary'] ?? '');
       await decideSuspension(

@@ -1,4 +1,4 @@
-import { schema, eq, and, asc, desc, inArray, isNull, or, type Database } from '@blacklist/db';
+import { schema, ne, eq, and, asc, desc, inArray, isNull, or, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { hasPermission, requirePermission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
@@ -125,7 +125,13 @@ export async function participants(tx: Database, findingId: string) {
   const decisions = await tx
     .select({ ref: schema.moderationDecisions.decidedByRef })
     .from(schema.moderationDecisions)
-    .where(eq(schema.moderationDecisions.findingId, findingId));
+    .where(
+      and(
+        eq(schema.moderationDecisions.findingId, findingId),
+        // Upholding an appeal is review, not authorship; amendments and reversals still count.
+        ne(schema.moderationDecisions.decisionType, 'appeal_outcome'),
+      ),
+    );
   for (const d of decisions) out.add(d.ref);
   return out;
 }
@@ -862,7 +868,7 @@ export async function publicFindings(db: Database, chainId: string, address: str
     .select({ subjectId: schema.addresses.subjectId })
     .from(schema.addresses)
     .where(and(eq(schema.addresses.chainId, chainId), eq(schema.addresses.address, address)));
-  if (!row) return { findings: [], timeline: [] };
+  if (!row) return { subjectId: null, findings: [], timeline: [] };
   const findings = await db
     .select()
     .from(schema.findings)
@@ -922,5 +928,5 @@ export async function publicFindings(db: Database, chainId: string, address: str
     });
   }
   timeline.sort((a, b) => a.at.localeCompare(b.at));
-  return { findings: out, timeline };
+  return { subjectId: row.subjectId, findings: out, timeline };
 }

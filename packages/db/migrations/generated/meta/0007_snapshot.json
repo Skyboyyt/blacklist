@@ -1,5 +1,5 @@
 {
-  "id": "699cb501-2635-44d4-a4a0-16696e69e91c",
+  "id": "d4782a65-ccab-4789-aa61-8a43a20f131c",
   "prevId": "2eb5e953-80a8-42ee-9879-1a09748d42e1",
   "version": "7",
   "dialect": "postgresql",
@@ -3583,6 +3583,170 @@
       },
       "isRLSEnabled": false
     },
+    "blacklist.appeals": {
+      "name": "appeals",
+      "schema": "blacklist",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "finding_id": {
+          "name": "finding_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "appealed_revision_id": {
+          "name": "appealed_revision_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "appellant_user_id": {
+          "name": "appellant_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "standing_claim_id": {
+          "name": "standing_claim_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "statement": {
+          "name": "statement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decision_id": {
+          "name": "decision_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "escalated_at": {
+          "name": "escalated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "one_open_appeal_per_member": {
+          "name": "one_open_appeal_per_member",
+          "columns": [
+            {
+              "expression": "finding_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "appellant_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"blacklist\".\"appeals\".\"status\" in ('submitted','in_review')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "appeals_finding_id_findings_id_fk": {
+          "name": "appeals_finding_id_findings_id_fk",
+          "tableFrom": "appeals",
+          "tableTo": "findings",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["finding_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "appeals_appealed_revision_id_finding_revisions_id_fk": {
+          "name": "appeals_appealed_revision_id_finding_revisions_id_fk",
+          "tableFrom": "appeals",
+          "tableTo": "finding_revisions",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["appealed_revision_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "appeals_appellant_user_id_auth_users_id_fk": {
+          "name": "appeals_appellant_user_id_auth_users_id_fk",
+          "tableFrom": "appeals",
+          "tableTo": "auth_users",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["appellant_user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "appeals_standing_claim_id_standing_claims_id_fk": {
+          "name": "appeals_standing_claim_id_standing_claims_id_fk",
+          "tableFrom": "appeals",
+          "tableTo": "standing_claims",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["standing_claim_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "appeals_decision_id_moderation_decisions_id_fk": {
+          "name": "appeals_decision_id_moderation_decisions_id_fk",
+          "tableFrom": "appeals",
+          "tableTo": "moderation_decisions",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["decision_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "appeal_status_valid": {
+          "name": "appeal_status_valid",
+          "value": "\"blacklist\".\"appeals\".\"status\" in ('submitted','in_review','upheld','amended','reversed','withdrawn')"
+        },
+        "appeal_statement_length": {
+          "name": "appeal_statement_length",
+          "value": "char_length(\"blacklist\".\"appeals\".\"statement\") between 20 and 5000"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "blacklist.moderation_case_messages": {
       "name": "moderation_case_messages",
       "schema": "blacklist",
@@ -4730,6 +4894,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "appeal_id": {
+          "name": "appeal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "response_id": {
+          "name": "response_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "status": {
           "name": "status",
           "type": "text",
@@ -4792,6 +4968,36 @@
           "method": "btree",
           "with": {}
         },
+        "one_case_per_appeal": {
+          "name": "one_case_per_appeal",
+          "columns": [
+            {
+              "expression": "appeal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "one_case_per_response": {
+          "name": "one_case_per_response",
+          "columns": [
+            {
+              "expression": "response_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "cases_queue": {
           "name": "cases_queue",
           "columns": [
@@ -4844,6 +5050,26 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "moderation_cases_appeal_id_appeals_id_fk": {
+          "name": "moderation_cases_appeal_id_appeals_id_fk",
+          "tableFrom": "moderation_cases",
+          "tableTo": "appeals",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["appeal_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "moderation_cases_response_id_subject_responses_id_fk": {
+          "name": "moderation_cases_response_id_subject_responses_id_fk",
+          "tableFrom": "moderation_cases",
+          "tableTo": "subject_responses",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["response_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4861,6 +5087,14 @@
         "case_report_source": {
           "name": "case_report_source",
           "value": "(\"blacklist\".\"moderation_cases\".\"case_type\" = 'report_review') = (\"blacklist\".\"moderation_cases\".\"report_id\" is not null)"
+        },
+        "case_appeal_source": {
+          "name": "case_appeal_source",
+          "value": "(\"blacklist\".\"moderation_cases\".\"case_type\" = 'appeal_review') = (\"blacklist\".\"moderation_cases\".\"appeal_id\" is not null)"
+        },
+        "case_response_source": {
+          "name": "case_response_source",
+          "value": "(\"blacklist\".\"moderation_cases\".\"case_type\" = 'subject_response') = (\"blacklist\".\"moderation_cases\".\"response_id\" is not null)"
         }
       },
       "isRLSEnabled": false
@@ -5444,6 +5678,398 @@
         "conflict_reason_valid": {
           "name": "conflict_reason_valid",
           "value": "\"blacklist\".\"staff_conflicts\".\"reason\" in ('self_declared','admin_recorded','derived')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "blacklist.standing_challenges": {
+      "name": "standing_challenges",
+      "schema": "blacklist",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finding_id": {
+          "name": "finding_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject_id": {
+          "name": "subject_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mechanism": {
+          "name": "mechanism",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chain_id": {
+          "name": "chain_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nonce": {
+          "name": "nonce",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "standing_challenges_user_id_auth_users_id_fk": {
+          "name": "standing_challenges_user_id_auth_users_id_fk",
+          "tableFrom": "standing_challenges",
+          "tableTo": "auth_users",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "standing_challenges_finding_id_findings_id_fk": {
+          "name": "standing_challenges_finding_id_findings_id_fk",
+          "tableFrom": "standing_challenges",
+          "tableTo": "findings",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["finding_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "standing_challenges_subject_id_subjects_id_fk": {
+          "name": "standing_challenges_subject_id_subjects_id_fk",
+          "tableFrom": "standing_challenges",
+          "tableTo": "subjects",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["subject_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "standing_challenges_chain_id_chains_chain_id_fk": {
+          "name": "standing_challenges_chain_id_chains_chain_id_fk",
+          "tableFrom": "standing_challenges",
+          "tableTo": "chains",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["chain_id"],
+          "columnsTo": ["chain_id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "standing_challenges_nonce_unique": {
+          "name": "standing_challenges_nonce_unique",
+          "nullsNotDistinct": false,
+          "columns": ["nonce"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "challenge_purpose_valid": {
+          "name": "challenge_purpose_valid",
+          "value": "\"blacklist\".\"standing_challenges\".\"purpose\" in ('appeal','response')"
+        },
+        "challenge_mechanism_valid": {
+          "name": "challenge_mechanism_valid",
+          "value": "\"blacklist\".\"standing_challenges\".\"mechanism\" in ('signature','authority_signature')"
+        },
+        "challenge_appeal_has_finding": {
+          "name": "challenge_appeal_has_finding",
+          "value": "(\"blacklist\".\"standing_challenges\".\"purpose\" = 'appeal') = (\"blacklist\".\"standing_challenges\".\"finding_id\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "blacklist.standing_claims": {
+      "name": "standing_claims",
+      "schema": "blacklist",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "claimant_user_id": {
+          "name": "claimant_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mechanism": {
+          "name": "mechanism",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proof_refs": {
+          "name": "proof_refs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decided_by_ref": {
+          "name": "decided_by_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope_statement": {
+          "name": "scope_statement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "standing_claims_claimant_user_id_auth_users_id_fk": {
+          "name": "standing_claims_claimant_user_id_auth_users_id_fk",
+          "tableFrom": "standing_claims",
+          "tableTo": "auth_users",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["claimant_user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "claim_mechanism_valid": {
+          "name": "claim_mechanism_valid",
+          "value": "\"blacklist\".\"standing_claims\".\"mechanism\" in ('signature','authority_signature','dns_txt','documentary')"
+        },
+        "claim_outcome_valid": {
+          "name": "claim_outcome_valid",
+          "value": "\"blacklist\".\"standing_claims\".\"outcome\" in ('granted','denied','pending')"
+        },
+        "claim_scope_length": {
+          "name": "claim_scope_length",
+          "value": "char_length(\"blacklist\".\"standing_claims\".\"scope_statement\") between 1 and 2000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "blacklist.subject_responses": {
+      "name": "subject_responses",
+      "schema": "blacklist",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "subject_id": {
+          "name": "subject_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_user_id": {
+          "name": "author_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "standing_claim_id": {
+          "name": "standing_claim_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitter_reason": {
+          "name": "submitter_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "one_open_response_per_member": {
+          "name": "one_open_response_per_member",
+          "columns": [
+            {
+              "expression": "subject_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "author_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"blacklist\".\"subject_responses\".\"status\" in ('submitted','in_review')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "subject_responses_subject_id_subjects_id_fk": {
+          "name": "subject_responses_subject_id_subjects_id_fk",
+          "tableFrom": "subject_responses",
+          "tableTo": "subjects",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["subject_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subject_responses_author_user_id_auth_users_id_fk": {
+          "name": "subject_responses_author_user_id_auth_users_id_fk",
+          "tableFrom": "subject_responses",
+          "tableTo": "auth_users",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["author_user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subject_responses_standing_claim_id_standing_claims_id_fk": {
+          "name": "subject_responses_standing_claim_id_standing_claims_id_fk",
+          "tableFrom": "subject_responses",
+          "tableTo": "standing_claims",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["standing_claim_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "response_status_valid": {
+          "name": "response_status_valid",
+          "value": "\"blacklist\".\"subject_responses\".\"status\" in ('submitted','in_review','published','rejected','withdrawn')"
+        },
+        "response_body_length": {
+          "name": "response_body_length",
+          "value": "char_length(\"blacklist\".\"subject_responses\".\"body\") between 20 and 5000"
+        },
+        "response_submitter_reason_valid": {
+          "name": "response_submitter_reason_valid",
+          "value": "\"blacklist\".\"subject_responses\".\"submitter_reason\" is null or \"blacklist\".\"subject_responses\".\"submitter_reason\" in ('insufficient_evidence','out_of_scope','duplicate','not_reproducible','already_corrected')"
+        },
+        "response_published_at": {
+          "name": "response_published_at",
+          "value": "(\"blacklist\".\"subject_responses\".\"status\" = 'published') = (\"blacklist\".\"subject_responses\".\"published_at\" is not null)"
         }
       },
       "isRLSEnabled": false
