@@ -17,7 +17,8 @@
 ## Progress
 
 - Slice 1: data model and permission catalog, done (PR #17).
-- Slice 2: reports and cases on the server, done (same PR). `accept_report` waits for slice 3.
+- Slice 2: reports and cases on the server, done (same PR).
+- Slice 3: findings, approve-and-publish, rejection, revisions, emergency suspension and its review, public findings on address research; done (same PR). Risk signals from findings are Phase 10. Public findings appear only where research is enabled (`RESEARCH_ENABLED`).
 
 ## Slices
 

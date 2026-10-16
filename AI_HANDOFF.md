@@ -44,6 +44,12 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-16: Claude, Phase 9a slice 3 (findings)
+
+- `packages/domain/src/moderation/findings.ts`, routes `apps/api/src/routes/findings.ts`: report acceptance authors revision 1; canonical content hashes; approve-and-publish in one locked transaction with §4.1 independence (self-approval only for non-severe; severe needs a non-author with `finding:approve_severe`; replacing a public severe revision also excludes its author and approver); rejection; new revisions of published findings (base hash, unchanged content refused); legal hold recorded as a blocked approval; emergency suspension with a `suspension_review` case (non-participant review; the severe suspender cannot reverse alone; severe suspension notifies admins); public findings and timeline on address research.
+- Changed tests (behaviour changed): research availability for findings is now `available`; `accept_report` now needs a step-up instead of being refused.
+- **Limits:** no risk signals or assessments (Phase 10); public findings show only where research is enabled; no conflict-declaration UI yet (the `staff_conflicts` check runs).
+
 ### 2026-10-16: Claude, Phase 9a slice 2 (reports and cases backend)
 
 - Domain `packages/domain/src/moderation/` (subjects, reports, cases, labels, refs) and routes `apps/api/src/routes/moderation.ts`: member submit/list/detail/withdraw/respond/notices; staff queue, case detail, assignment, notes, decisions (`start_review`, `request_info`, `reject_report`, `reject_abusive` with step-up). `accept_report` waits for slice 3.

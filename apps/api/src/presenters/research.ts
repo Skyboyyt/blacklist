@@ -2,6 +2,7 @@ import { addressResearchSchema, transactionResearchSchema, type ChainSlugDto } f
 import {
   readResearchAddress,
   readResearchTransaction,
+  publicFindings,
   type ResearchReadOptions,
   type ResearchContext,
   type Actor,
@@ -29,6 +30,8 @@ export async function addressResearch(
   if (!read.result.ok) return unavailable(read.result.error.kind);
   const { data, provenance } = read.result.value;
   if (!data) return { kind: 'not_found' as const };
+  // Published moderator findings only (moderation §4.2); reports never appear here.
+  const published = await publicFindings(ctx.runtime.db, read.ref.chainId, data.address);
   const at = provenance.fetchedAt.toISOString();
   const snapshot =
     provenance.snapshot.kind === 'evm_block'
@@ -55,12 +58,12 @@ export async function addressResearch(
       untrustedLabel: null,
       availability: {
         assessment: 'unavailable',
-        findings: 'unavailable',
+        findings: 'available',
         labels: 'unavailable',
         responses: 'unavailable',
         transfers: 'unavailable',
         evidence: 'unavailable',
-        history: 'unavailable',
+        history: 'available',
         disclosures: 'unavailable',
       },
       assessment: {
@@ -69,7 +72,7 @@ export async function addressResearch(
         factors: [],
         confidence: 'low',
         coverage:
-          'Chain account data only. Published findings, evidence, responses and risk assessment are not connected.',
+          'Chain account data and published moderator findings. Evidence, responses and risk assessment are not connected.',
         asOf: at,
         rulesetVersion: 'unavailable',
         disputeState: 'none',
@@ -97,11 +100,11 @@ export async function addressResearch(
       ],
       disclosures: [],
       labels: [],
-      findings: [],
+      findings: published.findings,
       responses: [],
       transfers: [],
       evidence: [],
-      timeline: [],
+      timeline: published.timeline,
     }),
   };
 }

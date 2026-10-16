@@ -225,6 +225,7 @@ describe('Phase 9a slice 2: private reports and the staff case workflow', () => 
           'case_status_changed',
         ]),
       );
+      if (current.type !== 'report_review') throw new Error('fixture_case_type');
       expect(current.reporterRef).toMatch(/^R-[0-9A-F]{6}$/);
 
       // Consequential decisions need an action-bound step-up for this exact decision.
@@ -253,7 +254,7 @@ describe('Phase 9a slice 2: private reports and the staff case workflow', () => 
           publicSummary: 'x'.repeat(20),
           internalRationale: 'y'.repeat(20),
         }),
-      ).rejects.toThrow('invalid_transition');
+      ).rejects.toThrow('stepup_required');
       const rejected = await decideCase(
         f.ctx,
         modA.actor,

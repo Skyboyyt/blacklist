@@ -154,7 +154,12 @@ Implemented on the server (`apps/api/src/routes/moderation.ts`; live web adapter
 | `GET /mod/queue` | staff, `moderation:queue:read` | Query-string filters as `queueRequestSchema`; appeal reviewers see appeal cases only |
 | `GET /mod/cases/:id` | staff, `moderation:case:read` | Reporter shown as a per-case pseudonym `R-XXXXXX` |
 | `POST /mod/cases/:id/assignment`, `/notes` | staff | `expectedVersion`; take-over needs `takeOver: true`; unassign by the assignee or an admin |
-| `POST /mod/cases/:id/decisions` | staff | `start_review`, `request_info` (no step-up); `reject_report`, `reject_abusive` need a step-up with action `case.<action>`, target type `case`, parameters `{ version, decision }`. `accept_report` returns `invalid_transition` until slice 3 |
+| `POST /mod/cases/:id/decisions` | staff | `start_review`, `request_info` (no step-up); `accept_report`, `reject_report`, `reject_abusive`, `reinstate_finding`, `reverse_finding` need a step-up with action `case.<action>`, target type `case`, parameters `{ version, decision }`. `accept_report` authors revision 1 of a finding (nothing public until approval) |
+| `GET /mod/approvals` | staff, `finding:publish` | Every revision of findings whose latest revision still awaits approval (slice 3) |
+| `POST /mod/findings/:id/approvals` | staff, `finding:publish` | `{ event: 'approve', revisionNumber, contentHash }` or `{ event: 'reject', revisionNumber, rationale }`, with a step-up `finding.approve` / `finding.reject` bound to those parameters. Approval and system publication in one locked transaction (moderation §4.2) |
+| `GET /mod/findings`, `POST /mod/findings/:id/suspend` | staff, `finding:suspend` | Suspension needs a step-up `finding.suspend` with `{ reason }`; it opens a `suspension_review` case due in 72 hours; a severe suspension notifies every admin |
+| `GET`/`POST /mod/findings/:id/revisions` | staff, `finding:propose` | History of a **published or suspended** finding (oldest first); proposing needs `base` (else `conflict`) and changed content. A finding awaiting its first approval changes only by approval or rejection |
+| `GET /addresses/:chain/:identifier` | public | `findings` and `history` are now `available`: published findings only, and a suspended or reversed finding shows only its notice in the timeline |
 
 Errors carry `code`, and for moderation refusals a fixed server-written `detail` and, for `conflict`, `currentVersion`. HTTP: `invalid_transition` and `evidence_unavailable` 409; `not_eligible` and `stepup_required` 403.
 

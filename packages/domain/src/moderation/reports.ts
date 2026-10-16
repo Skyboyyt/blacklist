@@ -214,6 +214,21 @@ async function detail(
       .map(({ e }) => ({ label: 'Link (never opened by Blacklist)', value: defangUrl(e.urlText ?? '') })),
   ];
   const open = OPEN_REPORT_STATUSES.includes(r.status);
+  // The public result exists only once the finding is published (never before approval).
+  let publicOutcome: string | null = null;
+  let publicLink: string | null = null;
+  if (c.findingId) {
+    const [f] = await tx.select().from(schema.findings).where(eq(schema.findings.id, c.findingId));
+    if (f?.status === 'published' && f.publishedRevisionId) {
+      const [rev] = await tx
+        .select({ summary: schema.findingRevisions.publicSummary })
+        .from(schema.findingRevisions)
+        .where(eq(schema.findingRevisions.id, f.publishedRevisionId));
+      const subject = await addressOf(tx, f.subjectId);
+      publicOutcome = rev?.summary ?? null;
+      publicLink = subject ? `/address/${subject.chain}/${subject.address}` : null;
+    }
+  }
   return {
     ...summary(c, r),
     version: c.version,
@@ -222,8 +237,8 @@ async function detail(
     timeline,
     infoRequest: r.status === 'needs_info' ? (lastRequest?.body ?? null) : null,
     submitterReason: r.submitterReason,
-    publicOutcome: null,
-    publicLink: null,
+    publicOutcome,
+    publicLink,
     canRespond: r.status === 'needs_info',
     canWithdraw: open,
   };

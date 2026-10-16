@@ -10,9 +10,16 @@ import { addressOf, type ChainSlug } from './subjects.ts';
 import { staffRefs, submitterPseudonym, type StaffRefView } from './refs.ts';
 import { defangUrl } from './labels.ts';
 import { moveReport } from './reports.ts';
+import {
+  createFindingFromReport,
+  decideSuspension,
+  suspensionCaseFields,
+  POLICY_VERSION,
+  type Severity,
+} from './findings.ts';
 
-// Staff case workflow (moderation design; contracts moderation.ts). Phase 9a slice 2 runs
-// report_review cases; other case types arrive with their slices.
+// Staff case workflow (moderation design; contracts moderation.ts). Phase 9a runs report
+// reviews and emergency-suspension reviews; other case types arrive with slice 4.
 
 const CASE_TARGET = 'moderation_case';
 const PAGE_SIZE = 8;
@@ -36,10 +43,11 @@ interface Rule {
   permission: Permission;
   stepUp: boolean;
 }
-/** Report decisions in this slice. `accept_report` creates a finding and arrives with slice 3. */
+/** Decisions per case type (contracts `caseDecisionSchema`; api-integration-contracts check order). */
 const REPORT_RULES: Readonly<Record<string, Rule>> = {
   start_review: { from: ['queued'], to: 'in_review', permission: 'finding:propose', stepUp: false },
   request_info: { from: ['in_review'], to: 'needs_info', permission: 'finding:propose', stepUp: false },
+  accept_report: { from: ['in_review'], to: 'accepted', permission: 'finding:propose', stepUp: true },
   reject_report: { from: ['in_review'], to: 'rejected', permission: 'finding:propose', stepUp: true },
   reject_abusive: {
     from: ['in_review'],
@@ -47,6 +55,14 @@ const REPORT_RULES: Readonly<Record<string, Rule>> = {
     permission: 'finding:propose',
     stepUp: true,
   },
+};
+const SUSPENSION_RULES: Readonly<Record<string, Rule>> = {
+  reinstate_finding: { from: ['open'], to: 'reinstated', permission: 'finding:publish', stepUp: true },
+  reverse_finding: { from: ['open'], to: 'reversed', permission: 'finding:publish', stepUp: true },
+};
+const RULES: Readonly<Record<string, Readonly<Record<string, Rule>>>> = {
+  report_review: REPORT_RULES,
+  suspension_review: SUSPENSION_RULES,
 };
 
 /** Appeal reviewers see appeal cases only (ARCHITECTURE §9.2); others never exist for them. */
@@ -78,24 +94,36 @@ async function subjectView(tx: Database, c: Case) {
 
 function summaryOf(
   c: Case,
-  r: Report,
+  r: Report | null | undefined,
   subject: Awaited<ReturnType<typeof subjectView>>,
   refs: Map<string, StaffRefView>,
 ) {
-  return {
+  const common = {
     id: c.id,
     ...subject,
-    title: r.title,
     assignedTo: c.assignedToRef
       ? (refs.get(c.assignedToRef) ?? { id: c.assignedToRef, handle: 'Staff' })
       : null,
-    submittedAt: (r.submittedAt ?? r.createdAt).toISOString(),
-    lastActivityAt: r.lastActivityAt.toISOString(),
-    slaDueAt: (c.slaDueAt ?? r.createdAt).toISOString(),
+    slaDueAt: (c.slaDueAt ?? c.createdAt).toISOString(),
     version: c.version,
-    type: 'report_review' as const,
-    status: r.status,
-    category: r.category,
+  };
+  if (r)
+    return {
+      ...common,
+      title: r.title,
+      submittedAt: (r.submittedAt ?? r.createdAt).toISOString(),
+      lastActivityAt: r.lastActivityAt.toISOString(),
+      type: 'report_review' as const,
+      status: r.status,
+      category: r.category,
+    };
+  return {
+    ...common,
+    title: 'Emergency suspension review',
+    submittedAt: c.createdAt.toISOString(),
+    lastActivityAt: (c.closedAt ?? c.createdAt).toISOString(),
+    type: 'suspension_review' as const,
+    status: c.status,
   };
 }
 
@@ -109,7 +137,7 @@ const HISTORY_ACTION: Readonly<Record<string, string>> = {
   'moderation.case.replied': 'case_status_changed',
 };
 
-async function detailOf(tx: Database, c: Case, r: Report) {
+async function detailOf(tx: Database, c: Case, r: Report | undefined) {
   const subject = await subjectView(tx, c);
   const notes = await tx
     .select()
@@ -126,16 +154,20 @@ async function detailOf(tx: Database, c: Case, r: Report) {
     .from(schema.auditLog)
     .where(and(eq(schema.auditLog.targetType, CASE_TARGET), eq(schema.auditLog.targetId, c.id)))
     .orderBy(asc(schema.auditLog.seq));
-  const items = await tx
-    .select({ e: schema.evidenceItems })
-    .from(schema.evidenceLinks)
-    .innerJoin(schema.evidenceItems, eq(schema.evidenceItems.id, schema.evidenceLinks.evidenceItemId))
-    .where(eq(schema.evidenceLinks.reportId, r.id));
-  const [reporterRef] = await tx
-    .select({ ref: schema.actorMap.actorRef })
-    .from(schema.actorMap)
-    .where(eq(schema.actorMap.userId, r.reporterUserId));
-  const reporter = submitterPseudonym(c.id, r.reporterUserId);
+  const items = r
+    ? await tx
+        .select({ e: schema.evidenceItems })
+        .from(schema.evidenceLinks)
+        .innerJoin(schema.evidenceItems, eq(schema.evidenceItems.id, schema.evidenceLinks.evidenceItemId))
+        .where(eq(schema.evidenceLinks.reportId, r.id))
+    : [];
+  const [reporterRef] = r
+    ? await tx
+        .select({ ref: schema.actorMap.actorRef })
+        .from(schema.actorMap)
+        .where(eq(schema.actorMap.userId, r.reporterUserId))
+    : [];
+  const reporter = r ? submitterPseudonym(c.id, r.reporterUserId) : '';
   const refs = await staffRefs(tx, [
     ...notes.map((n) => n.authorRef),
     ...audit.map((a) => a.actorRef),
@@ -175,8 +207,13 @@ async function detailOf(tx: Database, c: Case, r: Report) {
       return { ...common, kind: 'url' as const, defangedUrl: defangUrl(e.urlText ?? '').slice(0, 500) };
     return { ...common, kind: 'statement' as const, stateNote: null, text: e.statementText ?? '' };
   });
-  return {
-    ...summaryOf(c, r, subject, refs),
+  const [decision] = await tx
+    .select({ publicSummary: schema.moderationDecisions.publicSummary })
+    .from(schema.moderationDecisions)
+    .where(eq(schema.moderationDecisions.caseId, c.id))
+    .orderBy(desc(schema.moderationDecisions.decidedAt))
+    .limit(1);
+  const common = {
     evidence,
     notes: notes.map((n) => ({
       id: n.id,
@@ -200,14 +237,20 @@ async function detailOf(tx: Database, c: Case, r: Report) {
       };
     }),
     assessment: null,
-    submitterReason: r.submitterReason,
-    publicSummary: null,
-    infoRequest: r.status === 'needs_info' ? (lastRequest?.body ?? null) : null,
+    submitterReason: r?.submitterReason ?? null,
+    publicSummary: decision?.publicSummary ?? null,
+    infoRequest: r?.status === 'needs_info' ? (lastRequest?.body ?? null) : null,
     submitterMessages: messages
       .filter((m) => m.direction === 'from_submitter')
       .map((m) => ({ at: m.at.toISOString(), text: m.body })),
-    reporterRef: reporter,
-    narrative: r.narrative,
+  };
+  if (r)
+    return { ...summaryOf(c, r, subject, refs), ...common, reporterRef: reporter, narrative: r.narrative };
+  return {
+    ...summaryOf(c, null, subject, refs),
+    ...common,
+    type: 'suspension_review' as const,
+    ...(await suspensionCaseFields(tx, c)),
   };
 }
 
@@ -234,7 +277,7 @@ export async function caseQueue(ctx: IdentityContext, actor: UserActor, q: Queue
         chain: schema.chains.slug,
       })
       .from(schema.moderationCases)
-      .innerJoin(schema.reports, eq(schema.reports.id, schema.moderationCases.reportId))
+      .leftJoin(schema.reports, eq(schema.reports.id, schema.moderationCases.reportId))
       .innerJoin(schema.addresses, eq(schema.addresses.subjectId, schema.moderationCases.subjectId))
       .innerJoin(schema.chains, eq(schema.chains.chainId, schema.addresses.chainId))
       .orderBy(desc(schema.moderationCases.createdAt))
@@ -288,7 +331,7 @@ export async function caseQueue(ctx: IdentityContext, actor: UserActor, q: Queue
         openResponses: count('subject_response'),
         openSuspensionReviews: count('suspension_review'),
         unassigned: open.filter(({ c }) => !c.assignedToRef).length,
-        pendingApprovals: 0,
+        pendingApprovals: await pendingApprovals(tx),
       },
       items: listed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
       page,
@@ -303,9 +346,21 @@ export async function getCase(ctx: IdentityContext, actor: UserActor, caseId: st
   return ctx.runtime.transaction(async (tx) => {
     await lockActor(tx, actor);
     const { c, report } = await loadCase(tx, actor, caseId);
-    if (!report) throw new DomainError('not_found');
     return detailOf(tx, c, report);
   });
+}
+
+/** Findings whose latest revision awaits approval (contracts `queueCountsSchema`). */
+async function pendingApprovals(tx: Database) {
+  const rows = await tx
+    .select({ id: schema.findings.id })
+    .from(schema.findings)
+    .where(and(eq(schema.findings.status, 'proposed')));
+  const severe = await tx
+    .select({ id: schema.findings.id })
+    .from(schema.findings)
+    .where(eq(schema.findings.status, 'pending_second_approval'));
+  return rows.length + severe.length;
 }
 
 function requireVersion(c: Case, version: number) {
@@ -331,7 +386,6 @@ async function bump(tx: Database, c: Case, set: Partial<typeof schema.moderation
 
 async function reload(tx: Database, actor: UserActor, caseId: string) {
   const { c, report } = await loadCase(tx, actor, caseId);
-  if (!report) throw new DomainError('not_found');
   return detailOf(tx, c, report);
 }
 
@@ -408,23 +462,18 @@ export async function decideCase(
   decision: CaseDecisionInput,
   assertion?: AssertionInput,
 ) {
-  const rule = REPORT_RULES[decision.action];
-  if (!rule) {
-    if (decision.action === 'accept_report')
-      throw refuse('invalid_transition', 'Accepting a report creates a finding, which is not available yet.');
-    throw refuse('invalid_transition', 'This decision does not apply to this kind of case.');
-  }
-  if (!hasPermission(actor, rule.permission))
-    throw refuse('forbidden', 'Your role cannot make this decision.');
   const apply = async (tx: Database) => {
     const { c, report } = await loadCase(tx, actor, caseId, true);
-    if (c.caseType !== 'report_review' || !report)
-      throw refuse('invalid_transition', 'This decision does not apply to this kind of case.');
+    const rule = RULES[c.caseType]?.[decision.action];
+    if (!rule) throw refuse('invalid_transition', 'This decision does not apply to this kind of case.');
+    if (!hasPermission(actor, rule.permission))
+      throw refuse('forbidden', 'Your role cannot make this decision.');
     requireVersion(c, version);
-    if (!rule.from.includes(report.status))
+    const status = report?.status ?? c.status;
+    if (!rule.from.includes(status))
       throw refuse(
         'invalid_transition',
-        `A case that is “${report.status.replaceAll('_', ' ')}” cannot take this decision.`,
+        `A case that is “${status.replaceAll('_', ' ')}” cannot take this decision.`,
       );
     if (decision.action === 'start_review') {
       if (c.assignedToRef && c.assignedToRef !== actor.actorRef)
@@ -436,6 +485,29 @@ export async function decideCase(
           ? 'Only the assigned reviewer can decide this case.'
           : 'Assign the case to yourself before deciding.',
       );
+    if (rule.stepUp && !assertion) throw new DomainError('stepup_required');
+    const rationale = String(decision['internalRationale'] ?? '');
+    if (c.caseType === 'suspension_review') {
+      const publicSummary = String(decision['publicSummary'] ?? '');
+      await decideSuspension(
+        tx,
+        actor,
+        c,
+        decision.action as 'reinstate_finding' | 'reverse_finding',
+        { publicSummary, internalRationale: rationale },
+        assertion?.challengeId ?? '',
+      );
+      await tx
+        .update(schema.moderationCases)
+        .set({ status: rule.to, version: c.version + 1, closedAt: new Date() })
+        .where(eq(schema.moderationCases.id, c.id));
+      await appendAudit(tx, actor, 'moderation.case.status_changed', CASE_TARGET, c.id, {
+        from: c.status,
+        to: rule.to,
+      });
+      return reload(tx, actor, caseId);
+    }
+    if (!report) throw new Error('report_case_without_report');
     if (decision.action === 'start_review') {
       if (!c.assignedToRef)
         await appendAudit(tx, actor, 'moderation.case.assigned', CASE_TARGET, c.id, {
@@ -451,18 +523,33 @@ export async function decideCase(
         .values({ caseId: c.id, direction: 'to_submitter', authorRef: actor.actorRef, body: message });
       await moveReport(tx, actor, c, report, rule.to, 'moderation.case.info_requested');
     } else {
-      const rationale = String(decision['internalRationale'] ?? '');
-      // An abusive report gets no reason text: the member sees "Not accepted" only.
-      const reason = decision.action === 'reject_report' ? String(decision['reason'] ?? '') : undefined;
+      // Acceptance authors revision 1 of a finding; nothing is public until approved (§4.2).
+      const findingId =
+        decision.action === 'accept_report'
+          ? await createFindingFromReport(
+              tx,
+              actor,
+              { caseId: c.id, reportId: report.id, subjectId: c.subjectId ?? '', category: report.category },
+              {
+                severity: String(decision['severity']) as Severity,
+                publicSummary: String(decision['publicSummary'] ?? ''),
+                internalRationale: rationale,
+              },
+            )
+          : null;
       await tx.insert(schema.moderationDecisions).values({
         caseId: c.id,
         decisionType: 'report_outcome',
+        findingId,
         outcome: rule.to,
         rationaleInternal: rationale,
-        policyVersion: '2026-10',
+        publicSummary: decision.action === 'accept_report' ? String(decision['publicSummary'] ?? '') : null,
+        policyVersion: POLICY_VERSION,
         decidedByRef: actor.actorRef,
         stepupChallengeId: assertion?.challengeId ?? null,
       });
+      // An abusive report gets no reason text: the member sees "Not accepted" only.
+      const reason = decision.action === 'reject_report' ? String(decision['reason'] ?? '') : undefined;
       await moveReport(
         tx,
         actor,
@@ -472,15 +559,16 @@ export async function decideCase(
         'moderation.case.status_changed',
         reason ? { submitterReason: reason } : {},
       );
+      if (findingId)
+        await tx.update(schema.moderationCases).set({ findingId }).where(eq(schema.moderationCases.id, c.id));
     }
     return reload(tx, actor, caseId);
   };
-  if (!rule.stepUp)
+  if (!assertion)
     return ctx.runtime.transaction(async (tx) => {
       await lockActor(tx, actor);
       return apply(tx);
     });
-  if (!assertion) throw new DomainError('stepup_required');
   return withStepup(
     ctx,
     actor,
