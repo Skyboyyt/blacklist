@@ -163,12 +163,12 @@ As revision 1. `project_addresses.basis` is an attribution basis with time and e
 
 ## Phase 9a implementation (2026-10-16; slice 1, not yet applied to Neon)
 
-`generated/0007_wonderful_boomerang.sql` and `0007_moderation_guards.sql` create the 19 tables below (schema `packages/db/src/schema/moderation.ts`): **14 ledger entries, 55 tables**. Differences from the planned columns:
+`generated/0007_mature_cammi.sql` and `0007_moderation_guards.sql` create the 20 tables below (schema `packages/db/src/schema/moderation.ts`): **14 ledger entries, 56 tables**. Differences from the planned columns:
 - Staff actors are stored as **actor references** (`*_ref`, from `actor_identity_map`), e.g. `author_ref`, `approver_ref`, `assigned_to_ref`, `decided_by_ref`, so independence checks compare stable pseudonyms. Members are `*_user_id`.
-- `moderation_cases.case_type` uses the frontend contract set (`report_review`, `appeal_review`, `correction_request`, `project_suggestion`, `subject_response`, `suspension_review`); cases carry `version` (optimistic concurrency) and, for now, `report_id` and `finding_id` sources. Appeal, response and correction sources arrive with slice 4. Internal notes are `moderation_case_notes` [append-only].
+- `moderation_cases.case_type` uses the frontend contract set (`report_review`, `appeal_review`, `correction_request`, `project_suggestion`, `subject_response`, `suspension_review`); cases carry `version` (optimistic concurrency) and, for now, `report_id` and `finding_id` sources. Appeal, response and correction sources arrive with slice 4. Internal notes are `moderation_case_notes` [append-only]; member-visible messages (a request for information and the member's reply) are `moderation_case_messages` [append-only]. `reports.submitter_reason` holds the fixed-list rejection reason shown to the reporter.
 - `evidence_items` stores the non-image kinds only in 9a (`submitted_by_ref`; image states are unused until 9b). `evidence_links` owns a report or a finding revision for now.
 - `findings.legal_hold_at`; `finding_revisions.source_case_id`; `finding_approval_events.publication_blocked` (`legal_hold`); `finding_status_history.publication_event_id`.
-- Append-only (trigger plus no UPDATE/DELETE for the runtime role): `report_status_history`, `moderation_case_notes`, `finding_revisions`, `finding_approval_events`, `finding_publication_events`, `moderation_decisions`, `decision_evidence`, `finding_status_history`, `evidence_custody_events`.
+- Append-only (trigger plus no UPDATE/DELETE for the runtime role): `report_status_history`, `moderation_case_notes`, `moderation_case_messages`, `finding_revisions`, `finding_approval_events`, `finding_publication_events`, `moderation_decisions`, `decision_evidence`, `finding_status_history`, `evidence_custody_events`.
 - `publication_guard`: a publication event must cite an unblocked `approve` event for the same revision with the revision's exact content hash; one publication per approval; actor always `system`.
 - 0007 also corrects the 0006 `recovery_staff_objection_reason` CHECK, which let a NULL reason pass.
 

@@ -1,5 +1,5 @@
 {
-  "id": "2f4f31cb-c60e-40f0-9ae4-91849e7539c1",
+  "id": "699cb501-2635-44d4-a4a0-16696e69e91c",
   "prevId": "2eb5e953-80a8-42ee-9879-1a09748d42e1",
   "version": "7",
   "dialect": "postgresql",
@@ -3583,6 +3583,77 @@
       },
       "isRLSEnabled": false
     },
+    "blacklist.moderation_case_messages": {
+      "name": "moderation_case_messages",
+      "schema": "blacklist",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "case_id": {
+          "name": "case_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "direction": {
+          "name": "direction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_ref": {
+          "name": "author_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "moderation_case_messages_case_id_moderation_cases_id_fk": {
+          "name": "moderation_case_messages_case_id_moderation_cases_id_fk",
+          "tableFrom": "moderation_case_messages",
+          "tableTo": "moderation_cases",
+          "schemaTo": "blacklist",
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "case_message_direction": {
+          "name": "case_message_direction",
+          "value": "\"blacklist\".\"moderation_case_messages\".\"direction\" in ('to_submitter','from_submitter')"
+        },
+        "case_message_length": {
+          "name": "case_message_length",
+          "value": "char_length(\"blacklist\".\"moderation_case_messages\".\"body\") between 1 and 5000"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "blacklist.moderation_case_notes": {
       "name": "moderation_case_notes",
       "schema": "blacklist",
@@ -5173,6 +5244,12 @@
           "notNull": true,
           "default": "'{}'::jsonb"
         },
+        "submitter_reason": {
+          "name": "submitter_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "submitted_at": {
           "name": "submitted_at",
           "type": "timestamp with time zone",
@@ -5254,6 +5331,10 @@
         "report_revision_positive": {
           "name": "report_revision_positive",
           "value": "\"blacklist\".\"reports\".\"revision\" >= 1"
+        },
+        "report_submitter_reason_valid": {
+          "name": "report_submitter_reason_valid",
+          "value": "\"blacklist\".\"reports\".\"submitter_reason\" is null or \"blacklist\".\"reports\".\"submitter_reason\" in ('insufficient_evidence','out_of_scope','duplicate','not_reproducible','already_corrected')"
         }
       },
       "isRLSEnabled": false

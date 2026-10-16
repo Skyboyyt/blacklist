@@ -7,6 +7,17 @@ CREATE TABLE "blacklist"."addresses" (
 	CONSTRAINT "address_kind_fixed" CHECK ("blacklist"."addresses"."kind" = 'address')
 );
 --> statement-breakpoint
+CREATE TABLE "blacklist"."moderation_case_messages" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"case_id" uuid NOT NULL,
+	"direction" text NOT NULL,
+	"author_ref" text NOT NULL,
+	"body" text NOT NULL,
+	"at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "case_message_direction" CHECK ("blacklist"."moderation_case_messages"."direction" in ('to_submitter','from_submitter')),
+	CONSTRAINT "case_message_length" CHECK (char_length("blacklist"."moderation_case_messages"."body") between 1 and 5000)
+);
+--> statement-breakpoint
 CREATE TABLE "blacklist"."moderation_case_notes" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"case_id" uuid NOT NULL,
@@ -229,6 +240,7 @@ CREATE TABLE "blacklist"."reports" (
 	"status" text NOT NULL,
 	"revision" integer DEFAULT 1 NOT NULL,
 	"screening_flags" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"submitter_reason" text,
 	"submitted_at" timestamp with time zone,
 	"decided_at" timestamp with time zone,
 	"last_activity_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -236,7 +248,8 @@ CREATE TABLE "blacklist"."reports" (
 	CONSTRAINT "report_status_valid" CHECK ("blacklist"."reports"."status" in ('draft','submitted','screening','queued','in_review','needs_info','accepted','rejected','rejected_abusive','withdrawn')),
 	CONSTRAINT "report_title_length" CHECK (char_length("blacklist"."reports"."title") between 1 and 200),
 	CONSTRAINT "report_narrative_length" CHECK (char_length("blacklist"."reports"."narrative") <= 10000),
-	CONSTRAINT "report_revision_positive" CHECK ("blacklist"."reports"."revision" >= 1)
+	CONSTRAINT "report_revision_positive" CHECK ("blacklist"."reports"."revision" >= 1),
+	CONSTRAINT "report_submitter_reason_valid" CHECK ("blacklist"."reports"."submitter_reason" is null or "blacklist"."reports"."submitter_reason" in ('insufficient_evidence','out_of_scope','duplicate','not_reproducible','already_corrected'))
 );
 --> statement-breakpoint
 CREATE TABLE "blacklist"."staff_conflicts" (
@@ -263,6 +276,7 @@ CREATE TABLE "blacklist"."subjects" (
 ALTER TABLE "blacklist"."staff_recovery_objections" DROP CONSTRAINT "recovery_staff_objection_reason";--> statement-breakpoint
 ALTER TABLE "blacklist"."addresses" ADD CONSTRAINT "addresses_chain_id_chains_chain_id_fk" FOREIGN KEY ("chain_id") REFERENCES "blacklist"."chains"("chain_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "blacklist"."addresses" ADD CONSTRAINT "addresses_subject_id_kind_subjects_id_kind_fk" FOREIGN KEY ("subject_id","kind") REFERENCES "blacklist"."subjects"("id","kind") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "blacklist"."moderation_case_messages" ADD CONSTRAINT "moderation_case_messages_case_id_moderation_cases_id_fk" FOREIGN KEY ("case_id") REFERENCES "blacklist"."moderation_cases"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "blacklist"."moderation_case_notes" ADD CONSTRAINT "moderation_case_notes_case_id_moderation_cases_id_fk" FOREIGN KEY ("case_id") REFERENCES "blacklist"."moderation_cases"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "blacklist"."decision_evidence" ADD CONSTRAINT "decision_evidence_decision_id_moderation_decisions_id_fk" FOREIGN KEY ("decision_id") REFERENCES "blacklist"."moderation_decisions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "blacklist"."decision_evidence" ADD CONSTRAINT "decision_evidence_evidence_item_id_evidence_items_id_fk" FOREIGN KEY ("evidence_item_id") REFERENCES "blacklist"."evidence_items"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

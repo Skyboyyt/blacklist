@@ -1,6 +1,7 @@
 -- Phase 9a (moderation design §2–§4, data-model §5–§6): history tables are append-only.
 -- blacklist.reject_mutation() is defined in 0001_security_boundaries.sql.
 CREATE TRIGGER report_history_append_only BEFORE UPDATE OR DELETE ON blacklist.report_status_history FOR EACH ROW EXECUTE FUNCTION blacklist.reject_mutation();
+CREATE TRIGGER case_messages_append_only BEFORE UPDATE OR DELETE ON blacklist.moderation_case_messages FOR EACH ROW EXECUTE FUNCTION blacklist.reject_mutation();
 CREATE TRIGGER case_notes_append_only BEFORE UPDATE OR DELETE ON blacklist.moderation_case_notes FOR EACH ROW EXECUTE FUNCTION blacklist.reject_mutation();
 CREATE TRIGGER finding_revisions_append_only BEFORE UPDATE OR DELETE ON blacklist.finding_revisions FOR EACH ROW EXECUTE FUNCTION blacklist.reject_mutation();
 CREATE TRIGGER approval_events_append_only BEFORE UPDATE OR DELETE ON blacklist.finding_approval_events FOR EACH ROW EXECUTE FUNCTION blacklist.reject_mutation();

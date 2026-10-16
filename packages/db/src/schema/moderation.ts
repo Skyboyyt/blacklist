@@ -78,6 +78,8 @@ export const reports = bl.table(
     status: text('status').notNull(),
     revision: integer('revision').notNull().default(1),
     screeningFlags: jsonb('screening_flags').notNull().default({}),
+    /** Fixed-list reason shown to the reporter after a rejection (contracts SUBMITTER_REASONS). */
+    submitterReason: text('submitter_reason'),
     submittedAt: optionalAt('submitted_at'),
     decidedAt: optionalAt('decided_at'),
     lastActivityAt: at('last_activity_at'),
@@ -91,6 +93,10 @@ export const reports = bl.table(
     check('report_title_length', sql`char_length(${t.title}) between 1 and 200`),
     check('report_narrative_length', sql`char_length(${t.narrative}) <= 10000`),
     check('report_revision_positive', sql`${t.revision} >= 1`),
+    check(
+      'report_submitter_reason_valid',
+      sql`${t.submitterReason} is null or ${t.submitterReason} in ('insufficient_evidence','out_of_scope','duplicate','not_reproducible','already_corrected')`,
+    ),
     index('reports_by_reporter').on(t.reporterUserId, t.createdAt),
   ],
 );
@@ -218,6 +224,27 @@ export const caseNotes = bl.table(
     at: at('at'),
   },
   (t) => [check('case_note_length', sql`char_length(${t.body}) between 1 and 5000`)],
+);
+/**
+ * Member-visible messages on a case: a staff request for information (`to_submitter`)
+ * or the submitter's reply (`from_submitter`). Never internal notes.
+ */
+export const caseMessages = bl.table(
+  'moderation_case_messages',
+  {
+    id: id(),
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => moderationCases.id),
+    direction: text('direction').notNull(),
+    authorRef: text('author_ref').notNull(),
+    body: text('body').notNull(),
+    at: at('at'),
+  },
+  (t) => [
+    check('case_message_direction', sql`${t.direction} in ('to_submitter','from_submitter')`),
+    check('case_message_length', sql`char_length(${t.body}) between 1 and 5000`),
+  ],
 );
 
 export const findings = bl.table(

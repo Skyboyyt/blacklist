@@ -14,6 +14,11 @@
 - The server permission catalog holds only Phase 7 permissions. `appeal_reviewer` has none.
 - `viem` (EVM message signatures) and `@solana/kit` are already dependencies of `@blacklist/chains`. Node 24 WebCrypto verifies Ed25519. **No new dependency is planned.** There is no DNS resolver module yet.
 
+## Progress
+
+- Slice 1: data model and permission catalog, done (PR #17).
+- Slice 2: reports and cases on the server, done (same PR). `accept_report` waits for slice 3.
+
 ## Slices
 
 Each slice is its own pull request with tests. It updates the data model and `AI_HANDOFF.md` as it goes.

@@ -75,7 +75,7 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
             "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema='blacklist'",
           )
         ).rows[0]?.n,
-      ).toBe(55);
+      ).toBe(56);
     } finally {
       await migrator.end();
     }

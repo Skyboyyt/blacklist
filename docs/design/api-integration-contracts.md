@@ -140,6 +140,24 @@ Contracts: `admin.ts`. Audience: active administrators in an assured session. Ev
 | `listLabels()` / `addLabel(r)` / `retireLabel(id, reason)` | `/admin/labels/*` | Labels identify an address with provenance; never risk factors; retiring keeps the record |
 | `listSuppressions()` / `suppressSignal(r)` / `liftSuppression(id, reason)` | `/admin/signals/suppressions` | Step-up; analysis indicators only (findings are suspended or reversed instead); shown publicly with the public reason; the internal rationale stays private |
 
+## 4b. Phase 9a backend status (2026-10-16, slice 2)
+
+Implemented on the server (`apps/api/src/routes/moderation.ts`; live web adapters follow in slice 5):
+
+| Endpoint | Guard | Notes |
+|---|---|---|
+| `GET /me/submissions`, `GET /me/submissions/:id` | member, `report:read:own` | Reports only in 9a; another member's case is `not_found` |
+| `POST /reports` | member, `report:create` | **Deviation:** creates and submits in one request while image uploads are unavailable (Phase 9b). Non-empty `evidence` → `evidence_unavailable`. Limited to 10 per account and per IP prefix per 24 h |
+| `POST /reports/:id/withdraw` | member | `expectedVersion`; before any decision |
+| `POST /me/submissions/:id/responses` | member | `expectedVersion`; only while `needs_info`; text only |
+| `GET /me/notifications` | member, `notification:read:own` | Derived from the member's own report history (plan interim decision 4) |
+| `GET /mod/queue` | staff, `moderation:queue:read` | Query-string filters as `queueRequestSchema`; appeal reviewers see appeal cases only |
+| `GET /mod/cases/:id` | staff, `moderation:case:read` | Reporter shown as a per-case pseudonym `R-XXXXXX` |
+| `POST /mod/cases/:id/assignment`, `/notes` | staff | `expectedVersion`; take-over needs `takeOver: true`; unassign by the assignee or an admin |
+| `POST /mod/cases/:id/decisions` | staff | `start_review`, `request_info` (no step-up); `reject_report`, `reject_abusive` need a step-up with action `case.<action>`, target type `case`, parameters `{ version, decision }`. `accept_report` returns `invalid_transition` until slice 3 |
+
+Errors carry `code`, and for moderation refusals a fixed server-written `detail` and, for `conflict`, `currentVersion`. HTTP: `invalid_transition` and `evidence_unavailable` 409; `not_eligible` and `stepup_required` 403.
+
 ## 5. `ResearchApi`, `AuthApi`, `AccountApi`, `StaffSecurityApi`
 
 Unchanged since Phases 1–3 and specified in [frontend.md](frontend.md) §1, §7–§7b, [identity.md](identity.md) and [chain-data.md](chain-data.md). `getScoreboard(request)` → `GET /projects/scoreboard?chain=` returns the band ranking of ADR 0012 (`scoreboardResponseSchema`; the research read model implements the rule in `lib/api/mock/scoreboard.ts`). Phase 5 adds the report status `needs_information`; the follow-up adds public `labels` and `responses` to address research, `suppressions` to the public assessment, `standingProvenAt` to responses, and timeline events for reinstatement, reversal, published responses and suppressions. The 2026-10-16 owner-decision work adds `AuthApi.staffRecoveryObjection(token, operation)` → `POST /auth/staff-recovery/objection` (the recovery subject's single-use link; ADR 0013 C2), and member password minimums of 12 (ADR 0016, amended).
