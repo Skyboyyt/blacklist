@@ -132,6 +132,9 @@ Contracts: `admin.ts`. Audience: active administrators in an assured session. Ev
 | `listRecoveries()` / `openRecovery(id)` | `GET/POST /admin/staff/recovery` | Step-up; not yourself; subject suspended |
 | `verifyRecovery(id, method)` | `POST /admin/staff/recovery/:id/verifications` | Two different verifiers, at least one an administrator, neither the subject (identity §10.11 step 2); moderators verify through `ModerationApi.verifyRecoveryIdentity` |
 | `approveRecovery(id)` | `POST /admin/staff/recovery/:id/approve` | Step-up; approver ≠ opener; starts the 24-hour objection window |
+| `objectRecovery(id, reason)` | `POST /admin/recoveries/object` | Step-up `staff.recovery.object` bound to the reason (10–1000 characters); during the window or re-enrollment; not the subject (ADR 0013 C1) |
+| `withdrawRecoveryObjection(id)` | `POST /admin/recoveries/withdraw` | Step-up; only the objector, within 24 hours, and only before a new case is opened; restarts the window when no other objection stands (ADR 0013 C5) |
+| `reopenRecovery(id)` | `POST /admin/recoveries/reopen` | Step-up; an admin who is neither the subject nor an objector; one new case per objected case; objectors cannot verify or approve it (ADR 0013 C4) |
 | `completeRecovery(id)` | `POST /admin/staff/recovery/:id/complete` | Only after the window; issues a re-enrollment invitation |
 | `listMembers()` / `suspendMember(id, reason)` / `restoreMember(id, reason)` | `/admin/users/*` | Step-up `user.suspend` / `user.restore`; a suspended member cannot submit |
 | `listLabels()` / `addLabel(r)` / `retireLabel(id, reason)` | `/admin/labels/*` | Labels identify an address with provenance; never risk factors; retiring keeps the record |
@@ -139,7 +142,7 @@ Contracts: `admin.ts`. Audience: active administrators in an assured session. Ev
 
 ## 5. `ResearchApi`, `AuthApi`, `AccountApi`, `StaffSecurityApi`
 
-Unchanged since Phases 1–3 and specified in [frontend.md](frontend.md) §1, §7–§7b, [identity.md](identity.md) and [chain-data.md](chain-data.md). `getScoreboard(request)` → `GET /projects/scoreboard?chain=` returns the band ranking of ADR 0012 (`scoreboardResponseSchema`; the research read model implements the rule in `lib/api/mock/scoreboard.ts`). Phase 5 adds the report status `needs_information`; the follow-up adds public `labels` and `responses` to address research, `suppressions` to the public assessment, `standingProvenAt` to responses, and timeline events for reinstatement, reversal, published responses and suppressions.
+Unchanged since Phases 1–3 and specified in [frontend.md](frontend.md) §1, §7–§7b, [identity.md](identity.md) and [chain-data.md](chain-data.md). `getScoreboard(request)` → `GET /projects/scoreboard?chain=` returns the band ranking of ADR 0012 (`scoreboardResponseSchema`; the research read model implements the rule in `lib/api/mock/scoreboard.ts`). Phase 5 adds the report status `needs_information`; the follow-up adds public `labels` and `responses` to address research, `suppressions` to the public assessment, `standingProvenAt` to responses, and timeline events for reinstatement, reversal, published responses and suppressions. The 2026-10-16 owner-decision work adds `AuthApi.staffRecoveryObjection(token, operation)` → `POST /auth/staff-recovery/objection` (the recovery subject's single-use link; ADR 0013 C2), and member password minimums of 12 (ADR 0016, amended).
 
 ## 6. Backend capabilities the frontend depends on
 
