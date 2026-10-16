@@ -16,7 +16,7 @@ export function RegisterStart() {
         <>
           <p>
             If this address can be used, we sent a link to finish creating your account. The link expires in
-            30 minutes. Addresses without an invitation receive no email.
+            30 minutes.
           </p>
           <p className="mt-2">Can’t find it? Check your spam folder, or try again in a few minutes.</p>
         </>
