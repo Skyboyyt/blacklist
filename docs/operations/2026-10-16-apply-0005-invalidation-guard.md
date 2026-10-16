@@ -5,7 +5,7 @@
 | Prepared by | Claude, 2026-10-16 |
 | Target | Neon staging database (ledger currently 10 entries) |
 | Change | One additive migration from `main` (`db48b47`): an INSERT guard trigger and a unique index on `blacklist.chain_fact_invalidations` (review CR-14 D-1) |
-| Status | **Prepared and rehearsed. Not applied. Needs the owner's approval** |
+| Status | **Applied to Neon staging by the owner on 2026-10-16 (owner-reported working; Step 4 output not yet reviewed by Claude)** |
 
 ## What it changes and why it is safe
 
