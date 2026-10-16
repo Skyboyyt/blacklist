@@ -125,7 +125,7 @@ export async function verifyOperatorMigrations(client: PoolClient) {
      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
      JOIN pg_roles r ON r.oid=c.relowner WHERE n.nspname='blacklist' AND c.relkind IN ('r','p')`,
   );
-  if (tables.rows[0]?.n !== 34 || !tables.rows[0]?.owned) throw new Error('operator_schema_invalid');
+  if (tables.rows[0]?.n !== 36 || !tables.rows[0]?.owned) throw new Error('operator_schema_invalid');
   const queues = await client.query<{ name: string }>('SELECT name FROM pgboss.queue');
   if (
     identityQueues.some(

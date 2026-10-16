@@ -4,6 +4,7 @@ import {
   issueIdentityToken,
   issueInvitation,
   sendNotice,
+  issueRecoveryObjectionLink,
   sendEmailChangeNotices,
   cleanupIdentity,
   verifyAudit,
@@ -70,13 +71,24 @@ export async function startWorker(ctx: DeliveryContext, mailer: SecurityMailer, 
         'staff_recovery_verified',
         'staff_recovery_objection_window',
         'staff_recovery_objected',
+        'staff_recovery_objection_withdrawn',
+        'staff_recovery_objection_pattern',
+        'staff_recovery_reopened',
         'break_glass_invoked',
         'staff_authenticator_removed',
         'staff_authenticator_registered',
         'staff_authenticator_flagged',
       ]),
     }),
-    (v) => sendNotice(ctx, v.accountId, v.kind, mailer),
+    async (v) => {
+      // ADR 0013 C2: the subject's window notice carries the single-use objection link.
+      if (
+        v.kind === 'staff_recovery_objection_window' &&
+        (await issueRecoveryObjectionLink(ctx, v.accountId, mailer))
+      )
+        return;
+      await sendNotice(ctx, v.accountId, v.kind, mailer);
+    },
   );
   work('identity.cleanup', z.strictObject({}), () => cleanupIdentity(ctx));
   work('audit.verify', z.strictObject({}), async () => {

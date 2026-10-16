@@ -5,6 +5,8 @@ export * from './staff/webauthn.ts';
 export * from './staff/enrollment.ts';
 export * from './staff/lifecycle.ts';
 export * from './staff/recovery.ts';
+export * from './staff/recovery-objections.ts';
+export * from './staff/recovery-objection-delivery.ts';
 export * from './staff/reads.ts';
 export * from './staff/invitation-delivery.ts';
 export * from './staff/authenticators.ts';

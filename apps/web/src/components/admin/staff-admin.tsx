@@ -71,7 +71,7 @@ const RECOVERY_STATE: Readonly<Record<RecoveryCase['state'], string>> = {
   awaiting_approval: 'Waiting for a different administrator to approve',
   objection_window: '24-hour objection window',
   fresh_enrollment: 'Waiting for a new password and two authenticators',
-  objected: 'Blocked by a recovery objection',
+  objected: 'Objected: stopped. Resolve it by opening a new case',
   cancelled: 'Cancelled',
   completed: 'Completed: re-enrollment finished',
 };
@@ -251,6 +251,43 @@ export function StaffAdmin() {
         'A 24-hour objection window starts. All administrators and the subject’s email are notified.',
       stepUp: { action: 'staff.recovery.approve', targetId: r.id, description: `approve recovery ${r.id}` },
       run: async () => report(await (await getAdminApi()).approveRecovery(r.id), 'Recovery approved'),
+    });
+  }
+
+  function objectRecovery(r: RecoveryCase) {
+    setRequest({
+      title: `Object to the recovery of ${r.subject.handle}?`,
+      description:
+        'The recovery stops and any re-enrollment invitation is revoked. Every administrator is told. Resolving it needs a new case opened by an administrator who did not object.',
+      tone: 'danger',
+      reasonLabel: 'Why do you object? (staff only)',
+      parameters: (reason) => [r.id, reason],
+      stepUp: { action: 'staff.recovery.object', targetId: r.id, description: `object to recovery ${r.id}` },
+      run: async (reason) =>
+        report(await (await getAdminApi()).objectRecovery(r.id, reason), 'Objection recorded'),
+    });
+  }
+
+  function withdrawObjection(r: RecoveryCase) {
+    setRequest({
+      title: `Withdraw your objection to ${r.id}?`,
+      description: 'If no other objection stands, a new 24-hour objection window starts.',
+      stepUp: {
+        action: 'staff.recovery.withdraw',
+        targetId: r.id,
+        description: `withdraw objection ${r.id}`,
+      },
+      run: async () =>
+        report(await (await getAdminApi()).withdrawRecoveryObjection(r.id), 'Objection withdrawn'),
+    });
+  }
+
+  function reopenRecovery(r: RecoveryCase) {
+    setRequest({
+      title: `Open a new recovery case for ${r.subject.handle}?`,
+      description: `The new case references ${r.id}. Identity verification and the 24-hour objection window start again, and no one who objected can verify or approve it.`,
+      stepUp: { action: 'staff.recovery.reopen', targetId: r.id, description: `reopen recovery ${r.id}` },
+      run: async () => report(await (await getAdminApi()).reopenRecovery(r.id), 'New recovery case opened'),
     });
   }
 
@@ -512,7 +549,20 @@ export function StaffAdmin() {
                   {r.objectionWindowEndsAt
                     ? ` · objection window ends ${formatDateTimeUtc(r.objectionWindowEndsAt)}`
                     : ''}
+                  {r.reopensCaseId ? ` · resolves objected case ${r.reopensCaseId}` : ''}
                 </p>
+                {r.objections.length > 0 ? (
+                  <ul className="flex flex-col gap-1 text-xs text-muted">
+                    {r.objections.map((o) => (
+                      <li key={`${o.by.id}-${o.at}`}>
+                        {o.kind === 'subject' ? 'The subject' : o.by.handle} objected{' '}
+                        {formatDateTimeUtc(o.at)}
+                        {o.reason ? `: ${o.reason}` : ''}
+                        {o.withdrawnAt ? ` (withdrawn ${formatDateTimeUtc(o.withdrawnAt)})` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
                 {r.state === 'verifying' ? (
                   <div className="flex flex-col gap-2">
                     <Field id={`verify-${r.id}`} label="How did you verify identity?">
@@ -551,6 +601,28 @@ export function StaffAdmin() {
                     onClick={() => void completeRecovery(r)}
                   >
                     Complete after the objection window
+                  </Button>
+                ) : null}
+                {r.state === 'objection_window' || r.state === 'fresh_enrollment' ? (
+                  <Button size="sm" variant="danger" className="w-fit" onClick={() => objectRecovery(r)}>
+                    Object<span className="sr-only"> to recovery {r.id}</span>
+                  </Button>
+                ) : null}
+                {r.state === 'objected' && r.viewerObjected ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-fit"
+                    onClick={() => withdrawObjection(r)}
+                  >
+                    Withdraw my objection<span className="sr-only"> to {r.id}</span>
+                  </Button>
+                ) : null}
+                {r.state === 'objected' &&
+                !r.viewerObjected &&
+                !recoveries.some((x) => x.reopensCaseId === r.id) ? (
+                  <Button size="sm" variant="secondary" className="w-fit" onClick={() => reopenRecovery(r)}>
+                    Open a new case to resolve<span className="sr-only"> {r.id}</span>
                   </Button>
                 ) : null}
               </li>

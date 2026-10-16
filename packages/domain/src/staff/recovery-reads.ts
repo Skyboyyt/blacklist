@@ -3,6 +3,7 @@ import { requirePermission } from '../access/policies.ts';
 import type { UserActor } from '../access/types.ts';
 import { lockActor } from '../identity/sessions.ts';
 import type { IdentityContext } from '../identity/types.ts';
+import { objectionView } from './reads.ts';
 export async function recoveryVerificationCases(ctx: IdentityContext, actor: UserActor) {
   requirePermission(actor, 'staff:recovery:verify');
   return ctx.runtime.transaction(async (tx) => {
@@ -32,8 +33,27 @@ export async function recoveryVerificationCases(ctx: IdentityContext, actor: Use
         .where(eq(schema.profiles.userId, map?.userId ?? id));
       return { id, handle: p?.handle ?? 'Operator' };
     }
+    const objections = rows.length
+      ? await tx
+          .select()
+          .from(schema.recoveryObjections)
+          .where(
+            inArray(
+              schema.recoveryObjections.caseId,
+              rows.map((r) => r.id),
+            ),
+          )
+      : [];
+    const refs = new Map<string, { id: string; handle: string }>();
+    for (const o of objections) refs.set(o.objector, await ref(o.objector));
     return Promise.all(
       rows.map(async (r) => ({
+        ...objectionView(
+          r,
+          objections.filter((o) => o.caseId === r.id),
+          actor.actorRef,
+          (id) => refs.get(id) ?? { id, handle: 'Operator' },
+        ),
         id: r.id,
         subject: await ref(r.subjectUserId),
         openedBy: await ref(r.openedBy),

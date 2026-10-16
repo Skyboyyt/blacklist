@@ -93,12 +93,30 @@ export const recoveryCaseSchema = z.strictObject({
     'cancelled',
   ]),
   createdAt: isoDateTimeSchema,
+  /** ADR 0013 C4: a case opened to resolve an objection references the objected case. */
+  reopensCaseId: z.string().nullable(),
+  /** ADR 0013 C: every objection stays visible to staff; withdrawal only adds a time. */
+  objections: z.array(
+    z.strictObject({
+      by: staffRefSchema,
+      kind: z.enum(['staff', 'subject', 'operator']),
+      reason: z.string().max(1000).nullable(),
+      at: isoDateTimeSchema,
+      withdrawnAt: isoDateTimeSchema.nullable(),
+    }),
+  ),
+  /** The viewer has a standing objection on this case (they may withdraw it). */
+  viewerObjected: z.boolean(),
 });
 export type RecoveryCase = z.infer<typeof recoveryCaseSchema>;
 export const recoveryCompletionSchema = recoveryCaseSchema.extend({ enrollmentCode: z.string() });
 export type RecoveryCompletion = z.infer<typeof recoveryCompletionSchema>;
 
 /** Identity §10.11 step 2: each verifier records the method and, separately, the rationale. */
+/** ADR 0013 C1: a staff objection states a reason (bound to the security-key step-up). */
+export const recoveryObjectionSchema = z.strictObject({
+  reason: z.string().trim().min(10, 'Say why you object (at least 10 characters).').max(1000),
+});
 export const recoveryVerificationSchema = z.strictObject({
   method: z.string().trim().min(5, 'Say how you verified identity.').max(100),
   rationale: z.string().trim().min(10, 'Say why you are confident it is them.').max(1000),

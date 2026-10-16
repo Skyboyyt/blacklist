@@ -37,6 +37,7 @@ export const notConnectedAuthApi: AuthApi = {
   forgotPassword: unavailable,
   resetPassword: unavailable,
   confirmEmailChange: unavailable,
+  staffRecoveryObjection: unavailable,
 };
 
 const accountUnavailable = () =>
@@ -111,6 +112,9 @@ export const notConnectedAdminApi: AdminApi = {
   openRecovery: moderationUnavailable,
   verifyRecovery: moderationUnavailable,
   approveRecovery: moderationUnavailable,
+  objectRecovery: moderationUnavailable,
+  withdrawRecoveryObjection: moderationUnavailable,
+  reopenRecovery: moderationUnavailable,
   completeRecovery: moderationUnavailable,
   listMembers: moderationUnavailable,
   suspendMember: moderationUnavailable,

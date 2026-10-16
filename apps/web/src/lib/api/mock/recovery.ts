@@ -31,6 +31,13 @@ export function addRecoveryVerification(
       detail: 'This case is not collecting verifications.',
     };
   }
+  if (chainObjectors(store, r).has(verifier.ref.id)) {
+    return {
+      kind: 'error',
+      code: 'not_eligible',
+      detail: 'You objected to an earlier case for this person, so you cannot verify this one.',
+    };
+  }
   if (r.subject.id === verifier.ref.id) {
     return { kind: 'error', code: 'not_eligible', detail: 'The subject cannot verify their own identity.' };
   }
@@ -67,4 +74,15 @@ export function addRecoveryVerification(
     changes: [{ field: r.subject.handle, from: null, to: 'identity verified' }],
   });
   return { kind: 'ok', data: structuredClone(r) };
+}
+
+/** Everyone who objected along a reopened chain (ADR 0013 C4); they never verify or approve it. */
+export function chainObjectors(store: MockStore, r: RecoveryCase): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (let id = r.reopensCaseId, depth = 0; id && depth < 50; depth++) {
+    const parent = store.recoveries.find((x) => x.id === id);
+    for (const o of parent?.objections ?? []) ids.add(o.by.id);
+    id = parent?.reopensCaseId ?? null;
+  }
+  return ids;
 }

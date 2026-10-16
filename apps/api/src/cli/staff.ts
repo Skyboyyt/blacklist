@@ -8,7 +8,7 @@ import {
   operatorApproveRole,
   operatorApproveRecovery,
   breakGlass,
-  objectRecovery,
+  operatorObjectRecovery,
 } from '@blacklist/domain';
 const args = parseArgs({
   options: {
@@ -17,6 +17,7 @@ const args = parseArgs({
     id: { type: 'string' },
     operator: { type: 'string' },
     incident: { type: 'string' },
+    reason: { type: 'string' },
   },
   strict: true,
 });
@@ -76,7 +77,7 @@ try {
     if (command === 'approve-invitation') await operatorApproveInvitation(ctx, actor, id);
     else if (command === 'approve-role') await operatorApproveRole(ctx, actor, id);
     else if (command === 'approve-recovery') await operatorApproveRecovery(ctx, actor, id);
-    else await objectRecovery(ctx, actor, id);
+    else await operatorObjectRecovery(ctx, actor, id, z.string().min(10).max(1000).parse(args.values.reason));
     process.stdout.write('Audited operator action complete.\n');
   }
 } catch {

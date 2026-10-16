@@ -87,6 +87,10 @@ export const mockAuthApi: AuthApi = {
     await wait();
     return tokenProblem(token) ?? { kind: 'success' };
   },
+  async staffRecoveryObjection(token) {
+    await wait();
+    return tokenProblem(token) ?? { kind: 'success' };
+  },
 };
 
 /** Simulated challenge: always passes after a short wait. Renders nothing and verifies nothing. */

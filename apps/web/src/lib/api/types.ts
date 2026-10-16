@@ -159,6 +159,8 @@ export interface AuthApi {
     options?: { readonly withPasskey: boolean },
   ): Promise<ResetPasswordOutcome>;
   confirmEmailChange(token: string): Promise<TokenFlowOutcome>;
+  /** ADR 0013 C2: the recovery subject's emailed link records an objection or its one withdrawal. */
+  staffRecoveryObjection(token: string, operation: 'object' | 'withdraw'): Promise<TokenFlowOutcome>;
 }
 
 /** Thrown when no backend is connected (any non-mock build before Phase 7). */
@@ -362,6 +364,12 @@ export interface AdminApi {
   verifyRecovery(id: string, method: string, rationale: string): Promise<ModerationResult<RecoveryCase>>;
   /** Step-up `staff.recovery.approve`. */
   approveRecovery(id: string): Promise<ModerationResult<RecoveryCase>>;
+  /** Step-up `staff.recovery.object`, bound to the reason (ADR 0013 C1). */
+  objectRecovery(id: string, reason: string): Promise<ModerationResult<RecoveryCase>>;
+  /** Step-up `staff.recovery.withdraw`; only the objector, within 24 hours (ADR 0013 C5). */
+  withdrawRecoveryObjection(id: string): Promise<ModerationResult<RecoveryCase>>;
+  /** Step-up `staff.recovery.reopen`: a new case referencing the objected one (ADR 0013 C4). */
+  reopenRecovery(id: string): Promise<ModerationResult<RecoveryCase>>;
   completeRecovery(id: string): Promise<ModerationResult<RecoveryCompletion>>;
   listMembers(): Promise<ModerationResult<readonly MemberAccount[]>>;
   /** Step-up `user.suspend` on the member. */

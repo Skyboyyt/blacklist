@@ -36,6 +36,8 @@ const staffEvents = [
   'staff.recovery.verified',
   'staff.recovery.approved',
   'staff.recovery.objected',
+  'staff.recovery.withdrawn',
+  'staff.recovery.reopened',
   'staff.recovery.completed',
   'staff.breakglass.invoked',
   'staff.breakglass.reviewed',

@@ -28,6 +28,7 @@ describe('single migration order (CR-14 D-2)', () => {
       '0003_chain_research_foundation.sql',
       '0004_pinned_transaction_time.sql',
       '0005_invalidation_guard.sql',
+      'generated/0006_easy_impossible_man.sql',
     ]);
   });
 
