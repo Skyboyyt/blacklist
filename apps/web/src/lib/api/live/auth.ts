@@ -69,6 +69,13 @@ export const liveAuthApi: AuthApi = {
       return tokenError(error);
     }
   },
+  async staffRecoveryObjection(token, operation) {
+    try {
+      return await request('/auth/staff-recovery/objection', tokenFlowOutcomeSchema, { token, operation });
+    } catch (error) {
+      return tokenError(error);
+    }
+  },
   async resetPassword(token, form, options): Promise<ResetPasswordOutcome> {
     try {
       let assertion;

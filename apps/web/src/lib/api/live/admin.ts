@@ -176,6 +176,31 @@ export const liveAdminApi: AdminApi = {
       });
       return find(await recoveries(), id);
     }),
+  objectRecovery: (id, reason) =>
+    result(async () => {
+      await mutate('/admin/recoveries/object', {
+        id,
+        reason,
+        assertion: takeStepup('staff.recovery.object', id),
+      });
+      return find(await recoveries(), id);
+    }),
+  withdrawRecoveryObjection: (id) =>
+    result(async () => {
+      await mutate('/admin/recoveries/withdraw', {
+        id,
+        assertion: takeStepup('staff.recovery.withdraw', id),
+      });
+      return find(await recoveries(), id);
+    }),
+  reopenRecovery: (id) =>
+    result(async () => {
+      const response = await request('/admin/recoveries/reopen', idResponseSchema, {
+        id,
+        assertion: takeStepup('staff.recovery.reopen', id),
+      });
+      return find(await recoveries(), response.id);
+    }),
   completeRecovery: (id) =>
     result(async () => {
       const verified = await verifyLiveStepup('staff.recovery.complete', id, [id]);

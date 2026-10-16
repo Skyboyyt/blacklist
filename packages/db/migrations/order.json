@@ -11,6 +11,7 @@
     "generated/0005_violet_stardust.sql",
     "0003_chain_research_foundation.sql",
     "0004_pinned_transaction_time.sql",
-    "0005_invalidation_guard.sql"
+    "0005_invalidation_guard.sql",
+    "generated/0006_easy_impossible_man.sql"
   ]
 }

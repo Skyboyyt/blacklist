@@ -68,14 +68,14 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
     try {
       expect(
         (await migrator.query('SELECT count(*)::int AS n FROM blacklist_migrations.applied')).rows[0]?.n,
-      ).toBe(11);
+      ).toBe(12);
       expect(
         (
           await migrator.query(
             "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema='blacklist'",
           )
         ).rows[0]?.n,
-      ).toBe(34);
+      ).toBe(36);
     } finally {
       await migrator.end();
     }
@@ -85,6 +85,7 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
       rpId: 'staging.example.test',
       rpName: 'Blacklist Staging',
       breakGlassEnabled: false,
+      registration: { mode: 'open' },
     });
     await ctx.runtime.start();
     expect((await ctx.runtime.pool.query('SELECT current_user AS name')).rows[0]?.name).toBe('blacklist_app');
@@ -351,6 +352,7 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
       rpId: 'staging.example.test',
       rpName: 'Blacklist Staging',
       breakGlassEnabled: false,
+      registration: { mode: 'open' },
     });
     await ctx.runtime.start();
     expect((await ctx.runtime.pool.query('SELECT id FROM blacklist.registration_intents')).rows).toEqual(

@@ -27,6 +27,7 @@ const ROUTES: readonly { readonly path: string; readonly viewer: string }[] = [
   { path: '/login', viewer: 'anonymous' },
   { path: '/register', viewer: 'anonymous' },
   { path: '/forgot-password', viewer: 'anonymous' },
+  { path: '/recovery/object', viewer: 'anonymous' },
   { path: '/dashboard', viewer: 'member' },
   { path: '/reports', viewer: 'member' },
   { path: '/reports/new', viewer: 'member' },

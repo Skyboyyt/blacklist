@@ -1,10 +1,15 @@
+import type { RegistrationAccess } from '@blacklist/config';
 import { createDatabase } from '@blacklist/db';
 import { createAuth } from './auth.ts';
 import { createThrottle, unavailableHumanVerifier, type HumanVerifier } from './throttle.ts';
 import { checkBreach, type BreachCheck } from './password-policy.ts';
 import type { IdentitySettings, IdentityContext, DeliveryContext } from './types.ts';
-export function createDelivery(databaseUrl: string, origin: string): DeliveryContext {
-  return { runtime: createDatabase(databaseUrl), settings: { origin } };
+export function createDelivery(
+  databaseUrl: string,
+  origin: string,
+  registration: RegistrationAccess,
+): DeliveryContext {
+  return { runtime: createDatabase(databaseUrl), settings: { origin, registration } };
 }
 export function createIdentity(
   databaseUrl: string,

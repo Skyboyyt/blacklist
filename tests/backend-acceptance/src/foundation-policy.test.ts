@@ -81,7 +81,7 @@ describe('foundation authorization, audit privacy and breach-provider negatives'
       }
       fetcher.mockImplementation(async () => new Response(null, { status: 503 }));
       expect(await checkBreach('password')).toBe(true);
-      await expect(preparePassword('short')).rejects.toThrow('password_policy_rejected');
+      await expect(preparePassword('short', 'staff')).rejects.toThrow('password_policy_rejected');
     } finally {
       vi.unstubAllGlobals();
     }

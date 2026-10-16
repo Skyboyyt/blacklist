@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   checkPasswordLength,
+  MEMBER_PASSWORD_MIN_CODE_POINTS,
+  memberPasswordSchema,
   codePointLength,
   emailSchema,
   handleSchema,
@@ -53,6 +55,20 @@ describe('password length rules (identity §3)', () => {
     const result = newPasswordSchema.safeParse('short');
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toMatch(/at least 8/);
+  });
+
+  it('requires 12 code points for member passwords and 8 for staff (ADR 0016)', () => {
+    expect(checkPasswordLength('a'.repeat(11), MEMBER_PASSWORD_MIN_CODE_POINTS)).toBe('too_short');
+    expect(checkPasswordLength('a'.repeat(12), MEMBER_PASSWORD_MIN_CODE_POINTS)).toBeNull();
+    expect(memberPasswordSchema.safeParse('a'.repeat(11)).error?.issues[0]?.message).toMatch(/at least 12/);
+    expect(newPasswordSchema.safeParse('a'.repeat(8)).success).toBe(true);
+    expect(
+      registerCompleteFormSchema.safeParse({
+        handle: 'demo_user',
+        password: 'eight888',
+        confirmPassword: 'eight888',
+      }).success,
+    ).toBe(false);
   });
 });
 

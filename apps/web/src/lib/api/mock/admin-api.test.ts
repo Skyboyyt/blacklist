@@ -259,6 +259,79 @@ describe('staff suspension, offboarding and recovery', () => {
     expect(store.invitations[0]?.state).toBe('issued');
   });
 
+  it('objections need a reason and step-up; only the objector withdraws; a non-objector reopens (ADR 0013 C)', async () => {
+    const opened = ok(
+      await withStepUp('staff.recovery.open', 'stf_mod_c', ['stf_mod_c'], () =>
+        admin.openRecovery('stf_mod_c'),
+      ),
+    );
+    ok(
+      await admin.verifyRecovery(opened.id, 'Video call with ID check.', 'Matched the staff photo on file.'),
+    );
+    as('admin_b');
+    ok(await admin.verifyRecovery(opened.id, 'Call-back to the number.', 'Matched the known phone number.'));
+    ok(
+      await withStepUp('staff.recovery.approve', opened.id, [opened.id], () =>
+        admin.approveRecovery(opened.id),
+      ),
+    );
+    const reason = 'The subject told me they did not ask for this.';
+    expect(code(await admin.objectRecovery(opened.id, reason))).toBe('stepup_required');
+    expect(code(await admin.objectRecovery(opened.id, 'short'))).toBe('invalid_transition');
+    const objected = ok(
+      await withStepUp('staff.recovery.object', opened.id, [opened.id, reason], () =>
+        admin.objectRecovery(opened.id, reason),
+      ),
+    );
+    expect(objected).toMatchObject({ state: 'objected', viewerObjected: true });
+    as('admin');
+    expect(code(await admin.withdrawRecoveryObjection(opened.id))).toBe('not_eligible');
+    as('admin_b');
+    expect(
+      code(
+        await withStepUp('staff.recovery.reopen', opened.id, [opened.id], () =>
+          admin.reopenRecovery(opened.id),
+        ),
+      ),
+    ).toBe('not_eligible');
+    const withdrawn = ok(
+      await withStepUp('staff.recovery.withdraw', opened.id, [opened.id], () =>
+        admin.withdrawRecoveryObjection(opened.id),
+      ),
+    );
+    expect(withdrawn.state).toBe('objection_window');
+    ok(
+      await withStepUp('staff.recovery.object', opened.id, [opened.id, reason], () =>
+        admin.objectRecovery(opened.id, reason),
+      ),
+    );
+    as('admin');
+    const reopened = ok(
+      await withStepUp('staff.recovery.reopen', opened.id, [opened.id], () =>
+        admin.reopenRecovery(opened.id),
+      ),
+    );
+    expect(reopened).toMatchObject({ state: 'verifying', reopensCaseId: opened.id });
+    as('admin_b');
+    expect(
+      code(await admin.verifyRecovery(reopened.id, 'Video call again.', 'Matched the staff photo on file.')),
+    ).toBe('not_eligible');
+    expect(
+      code(
+        await withStepUp('staff.recovery.withdraw', opened.id, [opened.id], () =>
+          admin.withdrawRecoveryObjection(opened.id),
+        ),
+      ),
+    ).toBe('invalid_transition');
+    expect(store.audit.map((a) => a.action)).toEqual(
+      expect.arrayContaining([
+        'staff_recovery_objected',
+        'staff_recovery_withdrawn',
+        'staff_recovery_reopened',
+      ]),
+    );
+  });
+
   it('moderators verify identity from the staff screen; one of the two verifiers must be an administrator (identity §10.11)', async () => {
     const opened = ok(
       await withStepUp('staff.recovery.open', 'stf_mod_c', ['stf_mod_c'], () =>

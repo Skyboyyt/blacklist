@@ -71,12 +71,19 @@ export async function resetPassword(
   // Cheap token pre-check before Argon2 and the breach lookup (CR-15.2); the locked
   // re-check in the transaction stays authoritative.
   const [candidate] = await ctx.runtime.db
-    .select({ state: schema.tokens.state, expiresAt: schema.tokens.expiresAt })
+    .select({
+      state: schema.tokens.state,
+      expiresAt: schema.tokens.expiresAt,
+      accountKind: schema.user.accountKind,
+    })
     .from(schema.tokens)
+    .innerJoin(schema.user, eq(schema.user.id, schema.tokens.userId))
     .where(and(eq(schema.tokens.tokenHash, digest(rawToken)), eq(schema.tokens.purpose, 'password_reset')));
   if (!candidate || candidate.state !== 'active' || candidate.expiresAt.getTime() <= Date.now())
     throw new DomainError('token_invalid');
-  const stored = await preparePassword(password, ctx.breachCheck);
+  // The minimum depends on the account kind (ADR 0016); the locked re-check confirms it.
+  const kind = candidate.accountKind === 'staff' ? 'staff' : 'member';
+  const stored = await preparePassword(password, kind, ctx.breachCheck);
   let proof: VerifiedAssertion | undefined;
   if (assertion) {
     const [token] = await ctx.runtime.db
@@ -100,6 +107,7 @@ export async function resetPassword(
   }
   await ctx.runtime.transaction(async (tx, client) => {
     const { token, state, user } = await lockedToken(tx, rawToken, 'password_reset');
+    if ((user.accountKind === 'staff' ? 'staff' : 'member') !== kind) throw new DomainError('token_invalid');
     if (user.accountKind === 'staff') {
       if (!proof) throw new DomainError('passkey_required');
       await consumeAssertion(tx, proof, { userId: user.id, purpose: 'reset', tokenId: token.id });

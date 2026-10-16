@@ -103,7 +103,7 @@ export async function startEnrollment(ctx: IdentityContext, rawToken: string, co
 }
 export async function setEnrollmentPassword(ctx: IdentityContext, flowToken: string, password: string) {
   await ctx.runtime.transaction((tx) => lockFlow(tx, flowToken));
-  const stored = await preparePassword(password, ctx.breachCheck);
+  const stored = await preparePassword(password, 'staff', ctx.breachCheck);
   await ctx.runtime.transaction(async (tx) => {
     const { flow } = await lockFlow(tx, flowToken);
     await tx

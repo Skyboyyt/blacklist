@@ -1,4 +1,4 @@
-import { readWorkerConfig } from '@blacklist/config';
+import { readWorkerConfig, resolveRegistrationAccess } from '@blacklist/config';
 import { createDelivery } from '@blacklist/domain';
 import { startWorker } from './worker.ts';
 import { smtpMailer } from './mail/smtp.ts';
@@ -6,7 +6,7 @@ import { resendMailer } from './mail/resend.ts';
 import { startWorkerHealth, closeWorkerHealth } from './health.ts';
 import type { Server } from 'node:http';
 const config = readWorkerConfig();
-const ctx = createDelivery(config.DATABASE_URL, config.APP_ORIGIN);
+const ctx = createDelivery(config.DATABASE_URL, config.APP_ORIGIN, resolveRegistrationAccess(config));
 let health: Server | undefined;
 try {
   await ctx.runtime.start();

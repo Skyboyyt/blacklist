@@ -13,7 +13,7 @@ describe('application token delivery lock ordering', () => {
       url.password = pool.options.password;
       return url.toString();
     };
-    const ctx = createDelivery(urlFor(h.runtime), 'https://blacklist.example.invalid');
+    const ctx = createDelivery(urlFor(h.runtime), 'https://blacklist.example.invalid', { mode: 'open' });
     const blocker = await h.runtime.connect();
     let sending: Promise<unknown> | undefined;
     let sent = 0;
@@ -79,7 +79,7 @@ describe('application token delivery lock ordering', () => {
       url.password = pool.options.password;
       return url.toString();
     };
-    const ctx = createDelivery(urlFor(h.runtime), 'https://blacklist.example.invalid');
+    const ctx = createDelivery(urlFor(h.runtime), 'https://blacklist.example.invalid', { mode: 'open' });
     const blocker = await h.runtime.connect();
     let releaseMail: (() => void) | undefined;
     let sending: Promise<unknown> | undefined;

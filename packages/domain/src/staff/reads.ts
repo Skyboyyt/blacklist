@@ -125,13 +125,15 @@ export async function staffAdministration(ctx: IdentityContext, actor: UserActor
       .orderBy(desc(schema.recoveries.createdAt))
       .limit(100);
     const verifications = await tx.select().from(schema.recoveryVerifications);
+    const objections = await tx.select().from(schema.recoveryObjections);
     return {
       overview: {
         activeStaff: users.filter((u) => u.accountKind === 'staff' && u.status === 'active').length,
         pendingInvitations: invitations.filter((i) => ['pending_approval', 'issued'].includes(i.state))
           .length,
         pendingRoleRequests: roles.filter((r) => r.state === 'pending').length,
-        openRecoveryCases: recoveries.filter((r) => !['completed', 'cancelled'].includes(r.state)).length,
+        openRecoveryCases: recoveries.filter((r) => !['completed', 'cancelled', 'objected'].includes(r.state))
+          .length,
         suspendedMembers: users.filter((u) => u.accountKind === 'member' && u.status === 'suspended').length,
         activeLabels: 0,
         activeSuppressions: 0,
@@ -163,6 +165,12 @@ export async function staffAdministration(ctx: IdentityContext, actor: UserActor
         verifications: verifications
           .filter((v) => v.caseId === r.id)
           .map((v) => ({ verifier: ref(v.verifier), method: v.method, at: v.createdAt.toISOString() })),
+        ...objectionView(
+          r,
+          objections.filter((o) => o.caseId === r.id),
+          actor.actorRef,
+          ref,
+        ),
       })),
       members: users
         .filter((u) => u.accountKind === 'member' && u.status !== 'deactivated')
@@ -190,4 +198,24 @@ export async function cancelRoleRequest(ctx: IdentityContext, actor: UserActor, 
       throw new DomainError('forbidden');
     await tx.update(schema.roleRequests).set({ state: 'cancelled' }).where(eq(schema.roleRequests.id, id));
   });
+}
+type StaffRef = { id: string; handle: string };
+/** Shared by the admin and verifier views of a recovery case (ADR 0013 C). */
+export function objectionView(
+  r: typeof schema.recoveries.$inferSelect,
+  objections: Array<typeof schema.recoveryObjections.$inferSelect>,
+  viewerRef: string,
+  ref: (id: string) => StaffRef,
+) {
+  return {
+    reopensCaseId: r.reopensCaseId,
+    objections: objections.map((o) => ({
+      by: ref(o.objector),
+      kind: o.objectorKind as 'staff' | 'subject' | 'operator',
+      reason: o.reason,
+      at: o.createdAt.toISOString(),
+      withdrawnAt: o.withdrawnAt?.toISOString() ?? null,
+    })),
+    viewerObjected: objections.some((o) => o.objector === viewerRef && !o.withdrawnAt),
+  };
 }

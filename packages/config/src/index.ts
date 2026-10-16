@@ -36,6 +36,18 @@ const shared = z.object({
   BREAK_GLASS_ENABLED: z.enum(['true', 'false']).default('false'),
   WEBAUTHN_RP_ID: z.string().min(1),
   WEBAUTHN_RP_NAME: z.string().min(1).default('Blacklist'),
+  /** ADR 0019: member sign-up is invite-only while staging holds real users. */
+  REGISTRATION_MODE: z.enum(['open', 'invite']).optional(),
+  /** Comma-separated SHA-256 hex digests of invited emails (trimmed, lower-cased). */
+  REGISTRATION_INVITE_EMAILS_SHA256: z
+    .string()
+    .default('')
+    .refine((value) =>
+      value
+        .split(',')
+        .map((item) => item.trim())
+        .every((item) => item === '' || /^[a-f0-9]{64}$/u.test(item)),
+    ),
 });
 const apiSchema = shared.extend({
   DEPLOYMENT_ENV: z.enum(['local', 'staging', 'production']).default('local'),
@@ -135,6 +147,23 @@ const workerSchema = shared.omit({ BETTER_AUTH_SECRET: true }).extend({
   SMTP_PASSWORD: z.string().optional(),
   EMAIL_FROM: z.string().email(),
 });
+export type RegistrationAccess =
+  { readonly mode: 'open' } | { readonly mode: 'invite'; readonly emailDigests: ReadonlySet<string> };
+/** Invite-only unless explicitly opened when running as a hosted (production) service (ADR 0019). */
+export function resolveRegistrationAccess(config: {
+  readonly NODE_ENV: 'development' | 'test' | 'production';
+  readonly REGISTRATION_MODE?: 'open' | 'invite' | undefined;
+  readonly REGISTRATION_INVITE_EMAILS_SHA256: string;
+}): RegistrationAccess {
+  const mode = config.REGISTRATION_MODE ?? (config.NODE_ENV === 'production' ? 'invite' : 'open');
+  if (mode === 'open') return Object.freeze({ mode });
+  const emailDigests = new Set(
+    config.REGISTRATION_INVITE_EMAILS_SHA256.split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+  return Object.freeze({ mode, emailDigests });
+}
 function parse<S extends z.ZodType>(
   schema: S,
   env: Record<string, string | undefined>,

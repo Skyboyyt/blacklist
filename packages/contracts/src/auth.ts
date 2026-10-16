@@ -7,7 +7,10 @@
  */
 import { z } from './zod.ts';
 
+/** Lower bound for every new password; staff accounts use it (ADR 0016, amended 2026-10-16). */
 export const PASSWORD_MIN_CODE_POINTS = 8;
+/** Member accounts are password-only in V1, so their minimum is higher (ADR 0016). */
+export const MEMBER_PASSWORD_MIN_CODE_POINTS = 12;
 export const PASSWORD_MAX_CODE_POINTS = 128;
 export const PASSWORD_MAX_BYTES = 512;
 
@@ -33,26 +36,41 @@ export function utf8ByteLength(value: string): number {
 export type PasswordProblem = 'too_short' | 'too_long' | 'too_many_bytes';
 
 /** Returns the first rule the (normalized) password breaks, or null. Never truncates. */
-export function checkPasswordLength(raw: string): PasswordProblem | null {
+export function checkPasswordLength(raw: string, minimum = PASSWORD_MIN_CODE_POINTS): PasswordProblem | null {
   const value = normalizePassword(raw);
   const points = codePointLength(value);
-  if (points < PASSWORD_MIN_CODE_POINTS) return 'too_short';
+  if (points < minimum) return 'too_short';
   if (points > PASSWORD_MAX_CODE_POINTS) return 'too_long';
   if (utf8ByteLength(value) > PASSWORD_MAX_BYTES) return 'too_many_bytes';
   return null;
 }
 
-export const PASSWORD_PROBLEM_MESSAGES: Readonly<Record<PasswordProblem, string>> = {
-  too_short: `Use at least ${PASSWORD_MIN_CODE_POINTS} characters.`,
-  too_long: `Use at most ${PASSWORD_MAX_CODE_POINTS} characters.`,
-  too_many_bytes: 'This password is too long. Use fewer special characters or a shorter passphrase.',
-};
+export function passwordProblemMessage(problem: PasswordProblem, minimum = PASSWORD_MIN_CODE_POINTS): string {
+  switch (problem) {
+    case 'too_short':
+      return `Use at least ${minimum} characters.`;
+    case 'too_long':
+      return `Use at most ${PASSWORD_MAX_CODE_POINTS} characters.`;
+    case 'too_many_bytes':
+      return 'This password is too long. Use fewer special characters or a shorter passphrase.';
+  }
+}
 
-/** New-password rule (registration, reset, change). */
-export const newPasswordSchema = z.string().superRefine((value, ctx) => {
-  const problem = checkPasswordLength(value);
-  if (problem) ctx.addIssue({ code: 'custom', message: PASSWORD_PROBLEM_MESSAGES[problem] });
-});
+function newPasswordRule(minimum: number) {
+  return z.string().superRefine((value, ctx) => {
+    const problem = checkPasswordLength(value, minimum);
+    if (problem) ctx.addIssue({ code: 'custom', message: passwordProblemMessage(problem, minimum) });
+  });
+}
+
+/**
+ * New-password lower bound. Staff enrollment and staff changes use it; the reset form
+ * uses it too because the account kind is unknown there, and the API applies the
+ * member minimum to member accounts.
+ */
+export const newPasswordSchema = newPasswordRule(PASSWORD_MIN_CODE_POINTS);
+/** New member password (registration, member password change). */
+export const memberPasswordSchema = newPasswordRule(MEMBER_PASSWORD_MIN_CODE_POINTS);
 
 /** Sign-in only checks presence: length rules must not reveal anything about stored passwords. */
 export const currentPasswordSchema = z.string().min(1, 'Enter your password.');
@@ -102,7 +120,7 @@ export type RegisterStartRequest = z.infer<typeof registerStartRequestSchema>;
 export const registerCompleteFormSchema = z
   .strictObject({
     handle: handleSchema,
-    password: newPasswordSchema,
+    password: memberPasswordSchema,
     confirmPassword: z.string().min(1, 'Confirm your password.'),
   })
   .refine((v) => normalizePassword(v.password) === normalizePassword(v.confirmPassword), {

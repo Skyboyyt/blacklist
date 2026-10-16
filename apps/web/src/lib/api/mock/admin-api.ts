@@ -17,6 +17,7 @@ import {
   invitationRequestSchema,
   labelRequestSchema,
   reasonRequestSchema,
+  recoveryObjectionSchema,
   roleChangeRequestSchema,
   suppressionRequestSchema,
   type AuditEntry,
@@ -30,7 +31,7 @@ import { KNOWN_ACCOUNT_EMAILS } from './fixtures/admin';
 import { STAFF } from './fixtures/moderation';
 import { applySuppression, liftSuppression, syncLabel } from './public-effects';
 import { currentPasskeyResult, currentScenario, currentViewerKey, type MockViewerKey } from './scenario';
-import { addRecoveryVerification } from './recovery';
+import { addRecoveryVerification, chainObjectors } from './recovery';
 import { createStore, nextId, type MockStore } from './store';
 
 export interface MockAdminOptions {
@@ -102,6 +103,11 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
     );
   }
 
+  /** Per-viewer copy: `viewerObjected` reflects the caller's own standing objection. */
+  const recoveryView = (r: RecoveryCase, me: StaffRef): RecoveryCase => ({
+    ...clone(r),
+    viewerObjected: r.objections.some((o) => o.by.id === me.id && o.withdrawnAt === null),
+  });
   const activeAdmins = () => store.staff.filter((s) => s.status === 'active' && s.roles.includes('admin'));
   const forbidden = <T>() =>
     err<T>('forbidden', 'The administrator console needs an active administrator account.');
@@ -390,7 +396,8 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
 
     async listRecoveries() {
       await wait();
-      return admin() ? ok(clone(store.recoveries)) : forbidden();
+      const me = admin();
+      return me ? ok(store.recoveries.map((r) => recoveryView(r, me))) : forbidden();
     },
 
     async openRecovery(staffId) {
@@ -401,7 +408,11 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
       if (!subject || subject.status === 'deactivated') return notFound;
       if (subject.id === me.id)
         return err('not_eligible', 'Another administrator must open your recovery case.');
-      if (store.recoveries.some((r) => r.subject.id === staffId && r.state !== 'completed')) {
+      if (
+        store.recoveries.some(
+          (r) => r.subject.id === staffId && !['completed', 'cancelled', 'objected'].includes(r.state),
+        )
+      ) {
         return err('invalid_transition', 'A recovery case is already open for this person.');
       }
       if (!consume('staff.recovery.open', staffId, [staffId])) return stepUp;
@@ -418,6 +429,9 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
         objectionWindowEndsAt: null,
         state: 'verifying',
         createdAt: at(),
+        reopensCaseId: null,
+        objections: [],
+        viewerObjected: false,
       };
       store.recoveries.unshift(recovery);
       record(me, 'staff_recovery_opened', null, [
@@ -447,6 +461,11 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
           'Approval must come from a different administrator than the one who opened the case.',
         );
       }
+      if (chainObjectors(store, r).has(me.id))
+        return err(
+          'not_eligible',
+          'You objected to an earlier case for this person, so you cannot approve this one.',
+        );
       if (!consume('staff.recovery.approve', id, [id])) return stepUp;
       r.approvedBy = me;
       r.state = 'objection_window';
@@ -455,6 +474,102 @@ export function createMockAdminApi(options: MockAdminOptions): AdminApi {
         { field: r.subject.handle, from: 'awaiting approval', to: '24-hour objection window' },
       ]);
       return ok(clone(r));
+    },
+
+    async objectRecovery(id, reason) {
+      await wait();
+      const me = admin();
+      if (!me) return forbidden();
+      const r = store.recoveries.find((x) => x.id === id);
+      if (!r) return notFound;
+      if (!['objection_window', 'fresh_enrollment'].includes(r.state))
+        return err(
+          'invalid_transition',
+          'Objections are possible during the objection window or re-enrollment.',
+        );
+      if (r.subject.id === me.id) return err('not_eligible', 'You cannot object to your own recovery.');
+      const parsed = recoveryObjectionSchema.safeParse({ reason });
+      if (!parsed.success) return err('invalid_transition', 'Say why you object (at least 10 characters).');
+      if (!consume('staff.recovery.object', id, [id, parsed.data.reason])) return stepUp;
+      r.objections.push({ by: me, kind: 'staff', reason: parsed.data.reason, at: at(), withdrawnAt: null });
+      r.state = 'objected';
+      record(me, 'staff_recovery_objected', parsed.data.reason, [
+        { field: r.subject.handle, from: 'recovery in progress', to: 'objected' },
+      ]);
+      return ok(recoveryView(r, me));
+    },
+
+    async withdrawRecoveryObjection(id) {
+      await wait();
+      const me = admin();
+      if (!me) return forbidden();
+      const r = store.recoveries.find((x) => x.id === id);
+      if (!r) return notFound;
+      const standing = r.objections.filter((o) => o.withdrawnAt === null);
+      const own = standing.find(
+        (o) => o.by.id === me.id && now().getTime() - Date.parse(o.at) < OBJECTION_WINDOW_MS,
+      );
+      if (r.state !== 'objected' || !own)
+        return err('not_eligible', 'Only the person who objected can withdraw it, within 24 hours.');
+      if (store.recoveries.some((x) => x.reopensCaseId === id))
+        return err('invalid_transition', 'A new case was already opened to resolve this objection.');
+      if (!consume('staff.recovery.withdraw', id, [id])) return stepUp;
+      own.withdrawnAt = at();
+      if (standing.length === 1) {
+        r.state = 'objection_window';
+        r.objectionWindowEndsAt = new Date(now().getTime() + OBJECTION_WINDOW_MS).toISOString();
+      }
+      record(me, 'staff_recovery_withdrawn', null, [
+        {
+          field: r.subject.handle,
+          from: 'objected',
+          to: r.state === 'objected' ? 'objected' : '24-hour objection window',
+        },
+      ]);
+      return ok(recoveryView(r, me));
+    },
+
+    async reopenRecovery(id) {
+      await wait();
+      const me = admin();
+      if (!me) return forbidden();
+      const r = store.recoveries.find((x) => x.id === id);
+      if (!r) return notFound;
+      if (r.state !== 'objected')
+        return err('invalid_transition', 'Only an objected case can be resolved this way.');
+      if (
+        r.subject.id === me.id ||
+        r.objections.some((o) => o.by.id === me.id) ||
+        chainObjectors(store, r).has(me.id)
+      )
+        return err('not_eligible', 'An administrator who did not object must open the new case.');
+      if (
+        store.recoveries.some(
+          (x) =>
+            x.reopensCaseId === id ||
+            (x.subject.id === r.subject.id && !['completed', 'cancelled', 'objected'].includes(x.state)),
+        )
+      )
+        return err('invalid_transition', 'A recovery case is already open for this person.');
+      if (!consume('staff.recovery.reopen', id, [id])) return stepUp;
+      const reopened: RecoveryCase = {
+        id: nextId(store, 'REC'),
+        subject: r.subject,
+        openedBy: me,
+        verifications: [],
+        approvedBy: null,
+        objectionWindowEndsAt: null,
+        state: 'verifying',
+        createdAt: at(),
+        reopensCaseId: r.id,
+        objections: [],
+        viewerObjected: false,
+      };
+      store.recoveries.unshift(reopened);
+      record(me, 'staff_recovery_reopened', null, [
+        { field: r.subject.handle, from: `objected (${r.id})`, to: `new case ${reopened.id}` },
+      ]);
+      return ok(recoveryView(reopened, me));
     },
 
     async completeRecovery(id) {

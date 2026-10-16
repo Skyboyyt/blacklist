@@ -94,10 +94,10 @@ describe('token pages', () => {
     const user = userEvent.setup();
     render(<RegisterCompleteForm />);
     await user.type(await screen.findByLabelText('Handle'), 'demo_user');
-    await user.type(screen.getByLabelText('Password'), 'seven77');
-    await user.type(screen.getByLabelText('Confirm password'), 'seven77');
+    await user.type(screen.getByLabelText('Password'), 'eleven11111');
+    await user.type(screen.getByLabelText('Confirm password'), 'eleven11111');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
-    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/Use at least 8 characters/);
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/Use at least 12 characters/);
     expect(registerComplete).not.toHaveBeenCalled();
   });
 
@@ -107,8 +107,8 @@ describe('token pages', () => {
     const user = userEvent.setup();
     render(<RegisterCompleteForm />);
     await user.type(await screen.findByLabelText('Handle'), 'demo_user');
-    await user.type(screen.getByLabelText('Password'), 'test8888');
-    await user.type(screen.getByLabelText('Confirm password'), 'test8888');
+    await user.type(screen.getByLabelText('Password'), 'test88888888');
+    await user.type(screen.getByLabelText('Confirm password'), 'test88888888');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(await screen.findByText(/breach or common-password list/)).toBeInTheDocument();
     expect(screen.queryByText('Account created')).not.toBeInTheDocument();

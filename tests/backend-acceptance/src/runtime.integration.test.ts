@@ -144,7 +144,14 @@ beforeAll(async () => {
   };
   ctx = createIdentity(
     env.DATABASE_URL,
-    { secret, origin, rpId: 'localhost', rpName: 'Blacklist', breakGlassEnabled: false },
+    {
+      secret,
+      origin,
+      rpId: 'localhost',
+      rpName: 'Blacklist',
+      breakGlassEnabled: false,
+      registration: { mode: 'open' },
+    },
     { breach: async () => false },
   );
   await ctx.runtime.start();
@@ -351,9 +358,9 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
       vi.unstubAllGlobals();
     }
   });
-  it('registers and resets with eight characters while rejecting shorter passwords, expired links and replay', async () => {
+  it('registers and resets members with twelve characters while rejecting shorter passwords, expired links and replay (ADR 0016)', async () => {
     const email = `eight-${randomUUID()}@example.test`,
-      password = randomBytes(4).toString('hex');
+      password = randomBytes(6).toString('hex');
     expect((await post('/api/v1/auth/register/start', { email })).statusCode).toBe(202);
     const token = await findToken(email, '/register/complete');
     const form = { handle: `e_${randomBytes(5).toString('hex')}`, password, confirmPassword: password };
@@ -361,7 +368,7 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
       (
         await post('/api/v1/auth/register/complete', {
           token,
-          form: { ...form, password: 'short77', confirmPassword: 'short77' },
+          form: { ...form, password: 'eleven11111', confirmPassword: 'eleven11111' },
         })
       ).statusCode,
     ).toBe(400);
@@ -397,12 +404,12 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
     expect((await post('/api/v1/auth/login', { email, password })).statusCode).toBe(200);
     expect((await post('/api/v1/auth/password/forgot', { email })).statusCode).toBe(202);
     const reset = await findToken(email, '/reset-password'),
-      next = randomBytes(4).toString('hex');
+      next = randomBytes(6).toString('hex');
     expect(
       (
         await post('/api/v1/auth/password/reset', {
           token: reset,
-          form: { password: 'short77', confirmPassword: 'short77' },
+          form: { password: 'eleven11111', confirmPassword: 'eleven11111' },
         })
       ).statusCode,
     ).toBe(400);

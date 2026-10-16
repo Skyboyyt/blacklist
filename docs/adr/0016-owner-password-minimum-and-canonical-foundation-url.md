@@ -2,9 +2,9 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted by explicit owner instruction; Claude independent review pending |
+| Status | **Accepted, amended by the owner on 2026-10-16: staff minimum 8, member minimum 12** |
 | Proposed by | Codex, 2026-10-13 |
-| Reviewed by | Claude recommendation pending; no independent review claimed |
+| Reviewed by | Claude, 2026-10-15 (recommendation below) |
 | Decided by | Owner, 2026-10-13: registration/reset failing on blacklist-web-eta.vercel.app; “reduce the password requirement to8” |
 | Affects | Identity §3, PRD AUTH-5/P-1, prior ADR0001 length rule, current frontend/backend validation; public foundation hosting only |
 
@@ -36,3 +36,12 @@ Free Render API/worker still sleep independently. Manual worker wake-up before a
 ## Decision (owner)
 
 The latest explicit8character requirement supersedes the former15character length choice for this implementation. The owner previously authorized merging/public foundation activation and now identified the existing default public URL whose registration/reset must work. That authorizes scoped repair there using existing staging infrastructure; no production data/billing/new phase or security-policy waiver is inferred.
+
+## Amendment (owner, 2026-10-16)
+
+The owner chose Claude's option: **staff passwords at least 8 code points; member passwords at least 12.** Staff accounts always have two WebAuthn authenticators, so the password is one factor of MFA. Member accounts are password-only in V1, so their minimum is raised toward the NIST SP 800-63B-4 single-factor guidance.
+- **Applies when a password is set:** registration, member password change, and password reset (by account kind).
+- **Existing passwords** shorter than 12 still sign in. Members are asked for 12 or more the next time they change or reset their password. No forced reset.
+- Better Auth's global `minPasswordLength` stays 8 as the lower bound; the identity domain enforces the per-kind minimum.
+- **Still required by the conditions above:** a larger bundled common-password list (CR-05, needs an approved source) and a human verifier (O-6).
+

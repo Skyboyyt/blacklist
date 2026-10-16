@@ -16,6 +16,7 @@ import {
   resetPassword,
   confirmEmailChange,
   resetChallenge,
+  redeemRecoveryObjectionLink,
   type IdentityContext,
 } from '@blacklist/domain';
 import { assertionSchema } from './webauthn-schemas.ts';
@@ -64,6 +65,14 @@ export function authRoutes(app: FastifyInstance, ctx: IdentityContext) {
   app.post('/api/v1/auth/password/reset/challenge', { config: publicMutation }, async (req) =>
     resetChallenge(ctx, z.strictObject({ token: flowTokenSchema }).parse(req.body).token),
   );
+  // ADR 0013 C2: records the subject's objection (or its one withdrawal); grants nothing else.
+  app.post('/api/v1/auth/staff-recovery/objection', { config: publicMutation }, async (req) => {
+    const input = z
+      .strictObject({ token: flowTokenSchema, operation: z.enum(['object', 'withdraw']) })
+      .parse(req.body);
+    await redeemRecoveryObjectionLink(ctx, input.token, input.operation, req.clientPrefix);
+    return { kind: 'success' };
+  });
   app.post('/api/v1/auth/email-change/confirm', { config: publicMutation }, async (req) => {
     await confirmEmailChange(
       ctx,

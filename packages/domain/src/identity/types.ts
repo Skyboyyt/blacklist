@@ -1,3 +1,4 @@
+import type { RegistrationAccess } from '@blacklist/config';
 import type { DatabaseRuntime } from '@blacklist/db';
 import type { IdentityAuth } from './auth.ts';
 import type { createThrottle } from './throttle.ts';
@@ -8,6 +9,7 @@ export interface IdentitySettings {
   rpId: string;
   rpName: string;
   breakGlassEnabled: boolean;
+  registration: RegistrationAccess;
 }
 export interface IdentityContext {
   runtime: DatabaseRuntime;
@@ -18,5 +20,5 @@ export interface IdentityContext {
 }
 export interface DeliveryContext {
   runtime: DatabaseRuntime;
-  settings: { origin: string };
+  settings: { origin: string; registration: RegistrationAccess };
 }

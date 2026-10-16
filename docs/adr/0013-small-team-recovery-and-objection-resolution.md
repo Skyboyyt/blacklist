@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | **Proposed — not implemented** |
+| Status | **Accepted with Claude's amendment (owner, 2026-10-16)** |
 | Proposed by | Codex, 2026-10-13 |
-| Reviewed by | Pending Claude |
-| Decided by | Pending project owner |
+| Reviewed by | Claude, 2026-10-15 (recommendation below) |
+| Decided by | Owner, 2026-10-16: "Accept the design" |
 | Affects | Identity §10.11–§10.13, P-13, staff recovery, T-03/T-07/T-46 |
 
 ## Problem
@@ -74,3 +74,8 @@ Identity §10.11 as implemented:
   - verification and the window restart after reopening.
 
 **Owner decisions required:** accept this amendment; record P-13 (who the operator is, and whether a second person must approve operator actions).
+
+## Decision (owner)
+
+**Accepted on 2026-10-16** with the transition model in sections A–D above. Sole-admin recovery and objection resolution may now be implemented exactly as specified there, with the negative tests in D. **P-13 is still open:** the owner must still record who the named operator is and whether a second person must approve operator actions. Until P-13 is recorded, the operator branch (B) stays unavailable in code; the objection, withdrawal and reopening changes (C) do not depend on P-13.
+

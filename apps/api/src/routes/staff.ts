@@ -36,6 +36,8 @@ import {
   approveRecovery,
   completeRecovery,
   objectRecovery,
+  withdrawRecoveryObjection,
+  reopenRecovery,
   staffSecurity,
   listStaff,
   listInvitations,
@@ -121,8 +123,20 @@ export function staffRoutes(app: FastifyInstance, ctx: IdentityContext) {
     return { kind: 'ok' };
   });
   app.post('/api/v1/admin/recoveries/object', { config: admin }, async (req) => {
-    await objectRecovery(ctx, actor(req), z.strictObject({ id: z.uuid() }).parse(req.body).id);
+    const input = z
+      .strictObject({ id: z.uuid(), reason: z.string().trim().min(10).max(1000), assertion: assertionSchema })
+      .parse(req.body);
+    await objectRecovery(ctx, actor(req), input.id, input.reason, input.assertion);
     return { kind: 'ok' };
+  });
+  app.post('/api/v1/admin/recoveries/withdraw', { config: admin }, async (req) => {
+    const input = z.strictObject({ id: z.uuid(), assertion: assertionSchema }).parse(req.body);
+    await withdrawRecoveryObjection(ctx, actor(req), input.id, input.assertion);
+    return { kind: 'ok' };
+  });
+  app.post('/api/v1/admin/recoveries/reopen', { config: admin }, async (req) => {
+    const input = z.strictObject({ id: z.uuid(), assertion: assertionSchema }).parse(req.body);
+    return { id: await reopenRecovery(ctx, actor(req), input.id, input.assertion) };
   });
   app.post('/api/v1/admin/members/state', { config: admin }, async (req) => {
     const input = z

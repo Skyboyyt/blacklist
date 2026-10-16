@@ -3,9 +3,11 @@ import {
   boolean,
   check,
   foreignKey,
+  index,
   integer,
   jsonb,
   text,
+  timestamp,
   unique,
   uniqueIndex,
   uuid,
@@ -188,13 +190,71 @@ export const recoveries = bl.table(
     objectionWindowEndsAt: optionalAt('objection_window_ends_at'),
     state: text('state').notNull(),
     invitationId: uuid('invitation_id').references(() => invitations.id),
+    /** ADR 0013 C4: resolving an objection opens a new case that references the objected one. */
+    reopensCaseId: uuid('reopens_case_id'),
     createdAt: at('created_at'),
   },
   (t) => [
     check('recovery_approver_distinct', sql`${t.approvedBy} is null or ${t.approvedBy} <> ${t.openedBy}`),
+    check('recovery_reopens_other', sql`${t.reopensCaseId} is null or ${t.reopensCaseId} <> ${t.id}`),
+    foreignKey({ columns: [t.reopensCaseId], foreignColumns: [t.id], name: 'recovery_reopens_case_fk' }),
+    // An objected case stays as history (terminal) and no longer blocks a reopened case.
     uniqueIndex('one_open_recovery')
       .on(t.subjectUserId)
-      .where(sql`${t.state} not in ('completed','cancelled')`),
+      .where(sql`${t.state} not in ('completed','cancelled','objected')`),
+    uniqueIndex('one_reopen_per_case').on(t.reopensCaseId),
+  ],
+);
+/** ADR 0013 C: every objection is kept; withdrawal only stamps `withdrawn_at`. */
+export const recoveryObjections = bl.table(
+  'staff_recovery_objections',
+  {
+    id: id(),
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => recoveries.id),
+    objector: text('objector').notNull(),
+    objectorKind: text('objector_kind').notNull(),
+    reason: text('reason'),
+    createdAt: at('created_at'),
+    withdrawnAt: optionalAt('withdrawn_at'),
+  },
+  (t) => [
+    check('recovery_objector_kind_valid', sql`${t.objectorKind} in ('staff','subject','operator')`),
+    check(
+      'recovery_staff_objection_reason',
+      sql`${t.objectorKind} = 'subject' or char_length(${t.reason}) between 10 and 1000`,
+    ),
+    index('recovery_objections_by_objector').on(t.objector, t.createdAt),
+  ],
+);
+/**
+ * ADR 0013 C2: the subject's single-use, POST-only objection link. It records an
+ * objection (and then, once, its withdrawal) and grants nothing else. Redeemable only
+ * after the delivery layer reports `accepted_for_delivery` (identity §8).
+ */
+export const recoveryObjectionLinks = bl.table(
+  'staff_recovery_objection_links',
+  {
+    id: id(),
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => recoveries.id),
+    tokenHash: text('token_hash').unique(),
+    state: text('state').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: at('created_at'),
+    usedAt: optionalAt('used_at'),
+  },
+  (t) => [
+    check(
+      'recovery_link_state_valid',
+      sql`${t.state} in ('pending_delivery','active','objected','withdrawn','invalidated')`,
+    ),
+    check(
+      'recovery_link_hash_state',
+      sql`(${t.tokenHash} is null) = (${t.state} in ('invalidated','withdrawn'))`,
+    ),
   ],
 );
 export const recoveryVerifications = bl.table(

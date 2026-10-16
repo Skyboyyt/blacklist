@@ -7,6 +7,7 @@ import type { IdentityContext } from '../identity/types.ts';
 import { withStepup, type AssertionInput } from './webauthn.ts';
 import { invalidateAccount, notifyAdmins, createRecoveryInvitation } from './lifecycle.ts';
 import { lockActor } from '../identity/sessions.ts';
+import { chainObjectors } from './recovery-objections.ts';
 
 export function openRecovery(
   ctx: IdentityContext,
@@ -70,7 +71,9 @@ export async function verifyRecoveryIdentity(
     if (
       !r ||
       r.subjectUserId === actor.userId ||
-      !['identity_verification', 'second_admin_approval'].includes(r.state)
+      !['identity_verification', 'second_admin_approval'].includes(r.state) ||
+      // ADR 0013 C4: an objector never verifies a reopened case.
+      (await chainObjectors(tx, r)).has(actor.actorRef)
     )
       throw new DomainError('forbidden');
     const prior = await tx
@@ -99,7 +102,7 @@ async function approveTx(
   ctx: IdentityContext,
   tx: Parameters<typeof lockActor>[0],
   client: Parameters<Parameters<typeof ctx.runtime.transaction>[0]>[1],
-  actor: UserActor | OperatorActor,
+  actor: UserActor,
   id: string,
 ) {
   const [r] = await tx.select().from(schema.recoveries).where(eq(schema.recoveries.id, id)).for('update');
@@ -115,31 +118,11 @@ async function approveTx(
     actor.actorRef === subjectRef ||
     verifications.length !== 2 ||
     !verifications.some((v) => v.wasAdmin) ||
-    verifications.some((v) => v.verifier === subjectRef)
+    verifications.some((v) => v.verifier === subjectRef) ||
+    // ADR 0013 C4: an objector never approves a reopened case.
+    (await chainObjectors(tx, r)).has(actor.actorRef)
   )
     throw new DomainError('forbidden');
-  if (actor.kind === 'cli') {
-    const admins = await tx
-      .select({ id: schema.user.id })
-      .from(schema.roles)
-      .innerJoin(schema.user, eq(schema.roles.userId, schema.user.id))
-      .where(
-        and(eq(schema.roles.role, 'admin'), isNull(schema.roles.revokedAt), eq(schema.user.status, 'active')),
-      );
-    // The documented operator exception applies when the recovery subject was
-    // the only admin, rather than being an alternate approval route for a team.
-    const subjectRoles = await tx
-      .select()
-      .from(schema.roles)
-      .where(
-        and(
-          eq(schema.roles.userId, r.subjectUserId),
-          eq(schema.roles.role, 'admin'),
-          isNull(schema.roles.revokedAt),
-        ),
-      );
-    if (admins.length || !subjectRoles.length) throw new DomainError('forbidden');
-  }
   await tx
     .update(schema.recoveries)
     .set({
@@ -166,24 +149,14 @@ export function approveRecovery(
     (tx, client) => approveTx(ctx, tx, client, actor, id),
   );
 }
-export function operatorApproveRecovery(ctx: IdentityContext, actor: OperatorActor, id: string) {
-  return ctx.runtime.transaction((tx, client) => approveTx(ctx, tx, client, actor, id));
-}
-export async function objectRecovery(ctx: IdentityContext, actor: UserActor | OperatorActor, id: string) {
-  if (actor.kind === 'user') requirePermission(actor, 'staff:recovery:approve');
-  await ctx.runtime.transaction(async (tx, client) => {
-    if (actor.kind === 'user') await lockActor(tx, actor);
-    const [r] = await tx.select().from(schema.recoveries).where(eq(schema.recoveries.id, id)).for('update');
-    if (!r || !['objection_window', 'fresh_enrollment'].includes(r.state)) throw new DomainError('forbidden');
-    await tx.update(schema.recoveries).set({ state: 'objected' }).where(eq(schema.recoveries.id, id));
-    if (r.invitationId)
-      await tx
-        .update(schema.invitations)
-        .set({ state: 'revoked', tokenHash: null, deliveredAt: null })
-        .where(eq(schema.invitations.id, r.invitationId));
-    await appendAudit(tx, actor, 'staff.recovery.objected', 'recovery', id);
-    await notifyAdmins(ctx, tx, client, 'staff_recovery_objected', r.subjectUserId);
-  });
+/**
+ * ADR 0013 B (sole-admin recovery through the named operator) stays unavailable until
+ * the owner records P-13. The former operator branch could never run: it required an
+ * admin verifier, which a sole-admin case cannot have (ADR 0013 D). Until then the
+ * path is break-glass (identity §10.13).
+ */
+export async function operatorApproveRecovery(_ctx: IdentityContext, _actor: OperatorActor, _id: string) {
+  throw new DomainError('forbidden');
 }
 export function completeRecovery(
   ctx: IdentityContext,

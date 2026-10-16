@@ -16,7 +16,7 @@ export async function prepareStaffPasswordChange(
   prefix: string,
 ) {
   if (actor.accountKind !== 'staff' || !actor.staffAssured) throw new DomainError('forbidden');
-  const hash = await preparePassword(password, ctx.breachCheck);
+  const hash = await preparePassword(password, 'staff', ctx.breachCheck);
   return throttledPasswordCheck(ctx, actor.userId, prefix, () =>
     ctx.runtime.transaction(async (tx) => {
       const { state } = await lockActor(tx, actor);

@@ -46,7 +46,18 @@ export async function verifyLiveStepup(
       targetType = 'invitation';
     else if (action === 'staff.role.approve') targetType = 'role_request';
     else if (action === 'staff.recovery.open') targetType = 'account';
-    else if (['staff.recovery.approve', 'staff.recovery.complete'].includes(action)) targetType = 'recovery';
+    else if (action === 'staff.recovery.object') {
+      targetType = 'recovery';
+      params = reasonRequestSchema.parse({ reason: parameters[1] });
+    } else if (
+      [
+        'staff.recovery.approve',
+        'staff.recovery.complete',
+        'staff.recovery.withdraw',
+        'staff.recovery.reopen',
+      ].includes(action)
+    )
+      targetType = 'recovery';
     else if (action === 'staff.authenticator.remove') targetType = 'authenticator';
     else return { kind: 'failed' };
     const challenge = await request('/auth/staff/stepup/challenge', authenticationChallengeSchema, {

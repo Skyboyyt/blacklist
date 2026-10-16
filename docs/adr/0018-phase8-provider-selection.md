@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **Proposed — owner direction approved; Claude review and O-3 evidence pending** |
+| Status | **Accepted provisionally (owner, 2026-10-16): single-source display providers; research stays off until the provider verification table is met** |
 | Proposed by | Codex, 2026-10-14 (Europe/London) |
 | Scope | O-3 capability, archival, independence, cost and terms evaluation; no live deployment |
 
@@ -81,3 +81,10 @@ The owner saved both protected keys in the existing Render environment group. Re
 Bounded read-only evaluation using saved keys confirms Alchemy chainId1 and Helius mainnet genesis; real canonical Ethereum account/balance/block/history pagination/transaction and Solana account/context/slot/block/history pagination/successful and failed v0 transactions parse successfully. One current Solana transaction returns-32015 (unsupported version); it remains explicitly unavailable, not fabricated or silently upgraded. These probes establish sampled method access, not complete archival history, actual Free billing/credits/terms or secondary independence. Keys are no longer missing, but O-3 remains Proposed pending Claude review and outstanding provider evidence. Runtime activation flags stay off and no provider subscription, migration or deployment occurred.
 
 Read-only GitHub retrieval of Alchemy's official `alchemyplatform/alchemy-sdk-js` `src/types/types.ts`, `src/api/core-namespace.ts` and `src/internal/core-api.ts` confirmed the `alchemy_getAssetTransfers` request shape, hexadecimal `maxCount`, directional address filters and opaque `pageKey`. Source object IDs were respectively `20bc30b8c7d983a2f602ca78f732b5a7ecb489da`, `f0a062e4686a33453e2852a7917c14c6505fd39a` and `be014d315aef2b2029fe41f2cb69d93565530638`. This is protocol evidence, not actual account entitlement, archive coverage, reliability or terms verification. The implementation therefore keeps enhanced Ethereum history behind `ALCHEMY_INDEXED_HISTORY_VERIFIED=false` and provider activation behind `RESEARCH_ENABLED=false` / `RPC_PLAN_VERIFIED=false`.
+
+## Decision (owner, 2026-10-16)
+
+**Accepted provisionally** as Claude recommended: Helius Free (Solana) and Alchemy Free (Ethereum) as single-source display providers tagged `unknown-upstream`.
+- **Waiver recorded:** the provider code was merged (PR #12) before this ADR was accepted. The owner accepts that ordering for this case; it does not change the AGENTS §6 rule for future work.
+- **Conditions:** `RESEARCH_ENABLED`, `RPC_PLAN_VERIFIED` and every capability flag stay `false` until the "Outstanding provider verification" table is met and recorded. Cross-verification stays `unavailable` until an independent secondary provider is documented. **O-3 stays open** for the secondary.
+
