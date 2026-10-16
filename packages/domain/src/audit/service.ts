@@ -44,7 +44,29 @@ const staffEvents = [
   'user.suspended',
   'user.restored',
 ] as const;
-export type AuditAction = (typeof accountEvents)[number] | (typeof staffEvents)[number];
+// Phase 9a case events. Statuses and pseudonymous references only; notes, messages and
+// rationales stay in their own private tables.
+const moderationEvents = [
+  'moderation.case.created',
+  'moderation.case.assigned',
+  'moderation.case.unassigned',
+  'moderation.case.note_added',
+  'moderation.case.status_changed',
+  'moderation.case.info_requested',
+  'moderation.case.replied',
+  'moderation.case.standing_decided',
+  'finding.created',
+  'finding.revision_submitted',
+  'finding.approved',
+  'finding.rejected',
+  'finding.became_public',
+  'finding.superseded',
+  'finding.suspended',
+  'finding.reinstated',
+  'finding.reversed',
+] as const;
+export type AuditAction =
+  (typeof accountEvents)[number] | (typeof staffEvents)[number] | (typeof moderationEvents)[number];
 // No free-form values. Recovery rationale/operator incident live in private state,
 // not in the immutable audit payload. Event facts refer to IDs only.
 const detailKeys: Record<string, readonly string[]> = {
@@ -55,6 +77,19 @@ const detailKeys: Record<string, readonly string[]> = {
   'staff.role.revoked': ['role'],
   'staff.breakglass.invoked': ['incidentRef'],
   'staff.authenticator.flagged': ['reason'],
+  'moderation.case.assigned': ['assigneeRef'],
+  'moderation.case.unassigned': ['previousRef'],
+  'moderation.case.status_changed': ['from', 'to'],
+  'moderation.case.info_requested': ['from', 'to'],
+  'moderation.case.replied': ['from', 'to'],
+  'moderation.case.standing_decided': ['outcome'],
+  'finding.created': ['revisionNumber', 'severity'],
+  'finding.revision_submitted': ['revisionNumber', 'severity'],
+  'finding.approved': ['revisionNumber'],
+  'finding.rejected': ['revisionNumber'],
+  'finding.became_public': ['revisionNumber'],
+  'finding.superseded': ['revisionNumber'],
+  'finding.suspended': ['severity'],
 };
 export async function actorReference(tx: Database, userId: string) {
   await tx.insert(schema.actorMap).values({ actorRef: randomUUID(), userId }).onConflictDoNothing();
@@ -70,7 +105,8 @@ export async function appendAudit(
   targetId: string,
   details: Record<string, string | number | boolean> = {},
 ) {
-  if (![...accountEvents, ...staffEvents].includes(action)) throw new Error('unknown_audit_action');
+  if (![...accountEvents, ...staffEvents, ...moderationEvents].includes(action))
+    throw new Error('unknown_audit_action');
   if (
     Object.keys(details).some((k) => !detailKeys[action]?.includes(k)) ||
     Object.values(details).some((v) => typeof v === 'string' && v.length > 80)

@@ -8,3 +8,4 @@ export { createEvmRpcSource } from './providers/evm-rpc.ts';
 export { createSolanaRpcSource } from './providers/solana-rpc.ts';
 export { createRpcTransport, ProviderFault } from './providers/rpc-transport.ts';
 export { budgetedTransport, retryingTransport } from './providers/policy.ts';
+export { verifyEvmMessage, verifySolanaMessage } from './signatures.ts';

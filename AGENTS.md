@@ -13,7 +13,8 @@
   - **Owner decisions 2026-10-16:** member passwords 12, staff 8 (ADR 0016, amended); public member sign-up with a recorded staging-data risk acceptance (ADR 0019 superseded; the invite gate is opt-in).
   - **Public foundation:** the Vercel web app, Render API and worker, and the Neon staging database went public on the owner's explicit instruction (2026-10-13). This is **not** production readiness; Phase 11 launch gates (legal, retention, recovery, monitoring) remain.
   - **Claude's review** of Phases 7–8 and its follow-up fixes: [docs/reviews/2026-10-15-claude-phase7-8-review.md](docs/reviews/2026-10-15-claude-phase7-8-review.md).
-  - **Not authorized:** Phase 9 or later, paid resources, cloud migrations, provider activation, `activity_stream`.
+  - **Phase 9a (Reports & Moderation Backend, without image evidence):** authorized by the owner on 2026-10-16. Phase 9 work may merge before the Phase 7 independent security review (owner waiver, recorded in AI_HANDOFF). Phase 9b (isolated image processor and object storage) needs an accepted hosting ADR first.
+  - **Not authorized:** Phase 9b cloud resources, Phase 10 or later, paid resources, cloud migrations, provider activation, `activity_stream`.
   - **Owner instructions recorded in AI_HANDOFF** (direct pushes or merges to `main`, going live) applied to those occasions only; the ordinary Git, architecture and security rules below are unchanged.
 - **Execution is frontend-first** (owner decision; ARCHITECTURE.md §36):
   - Phases 1–6 build and review the primary frontend against `@blacklist/contracts` and a typed mock client.

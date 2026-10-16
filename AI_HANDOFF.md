@@ -16,15 +16,15 @@ This file holds the **current state only**. Each session adds one short entry un
 | Phase 7 (Backend Foundation) | Authorized 2026-10-13, merged (PRs #8–#11). Acceptance gates D1–D9 and S1–S17 recorded as passing by Codex. **Exit not closed:** independent security review; ADR 0013 accepted 2026-10-16 and part C implemented on the open branch (P-13 still open) |
 | Phase 8 (Chain Data & Research) | Authorized 2026-10-14, merged (PR #12) on explicit owner instruction despite disclosed blockers. **Research is off** (`RESEARCH_ENABLED=false`). ADR 0018 accepted provisionally 2026-10-16 (waiver recorded); O-3 open |
 | Deployment | Free staging services are public on explicit owner instruction (2026-10-13): Vercel web, Render API and worker, Neon PostgreSQL 18 staging database. **Not production-ready**; Phase 11 gates (legal, retention, recovery, monitoring) remain |
-| Authorized now | Owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9 or later, paid resources, cloud migrations, provider activation |
+| Authorized now | **Phase 9a** (owner, 2026-10-16): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Phase 9b (image evidence, object storage, processor) waits for a hosting ADR. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9b cloud resources, Phase 10 or later, paid resources, cloud migrations, provider activation |
 | Primary / reviewer | Claude / Codex |
-| Last agent | Claude: owner decisions of 2026-10-16 implemented on `claude/amazing-goodall-drtbc9` (PR open, not merged or deployed) |
+| Last agent | Claude: Phase 9a slices 1–4 on `claude/amazing-goodall-drtbc9` (PR #17 open, not merged; 0007 not applied to Neon) |
 | Last updated | 2026-10-16 |
 
 ## Open work, by owner
 
 **Owner decisions and actions**
-1. **To deploy:** PR #15 is merged and 0006 is applied to Neon; finish the runbook's other Step 4 checks, then deploy the Render API and worker and Vercel. Registration is **public** (owner, 2026-10-16): if PR #15 is already deployed, set `REGISTRATION_MODE=open` on both the Render API and worker now; after the next deploy the default is `open` anyway. `REGISTRATION_INVITE_EMAILS_SHA256` is not needed.
+1. **Deployed (owner-reported):** PRs #15 and #16 are live, 0006 is on Neon, and registration is public. Next: confirm a fresh sign-up receives its email and needs 12 characters, and share the runbook's remaining Step 4 output if convenient.
 2. **P-13:** name the recovery operator and decide whether a second person approves operator actions. Until then sole-admin recovery is break-glass only.
 3. ADRs 0014, 0015 and 0017: Claude's amendments still await decisions. Record the Phase 6 sign-off, Phase 7 closure, and waivers for going live (review CR-11).
 4. Run the two-network lockout test (decision brief §3) and report the result.
@@ -44,7 +44,42 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-16: Claude, Phase 9a slice 4 (standing, appeals, responses)
+
+- Domain `packages/domain/src/moderation/standing.ts` and `redress.ts`, routes `apps/api/src/routes/redress.ts`. Standing challenges are built by the server (SIWE/SIWS-format text, 10 minutes, bound to member, session, purpose and target, single use). EVM (EIP-191, viem) and Solana (Ed25519, node:crypto) verification is in `packages/chains/src/signatures.ts`; no new dependency.
+- Documentary standing is decided by a non-participant standing reviewer, and a reply after a denial reopens it.
+- Appeals: `uphold`, `amend` (a new revision that still needs approval) and `reverse`. Deciding is bound to the appealed revision; a stale appeal gets `conflict`.
+- Responses are published as plain text with their standing mechanism and date.
+- Public address research shows `under_appeal`, published responses, and appeal and response timeline events.
+- Two interim rules for the owner: a standing reviewer decides without taking the case, and upholding an appeal does not make the reviewer a participant (plan interim decisions 6–7).
+- Deferred, with reasons in the plan: authority signatures (`temporarily_unavailable`); DNS standing and finding corrections (Phase 10, with projects); 14-day escalation and outcome notices (notifications table).
+- 0007 regenerated before any apply (adds `subject_responses.submitter_reason`), checksum `04d79a17…`. Runbook re-rehearsed on disposable PostgreSQL 18: all checks pass.
+- Tests: `moderation-redress.integration.test.ts` (4 tests: replay across nonce, session, member, purpose and target; edited text; wrong key; expiry; appeal reviewer independence; lost-key journey; amendment; stale appeal; responses) and HTTP guards for the new routes in `moderation-reports.integration.test.ts`. One behaviour change in a test: `publicFindings` now also returns `subjectId`.
+
+### 2026-10-16: Claude, Phase 9a slice 3 (findings)
+
+- `packages/domain/src/moderation/findings.ts`, routes `apps/api/src/routes/findings.ts`: report acceptance authors revision 1; canonical content hashes; approve-and-publish in one locked transaction with §4.1 independence (self-approval only for non-severe; severe needs a non-author with `finding:approve_severe`; replacing a public severe revision also excludes its author and approver); rejection; new revisions of published findings (base hash, unchanged content refused); legal hold recorded as a blocked approval; emergency suspension with a `suspension_review` case (non-participant review; the severe suspender cannot reverse alone; severe suspension notifies admins); public findings and timeline on address research.
+- Changed tests (behaviour changed): research availability for findings is now `available`; `accept_report` now needs a step-up instead of being refused.
+- **Limits:** no risk signals or assessments (Phase 10); public findings show only where research is enabled; no conflict-declaration UI yet (the `staff_conflicts` check runs).
+
+### 2026-10-16: Claude, Phase 9a slice 2 (reports and cases backend)
+
+- Domain `packages/domain/src/moderation/` (subjects, reports, cases, labels, refs) and routes `apps/api/src/routes/moderation.ts`: member submit/list/detail/withdraw/respond/notices; staff queue, case detail, assignment, notes, decisions (`start_review`, `request_info`, `reject_report`, `reject_abusive` with step-up). `accept_report` waits for slice 3.
+- 0007 regenerated before any apply: adds `moderation_case_messages` (append-only) and `reports.submitter_reason` (20 tables, 56 total). Apply script now generated by `scripts/build-neon-apply.mjs`; rehearsal repeated.
+- New domain error codes `invalid_transition`, `not_eligible`, `stepup_required`, `evidence_unavailable`, with fixed `detail` and `currentVersion` in problem+json.
+- Live web adapters are not wired yet (slice 5); the web app still uses mocks for these screens.
+
+### 2026-10-16: Claude, Phase 9a slice 1 (data model and permission catalog)
+
+- Plan: [docs/phase9a-plan.md](docs/phase9a-plan.md) (five slices; interim decisions on response/correction statuses, standing proof contract, projects, member notices, error codes).
+- Migrations `generated/0007_smiling_quentin_quire.sql` + `0007_moderation_guards.sql`: 20 tables, append-only triggers, publication guard (14 ledger entries, 56 tables). **Not applied to Neon**: [runbook](docs/operations/2026-10-16-apply-0007-phase9a.md), rehearsed on disposable PostgreSQL 18.
+- **Bug found and fixed:** a CHECK of the form `x = 'a' OR char_length(y) BETWEEN …` passes when `y` is NULL. The 0006 recovery objection reason CHECK had this flaw (the domain always required a reason); 0007 replaces it.
+- Permission catalog extended per ARCHITECTURE §9.2: member, moderator, appeal_reviewer (queue limited to appeals by the domain), admin. Member permissions are member-account only.
+- Staging operator checks expect 56 tables and no UPDATE/DELETE on the history tables.
+
 ### 2026-10-16: Claude, public registration (owner decision)
+
+- **Merged** as PR #16 (`3558cc2`). **Deployed by the owner (2026-10-16):** Render API and worker on `main`, Vercel redeployed, `REGISTRATION_MODE` open on both services (owner-reported). Claude has no access to Render, Vercel or Neon and has not observed the live result.
 
 - Owner: "allow everyone to register without any needing approval, make it public registration". ADR 0019 superseded, with a recorded risk acceptance for review CR-10 (real-user data in staging).
 - `REGISTRATION_MODE` now defaults to `open` everywhere; the blueprint sets `open`; the invite gate is opt-in. Sign-up copy no longer mentions invitations. Identity §4.3, ESSENTIALS, ARCHITECTURE, THREAT-MODEL T-01 and AGENTS §1 updated.

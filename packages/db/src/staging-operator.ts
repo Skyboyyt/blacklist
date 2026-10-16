@@ -125,7 +125,7 @@ export async function verifyOperatorMigrations(client: PoolClient) {
      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
      JOIN pg_roles r ON r.oid=c.relowner WHERE n.nspname='blacklist' AND c.relkind IN ('r','p')`,
   );
-  if (tables.rows[0]?.n !== 36 || !tables.rows[0]?.owned) throw new Error('operator_schema_invalid');
+  if (tables.rows[0]?.n !== 60 || !tables.rows[0]?.owned) throw new Error('operator_schema_invalid');
   const queues = await client.query<{ name: string }>('SELECT name FROM pgboss.queue');
   if (
     identityQueues.some(
@@ -151,6 +151,9 @@ export async function verifyOperatorRuntime(client: PoolClient) {
      AND NOT has_table_privilege(current_user,'blacklist.chains','INSERT,UPDATE,DELETE,TRUNCATE')
      AND NOT has_table_privilege(current_user,'blacklist.staff_recovery_objections','DELETE,TRUNCATE')
      AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+       WHERE n.nspname='blacklist' AND c.relname IN ('report_status_history','moderation_case_notes','moderation_case_messages','finding_revisions','finding_approval_events','finding_publication_events','moderation_decisions','decision_evidence','finding_status_history','evidence_custody_events')
+       AND has_table_privilege(current_user,c.oid,'UPDATE,DELETE,TRUNCATE'))
+     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
        WHERE n.nspname='blacklist' AND c.relname IN ('verification_receipts','chain_fact_verifications','chain_transactions','asset_transfers','chain_fact_invalidations')
        AND has_table_privilege(current_user,c.oid,'UPDATE,DELETE,TRUNCATE'))
      AND has_table_privilege(current_user,'blacklist.auth_users','SELECT,INSERT,UPDATE,DELETE')
@@ -167,6 +170,7 @@ export async function verifyOperatorRuntime(client: PoolClient) {
        OR (c.relname='security_email_deliveries' AND p.permission IN ('UPDATE','DELETE'))
        OR (c.relname='chains' AND p.permission<>'SELECT')
        OR (c.relname='staff_recovery_objections' AND p.permission='DELETE')
+       OR (c.relname IN ('report_status_history','moderation_case_notes','moderation_case_messages','finding_revisions','finding_approval_events','finding_publication_events','moderation_decisions','decision_evidence','finding_status_history','evidence_custody_events') AND p.permission IN ('UPDATE','DELETE'))
        OR (c.relname IN ('verification_receipts','chain_fact_verifications','chain_transactions','asset_transfers','chain_fact_invalidations') AND p.permission IN ('UPDATE','DELETE'))))
      AND NOT has_table_privilege(current_user,c.oid,p.permission)`,
   );
@@ -179,6 +183,8 @@ export async function verifyOperatorRuntime(client: PoolClient) {
     'DELETE FROM blacklist.security_email_deliveries WHERE false',
     'UPDATE blacklist.chains SET enabled=enabled WHERE false',
     'DELETE FROM blacklist.staff_recovery_objections WHERE false',
+    'UPDATE blacklist.finding_revisions SET content_hash=content_hash WHERE false',
+    'DELETE FROM blacklist.finding_approval_events WHERE false',
     'DELETE FROM blacklist.verification_receipts WHERE false',
     'UPDATE blacklist.chain_transactions SET pinned_reason=pinned_reason WHERE false',
   ]) {

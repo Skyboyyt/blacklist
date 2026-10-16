@@ -130,7 +130,9 @@ describe('real API/domain/Postgres research boundary (synthetic RPC, mock mode o
       expect(parsed.kind).toBe('found');
       if (parsed.kind !== 'found') throw new Error('fixture_result_missing');
       expect(parsed.data.facts[0]?.value).toBe('9007199254740993');
-      expect(parsed.data.availability?.findings).toBe('unavailable');
+      // Phase 9a slice 3 connects published findings; none exist for this address.
+      expect(parsed.data.availability?.findings).toBe('available');
+      expect(parsed.data.findings).toEqual([]);
       expect(parsed.data.provenance).toMatchObject({
         snapshot: { kind: 'evm_block', blockHash: '0x' + 'a'.repeat(64), blockNumber: '16' },
         verification: 'single_source',

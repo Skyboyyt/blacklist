@@ -37,6 +37,36 @@ describe('foundation authorization, audit privacy and breach-provider negatives'
     expect(hasPermission({ ...staff, staffAssured: false }, 'session:manage:own')).toBe(false);
     expect(hasPermission({ ...actor, roles: ['admin'] }, 'staff:invite')).toBe(false);
   });
+  it('grants Phase 9a permissions by role and never lets one account kind use the other side (ARCHITECTURE §9.2)', () => {
+    const staff = {
+      ...actor,
+      accountKind: 'staff' as const,
+      staffAssured: true,
+      staffPermissionsActive: true,
+    };
+    const as = (roles: UserActor['roles']) => ({ ...staff, roles });
+    expect(hasPermission(actor, 'report:create')).toBe(true);
+    expect(hasPermission(actor, 'appeal:create')).toBe(true);
+    expect(hasPermission(actor, 'moderation:queue:read')).toBe(false);
+    expect(hasPermission(as(['admin']), 'report:create')).toBe(false);
+    for (const permission of [
+      'finding:propose',
+      'finding:publish',
+      'finding:approve_severe',
+      'report:read:any',
+    ] as const) {
+      expect(hasPermission(as(['moderator']), permission)).toBe(true);
+      expect(hasPermission(as(['admin']), permission)).toBe(true);
+      expect(hasPermission(as(['appeal_reviewer']), permission)).toBe(false);
+    }
+    expect(hasPermission(as(['appeal_reviewer']), 'appeal:decide')).toBe(true);
+    expect(hasPermission(as(['appeal_reviewer']), 'moderation:case:assign')).toBe(false);
+    expect(hasPermission(as(['moderator']), 'user:suspend')).toBe(false);
+    expect(hasPermission({ ...as(['moderator']), staffAssured: false }, 'finding:propose')).toBe(false);
+    expect(hasPermission({ ...as(['moderator']), staffPermissionsActive: false }, 'appeal:decide')).toBe(
+      false,
+    );
+  });
   it('rejects unknown audit actions and private/free-form/oversized details before database access', async () => {
     const query = vi.spyOn(runtime.pool, 'query');
     await expect(

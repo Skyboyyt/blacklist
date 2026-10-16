@@ -11,6 +11,9 @@ import { authRoutes } from './routes/auth.ts';
 import { accountRoutes } from './routes/account.ts';
 import { staffRoutes } from './routes/staff.ts';
 import { researchRoutes } from './routes/research.ts';
+import { moderationRoutes } from './routes/moderation.ts';
+import { findingRoutes } from './routes/findings.ts';
+import { redressRoutes } from './routes/redress.ts';
 export function createServer(
   ctx: IdentityContext,
   config: ApiConfig,
@@ -44,6 +47,9 @@ export function createServer(
   authRoutes(app, ctx);
   accountRoutes(app, ctx);
   staffRoutes(app, ctx);
+  moderationRoutes(app, ctx);
+  findingRoutes(app, ctx);
+  redressRoutes(app, ctx);
   researchRoutes(app, research);
   app.get('/healthz', { config: { security: { auth: 'public', mutation: false } } }, async () => {
     await ctx.runtime.checkConnection();

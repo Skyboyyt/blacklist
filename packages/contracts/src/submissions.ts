@@ -139,29 +139,83 @@ export const authorityRoleSchema = z.enum(AUTHORITY_ROLES);
 export type AuthorityRole = z.infer<typeof authorityRoleSchema>;
 
 /**
- * Standing proof for an appeal or response (moderation §6.2). In the frontend phases
- * signature, authority-signature and DNS checks are SIMULATED and labelled as such;
- * documentary standing goes to staff.
+ * Standing proof for an appeal or response (moderation §6.2). Signature-based proofs carry
+ * the server-issued challenge ID and the wallet's signature over that challenge's exact
+ * text; the frontend mock may still send `simulated: true` instead, which the API refuses.
+ * Documentary standing goes to a staff standing reviewer; until image uploads exist
+ * (Phase 9b) it may be supported by transaction references and links.
  */
+const signedProof = {
+  simulated: z.literal(true).optional(),
+  challengeId: z.uuid().optional(),
+  /** EVM: 0x-hex `personal_sign` signature. Solana: base58 Ed25519 signature. */
+  signature: z
+    .string()
+    .trim()
+    .max(200)
+    .regex(/^(0x[0-9a-fA-F]{130}|[1-9A-HJ-NP-Za-km-z]{64,90})$/, 'This is not a valid signature.')
+    .optional(),
+};
+const oneProofForm = (v: {
+  simulated?: true | undefined;
+  challengeId?: string | undefined;
+  signature?: string | undefined;
+}) =>
+  (v.simulated === true) !== (v.challengeId !== undefined && v.signature !== undefined) &&
+  (v.challengeId === undefined) === (v.signature === undefined);
+const proofMessage = {
+  message: 'Sign the challenge with the wallet that controls the address.',
+  path: ['signature'],
+};
 export const standingProofSchema = z.discriminatedUnion('mechanism', [
-  z.strictObject({ mechanism: z.literal('signature'), simulated: z.literal(true) }),
-  z.strictObject({
-    mechanism: z.literal('authority_signature'),
-    authorityRole: authorityRoleSchema,
-    simulated: z.literal(true),
-  }),
-  z.strictObject({ mechanism: z.literal('dns_txt'), domain: hostnameSchema, simulated: z.literal(true) }),
-  z.strictObject({
-    mechanism: z.literal('documentary'),
-    explanation: z
-      .string()
-      .trim()
-      .min(10, 'Explain what the documents show, in at least 10 characters.')
-      .max(2000),
-    evidence: evidenceFilesSchema.min(1, 'Attach at least one document image.'),
-  }),
+  z.strictObject({ mechanism: z.literal('signature'), ...signedProof }).refine(oneProofForm, proofMessage),
+  z
+    .strictObject({
+      mechanism: z.literal('authority_signature'),
+      authorityRole: authorityRoleSchema,
+      ...signedProof,
+    })
+    .refine(oneProofForm, proofMessage),
+  z
+    .strictObject({
+      mechanism: z.literal('dns_txt'),
+      domain: hostnameSchema,
+      simulated: z.literal(true).optional(),
+      challengeId: z.uuid().optional(),
+    })
+    .refine((v) => (v.simulated === true) !== (v.challengeId !== undefined), {
+      message: 'Publish the TXT record, then check it.',
+      path: ['domain'],
+    }),
+  z
+    .strictObject({
+      mechanism: z.literal('documentary'),
+      explanation: z
+        .string()
+        .trim()
+        .min(10, 'Explain what the documents show, in at least 10 characters.')
+        .max(2000),
+      evidence: evidenceFilesSchema,
+      txRefs: z.array(txRefSchema).max(10).optional(),
+      urls: z.array(urlTextSchema).max(10).optional(),
+    })
+    .refine((v) => v.evidence.length + (v.txRefs?.length ?? 0) + (v.urls?.length ?? 0) > 0, {
+      message: 'Attach at least one document image.',
+      path: ['evidence'],
+    }),
 ]);
 export type StandingProof = z.infer<typeof standingProofSchema>;
+
+/**
+ * A server-built standing challenge (moderation §6.4): the exact text to sign with
+ * `personal_sign` (EVM) or a Solana message signature. Single use, 10 minutes.
+ */
+export const standingChallengeSchema = z.strictObject({
+  challengeId: z.uuid(),
+  message: z.string().max(2000),
+  expiresAt: isoDateTimeSchema,
+});
+export type StandingChallenge = z.infer<typeof standingChallengeSchema>;
 
 export const appealRequestSchema = z.strictObject({
   findingId: z.string().min(1).max(64),
