@@ -7,6 +7,7 @@ import { createAuth } from './auth.ts';
 import { signIn } from './login.ts';
 import type { IdentityContext } from './types.ts';
 import { admitTokenAction } from './token-throttle.ts';
+import { registrationAllowed } from './registration-access.ts';
 
 export async function startRegistration(ctx: IdentityContext, email: string, prefix: string) {
   await ctx.runtime.transaction(async (tx, client) => {
@@ -47,14 +48,15 @@ export async function completeRegistration(
   // Cheap token pre-check before Argon2 and the breach lookup (CR-15.2); the locked
   // re-check below stays authoritative.
   const [candidate] = await ctx.runtime.db
-    .select({ state: schema.intents.state, expiresAt: schema.intents.expiresAt })
+    .select({ state: schema.intents.state, expiresAt: schema.intents.expiresAt, email: schema.intents.email })
     .from(schema.intents)
     .where(eq(schema.intents.tokenHash, digest(rawToken)));
   if (
     !candidate ||
     candidate.state !== 'issued' ||
     !candidate.expiresAt ||
-    candidate.expiresAt.getTime() <= Date.now()
+    candidate.expiresAt.getTime() <= Date.now() ||
+    !registrationAllowed(ctx.settings.registration, candidate.email)
   )
     throw new DomainError('token_invalid');
   const stored = await preparePassword(password, 'member', ctx.breachCheck);
@@ -69,7 +71,9 @@ export async function completeRegistration(
         !intent ||
         intent.state !== 'issued' ||
         !intent.expiresAt ||
-        intent.expiresAt.getTime() <= Date.now()
+        intent.expiresAt.getTime() <= Date.now() ||
+        // ADR 0019: removing an email from the invite list also stops links already sent.
+        !registrationAllowed(ctx.settings.registration, intent.email)
       )
         throw new DomainError('token_invalid');
       const context = await createAuth(tx, ctx.settings.secret, ctx.settings.origin).$context;

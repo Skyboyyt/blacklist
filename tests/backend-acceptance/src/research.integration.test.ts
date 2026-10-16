@@ -46,6 +46,7 @@ describe('real API/domain/Postgres research boundary (synthetic RPC, mock mode o
         rpId: 'localhost',
         rpName: 'Blacklist',
         breakGlassEnabled: false,
+        registration: { mode: 'open' },
       });
       await ctx.runtime.start();
       const transport: RpcTransport = {

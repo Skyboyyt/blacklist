@@ -3,6 +3,7 @@ import { randomToken, digest } from '../shared/crypto.ts';
 import type { DeliveryContext } from './types.ts';
 import { RetryableDeliveryError, sendSecurityMail, type SecurityMailer } from './mailer.ts';
 import { record, claimNotice } from './mail-records.ts';
+import { registrationAllowed } from './registration-access.ts';
 export async function issueRegistration(ctx: DeliveryContext, intentId: string, mailer: SecurityMailer) {
   const plaintext = randomToken();
   const prepared = await ctx.runtime.transaction(async (tx) => {
@@ -32,6 +33,14 @@ export async function issueRegistration(ctx: DeliveryContext, intentId: string, 
         })
         .where(eq(schema.intents.id, intent.id));
       return { notice: true, email: intent.email, intent };
+    }
+    // ADR 0019: uninvited addresses are closed silently, so the HTTP answer stays uniform.
+    if (!registrationAllowed(ctx.settings.registration, intent.email)) {
+      await tx
+        .update(schema.intents)
+        .set({ state: 'superseded', closeReason: 'not_invited', supersededAt: new Date(), tokenHash: null })
+        .where(eq(schema.intents.id, intent.id));
+      return null;
     }
     const now = new Date(),
       generation = intent.generation + 1;

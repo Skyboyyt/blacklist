@@ -85,6 +85,7 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
       rpId: 'staging.example.test',
       rpName: 'Blacklist Staging',
       breakGlassEnabled: false,
+      registration: { mode: 'open' },
     });
     await ctx.runtime.start();
     expect((await ctx.runtime.pool.query('SELECT current_user AS name')).rows[0]?.name).toBe('blacklist_app');
@@ -351,6 +352,7 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
       rpId: 'staging.example.test',
       rpName: 'Blacklist Staging',
       breakGlassEnabled: false,
+      registration: { mode: 'open' },
     });
     await ctx.runtime.start();
     expect((await ctx.runtime.pool.query('SELECT id FROM blacklist.registration_intents')).rows).toEqual(

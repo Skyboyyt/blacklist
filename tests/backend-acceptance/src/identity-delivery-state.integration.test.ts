@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 import { schema, eq, and } from '@blacklist/db';
 import {
+  completeRegistration,
   issueIdentityToken,
   issueRegistration,
   sendNotice,
@@ -257,5 +258,57 @@ describe('identity delivery terminal states and stale authority', () => {
       .where(eq(schema.intents.id, stale.id));
     await issueRegistration(f.ctx, stale.id, m.mailer);
     expect(m.messages.length).toBe(1);
+  });
+  it('invite-only registration closes uninvited intents silently and re-checks at completion (ADR 0019)', async () => {
+    const invited = `invited-${randomUUID()}@example.test`,
+      outsider = `outsider-${randomUUID()}@example.test`;
+    const invite = (emails: string[]) => ({
+      ...f.ctx,
+      settings: {
+        ...f.ctx.settings,
+        registration: { mode: 'invite' as const, emailDigests: new Set(emails.map((e) => digest(e))) },
+      },
+    });
+    const gated = invite([invited]),
+      m = capture();
+    const intent = async (email: string) => {
+      const [r] = await f.ctx.runtime.db
+        .insert(schema.intents)
+        .values({ email, state: 'requested' })
+        .returning();
+      if (!r) throw new Error('fixture_intent_missing');
+      return r;
+    };
+    const uninvited = await intent(outsider);
+    await issueRegistration(gated, uninvited.id, m.mailer);
+    const [closed] = await f.ctx.runtime.db
+      .select()
+      .from(schema.intents)
+      .where(eq(schema.intents.id, uninvited.id));
+    expect(closed).toMatchObject({ state: 'superseded', closeReason: 'not_invited', tokenHash: null });
+    expect(m.messages).toHaveLength(0);
+
+    const allowed = await intent(invited);
+    await issueRegistration(gated, allowed.id, m.mailer);
+    expect(m.messages).toHaveLength(1);
+    const token = /#token=([^\s]+)/u.exec(m.messages[0]?.text ?? '')?.[1];
+    if (!token) throw new Error('fixture_token_missing');
+    // Removing the email from the list also stops a link already sent.
+    await expect(
+      completeRegistration(
+        invite([]),
+        token,
+        'invite_gate_user',
+        'fictional invited phrase',
+        'ip4:192.0.2.61',
+      ),
+    ).rejects.toThrow('token_invalid');
+    const [stillIssued] = await f.ctx.runtime.db
+      .select()
+      .from(schema.intents)
+      .where(eq(schema.intents.id, allowed.id));
+    expect(stillIssued?.state).toBe('issued');
+    const [users] = await f.ctx.runtime.db.select().from(schema.user).where(eq(schema.user.email, invited));
+    expect(users).toBeUndefined();
   });
 });

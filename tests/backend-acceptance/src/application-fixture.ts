@@ -28,6 +28,7 @@ export async function startApplicationFixture() {
       rpId: 'blacklist.example.invalid',
       rpName: 'Blacklist test',
       breakGlassEnabled: false,
+      registration: { mode: 'open' },
     },
     { breach: async () => false },
   );

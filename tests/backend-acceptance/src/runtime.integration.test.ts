@@ -144,7 +144,14 @@ beforeAll(async () => {
   };
   ctx = createIdentity(
     env.DATABASE_URL,
-    { secret, origin, rpId: 'localhost', rpName: 'Blacklist', breakGlassEnabled: false },
+    {
+      secret,
+      origin,
+      rpId: 'localhost',
+      rpName: 'Blacklist',
+      breakGlassEnabled: false,
+      registration: { mode: 'open' },
+    },
     { breach: async () => false },
   );
   await ctx.runtime.start();

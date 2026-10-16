@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { describe, it, expect, vi } from 'vitest';
-import { readApiConfig, readWorkerConfig } from '@blacklist/config';
+import { readApiConfig, readWorkerConfig, resolveRegistrationAccess } from '@blacklist/config';
 import { ipPrefix, hasPermission, isPermission, type UserActor } from '@blacklist/domain';
 import {
   preparePassword,
@@ -20,6 +20,27 @@ const env = {
   WEBAUTHN_RP_ID: 'localhost',
 };
 describe('runtime security/configuration boundaries', () => {
+  it('defaults hosted services to invite-only registration and accepts only digest lists (ADR 0019)', () => {
+    const invited = 'a'.repeat(64);
+    expect(resolveRegistrationAccess(readApiConfig(env))).toEqual({ mode: 'open' });
+    const hosted = resolveRegistrationAccess(
+      readApiConfig({ ...env, NODE_ENV: 'production', APP_ORIGIN: 'https://localhost' }),
+    );
+    expect(hosted.mode).toBe('invite');
+    expect(hosted.mode === 'invite' && hosted.emailDigests.size).toBe(0);
+    const listed = resolveRegistrationAccess(
+      readApiConfig({
+        ...env,
+        REGISTRATION_MODE: 'invite',
+        REGISTRATION_INVITE_EMAILS_SHA256: `${invited}, `,
+      }),
+    );
+    expect(listed.mode === 'invite' && [...listed.emailDigests]).toEqual([invited]);
+    expect(() => readApiConfig({ ...env, REGISTRATION_INVITE_EMAILS_SHA256: 'person@example.test' })).toThrow(
+      'REGISTRATION_INVITE_EMAILS_SHA256',
+    );
+    expect(() => readApiConfig({ ...env, REGISTRATION_MODE: 'public' })).toThrow('REGISTRATION_MODE');
+  });
   it('rejects malformed configuration without exporting secret values; RP and TLS boundaries fail closed', () => {
     expect(() => readApiConfig({ ...env, DATABASE_URL: 'sensitive-input' })).toThrow('DATABASE_URL');
     expect(() => readApiConfig({ ...env, DATABASE_URL: 'sensitive-input' })).not.toThrow('sensitive-input');

@@ -1,4 +1,4 @@
-import { readApiConfig } from '@blacklist/config';
+import { readApiConfig, resolveRegistrationAccess } from '@blacklist/config';
 import { createIdentity, createResearch } from '@blacklist/domain';
 import { createServer } from './server.ts';
 const config = readApiConfig();
@@ -8,6 +8,7 @@ const ctx = createIdentity(config.DATABASE_URL, {
   rpId: config.WEBAUTHN_RP_ID,
   rpName: config.WEBAUTHN_RP_NAME,
   breakGlassEnabled: config.BREAK_GLASS_ENABLED === 'true',
+  registration: resolveRegistrationAccess(config),
 });
 const server = createServer(ctx, config, true, createResearch(ctx.runtime, config));
 try {

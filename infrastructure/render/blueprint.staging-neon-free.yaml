@@ -41,6 +41,10 @@ services:
         value: https://blacklist-staging-worker.onrender.com/healthz
       - key: BREAK_GLASS_ENABLED
         value: 'false'
+      - key: REGISTRATION_MODE
+        value: invite
+      - key: REGISTRATION_INVITE_EMAILS_SHA256
+        sync: false
   - type: web
     name: blacklist-staging-worker
     runtime: node
@@ -71,4 +75,8 @@ services:
         sync: false
       - key: WORKER_WEB_SERVICE
         value: 'true'
+      - key: REGISTRATION_MODE
+        value: invite
+      - key: REGISTRATION_INVITE_EMAILS_SHA256
+        sync: false
     healthCheckPath: /healthz

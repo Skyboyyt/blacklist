@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
-import { readApiConfig } from '@blacklist/config';
+import { readApiConfig, resolveRegistrationAccess } from '@blacklist/config';
 import {
   createIdentity,
   bootstrapStaff,
@@ -43,6 +43,7 @@ const ctx = createIdentity(config.DATABASE_URL, {
   rpId: config.WEBAUTHN_RP_ID,
   rpName: config.WEBAUTHN_RP_NAME,
   breakGlassEnabled: config.BREAK_GLASS_ENABLED === 'true',
+  registration: resolveRegistrationAccess(config),
 });
 const actor = { kind: 'cli' as const, operator, actorRef: `cli:${operator}` };
 try {

@@ -9,7 +9,7 @@ export default function RegisterPage() {
     <>
       <AuthHeading
         title="Create an account"
-        description="Start with your email. We’ll send a link to choose your handle and password."
+        description="During testing, sign-up is by invitation only. Start with the email you were invited with. We’ll send a link to choose your handle and password."
       />
       <RegisterStart />
     </>
