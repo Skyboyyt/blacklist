@@ -24,7 +24,7 @@ This file holds the **current state only**. Each session adds one short entry un
 ## Open work, by owner
 
 **Owner decisions and actions**
-1. **To deploy:** PR #15 is merged and 0006 is applied to Neon; finish the runbook's other Step 4 checks, then deploy the Render API and worker and Vercel. Registration is **public** (owner, 2026-10-16): if PR #15 is already deployed, set `REGISTRATION_MODE=open` on both the Render API and worker now; after the next deploy the default is `open` anyway. `REGISTRATION_INVITE_EMAILS_SHA256` is not needed.
+1. **To deploy:** PR #15 is merged and 0006 is applied to Neon; finish the runbook's other Step 4 checks, then deploy the Render API and worker and Vercel. PRs #15 and #16 are deployed and registration is public (owner-reported). Next: confirm a fresh sign-up receives its email and needs 12 characters.
 2. **P-13:** name the recovery operator and decide whether a second person approves operator actions. Until then sole-admin recovery is break-glass only.
 3. ADRs 0014, 0015 and 0017: Claude's amendments still await decisions. Record the Phase 6 sign-off, Phase 7 closure, and waivers for going live (review CR-11).
 4. Run the two-network lockout test (decision brief §3) and report the result.
@@ -45,6 +45,8 @@ This file holds the **current state only**. Each session adds one short entry un
 ## Session log
 
 ### 2026-10-16: Claude, public registration (owner decision)
+
+- **Merged** as PR #16 (`3558cc2`). **Deployed by the owner (2026-10-16):** Render API and worker on `main`, Vercel redeployed, `REGISTRATION_MODE` open on both services (owner-reported). Claude has no access to Render, Vercel or Neon and has not observed the live result.
 
 - Owner: "allow everyone to register without any needing approval, make it public registration". ADR 0019 superseded, with a recorded risk acceptance for review CR-10 (real-user data in staging).
 - `REGISTRATION_MODE` now defaults to `open` everywhere; the blueprint sets `open`; the invite gate is opt-in. Sign-up copy no longer mentions invitations. Identity §4.3, ESSENTIALS, ARCHITECTURE, THREAT-MODEL T-01 and AGENTS §1 updated.
