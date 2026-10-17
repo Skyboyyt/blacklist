@@ -38,7 +38,7 @@ Mocks confer no authority.
 apps/web                 UI only (.tsx/.ts). Imports core, contracts. One server-only env module (SSR token).
 apps/api                 Fastify plugins + thin routes + operator CLI → domain services. Routes never touch db.
 apps/worker              pg-boss handlers → domain services.
-apps/evidence-processor  Isolated image sanitizer. Imports core only. No DB, no secrets, no other egress.
+apps/evidence-processor  Isolated image sanitizer. Imports core only. No DB, no secrets, no other egress (staging: ADR 0020, test images only).
 packages/core            Dependency-free primitives.
 packages/contracts       Zod request/response schemas.
 packages/domain          Business logic: src/<module>/{index,service,policies,repository,types}.ts

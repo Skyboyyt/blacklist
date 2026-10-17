@@ -1,5 +1,5 @@
-import { readWorkerConfig, resolveRegistrationAccess } from '@blacklist/config';
-import { createDelivery } from '@blacklist/domain';
+import { readWorkerConfig, resolveEvidenceStorage, resolveRegistrationAccess } from '@blacklist/config';
+import { createDelivery, createEvidenceStorage, createProcessorClient } from '@blacklist/domain';
 import { startWorker } from './worker.ts';
 import { smtpMailer } from './mail/smtp.ts';
 import { resendMailer } from './mail/resend.ts';
@@ -10,7 +10,18 @@ const ctx = createDelivery(config.DATABASE_URL, config.APP_ORIGIN, resolveRegist
 let health: Server | undefined;
 try {
   await ctx.runtime.start();
-  await startWorker(ctx, config.EMAIL_PROVIDER === 'resend' ? resendMailer(config) : smtpMailer(config));
+  const storage = resolveEvidenceStorage(config);
+  await startWorker(
+    ctx,
+    config.EMAIL_PROVIDER === 'resend' ? resendMailer(config) : smtpMailer(config),
+    2,
+    storage && config.EVIDENCE_PROCESSOR_URL
+      ? {
+          storage: createEvidenceStorage(storage),
+          processor: createProcessorClient(config.EVIDENCE_PROCESSOR_URL),
+        }
+      : undefined,
+  );
   if (config.WORKER_HEALTH_PORT !== undefined)
     health = await startWorkerHealth(() => ctx.runtime.checkConnection(), config.WORKER_HEALTH_PORT);
 } catch {

@@ -262,7 +262,7 @@ export function ReportForm() {
           </Field>
         )}
       />
-      <EvidenceUpload label="Screenshots" onChange={onEvidence} error={errors['evidence']} />
+      <EvidenceUpload label="Screenshots" onChange={onEvidence} error={errors['evidence']} liveUploads />
       <Button type="submit" size="lg" loading={pending} loadingLabel="Sending…" className="w-fit">
         Send private report
       </Button>

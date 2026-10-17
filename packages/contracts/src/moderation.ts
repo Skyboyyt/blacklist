@@ -194,6 +194,16 @@ export const staffEvidenceSchema = z.discriminatedUnion('kind', [
 ]);
 export type StaffEvidence = z.infer<typeof staffEvidenceSchema>;
 
+/**
+ * A five-minute download link for the sanitized copy of an image (ARCHITECTURE §14.4).
+ * It points at the storage domain and downloads as an attachment; originals have no link.
+ */
+export const evidenceLinkSchema = z.strictObject({
+  url: z.url({ protocol: /^https?$/ }),
+  expiresAt: isoDateTimeSchema,
+});
+export type EvidenceLink = z.infer<typeof evidenceLinkSchema>;
+
 const V1_FACTOR_CODES = Object.keys(V1_RISK_FACTOR_PROVENANCE) as [V1RiskFactorCode, ...V1RiskFactorCode[]];
 
 /**

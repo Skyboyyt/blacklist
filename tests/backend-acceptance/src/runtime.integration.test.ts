@@ -251,8 +251,9 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
       const response = await app.inject({
         method: route.method as 'GET' | 'HEAD' | 'POST' | 'PATCH',
         url: route.path,
-        headers: { origin, 'content-type': 'application/json' },
-        ...(route.policy.mutation ? { payload: '{}' } : {}),
+        // Each route gets the body type it declares, so only authorization can refuse it.
+        headers: { origin, 'content-type': route.policy.body === 'image' ? 'image/png' : 'application/json' },
+        ...(route.policy.mutation ? { payload: route.policy.body === 'image' ? 'x' : '{}' } : {}),
       });
       expect(response.statusCode).toBe(route.policy.auth === 'internal' ? 404 : 401);
     }

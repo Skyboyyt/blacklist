@@ -43,7 +43,7 @@ const member = (permission: Permission, mutation: boolean) =>
 const staff = (permission: Permission, mutation: boolean) =>
   ({ security: { auth: 'staff', permission, mutation } }) as const;
 
-export function moderationRoutes(app: FastifyInstance, ctx: IdentityContext) {
+export function moderationRoutes(app: FastifyInstance, ctx: IdentityContext, images = false) {
   app.get('/api/v1/me/submissions', { config: member('report:read:own', false) }, async (req) => ({
     kind: 'ok',
     data: z.array(memberSubmissionSummarySchema).parse(await listOwnSubmissions(ctx, actor(req))),
@@ -52,12 +52,15 @@ export function moderationRoutes(app: FastifyInstance, ctx: IdentityContext) {
     kind: 'ok',
     data: memberSubmissionDetailSchema.parse(await getOwnSubmission(ctx, actor(req), caseId(req))),
   }));
-  // Without image uploads (Phase 9b) a report is created and submitted in one request.
+  // A report is created and submitted in one request; images are uploaded first and
+  // referenced by id (Phase 9b).
   app.post('/api/v1/reports', { config: member('report:create', true) }, async (req) => ({
     kind: 'ok',
-    data: z
-      .strictObject({ id: z.string() })
-      .parse(await submitReport(ctx, actor(req), reportRequestSchema.parse(req.body), req.clientPrefix)),
+    data: z.strictObject({ id: z.string() }).parse(
+      await submitReport(ctx, actor(req), reportRequestSchema.parse(req.body), req.clientPrefix, {
+        images,
+      }),
+    ),
   }));
   app.post('/api/v1/reports/:id/withdraw', { config: member('report:read:own', true) }, async (req) => {
     const input = z.strictObject({ expectedVersion: version }).parse(req.body);

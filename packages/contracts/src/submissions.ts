@@ -4,9 +4,9 @@
  * submissions returned only to them. These views never carry internal notes, internal
  * rationales, staff identities or other people's data.
  *
- * Evidence is image-only (PNG, JPEG, WebP; ≤ 10 MiB each; ≤ 10 per submission). The
- * browser sends file METADATA only in the frontend phases; real uploads go to the
- * isolated evidence pipeline (ADR 0004) once the backend exists.
+ * Evidence is image-only (PNG, JPEG, WebP; ≤ 10 MiB each; ≤ 10 per submission). Each
+ * image is uploaded first (`POST /evidence/images`, Phase 9b) and a submission refers to
+ * it by `id`; the server trusts only the id and ignores the descriptive fields.
  */
 import { z } from './zod.ts';
 import { chainSlugSchema, isoDateTimeSchema, type ChainSlugDto } from './common.ts';
@@ -18,11 +18,16 @@ export const EVIDENCE_MAX_BYTES = 10 * 1024 * 1024;
 export const EVIDENCE_MAX_FILES = 10;
 
 export const evidenceFileSchema = z.strictObject({
+  id: z.uuid(),
   name: z.string().trim().min(1).max(200),
   type: z.enum(EVIDENCE_IMAGE_TYPES, { message: 'Only PNG, JPEG and WebP images are accepted.' }),
   size: z.number().int().min(1).max(EVIDENCE_MAX_BYTES, 'Each image can be at most 10 MiB.'),
 });
 export type EvidenceFile = z.infer<typeof evidenceFileSchema>;
+
+/** Reply to an image upload: processing continues in the background. */
+export const evidenceUploadResponseSchema = z.strictObject({ id: z.uuid(), state: z.literal('processing') });
+export type EvidenceUploadResponse = z.infer<typeof evidenceUploadResponseSchema>;
 
 export const evidenceFilesSchema = z
   .array(evidenceFileSchema)

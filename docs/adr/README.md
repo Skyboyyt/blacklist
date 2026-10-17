@@ -52,3 +52,4 @@ No ADR status authorizes starting a phase. Phase authorization is always a separ
 | [0017](0017-request-triggered-free-mail-worker-wake.md) | Request-triggered free mail-worker wake | **Accepted by owner**; Claude: accept with amendments (2026-10-15) |
 | [0018](0018-phase8-provider-selection.md) | Phase 8 blockchain provider selection (O-3) | **Accepted provisionally** (owner, 2026-10-16); research off until provider verification is met |
 | [0019](0019-invite-only-member-registration-in-staging.md) | Invite-only member registration while staging holds real users | **Superseded** (owner, 2026-10-16): registration is public; the invite gate is opt-in |
+| [0020](0020-phase9b-evidence-hosting-on-staging.md) | Image evidence hosting on staging (Phase 9b) | **Accepted for staging** (owner, 2026-10-17): test images only |

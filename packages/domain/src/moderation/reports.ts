@@ -21,6 +21,7 @@ import {
   listOwnProjectSubmissions,
   replyToSuggestion,
 } from '../projects/submissions.ts';
+import { linkImagesToReport } from '../evidence/uploads.ts';
 
 // Reports are private to the reporter and staff and change nothing public while
 // unreviewed (moderation §10; AGENTS §5.7). Member views carry no staff identities.
@@ -38,15 +39,16 @@ export interface ReportInput {
   lossAsset?: string | undefined;
   txRefs: readonly { chain: ChainSlug; hash: string }[];
   urls: readonly string[];
-  evidence: readonly unknown[];
+  /** Images the member uploaded first (Phase 9b); only their ids are trusted. */
+  evidence: readonly { id: string }[];
 }
 
+const IMAGES_UNAVAILABLE =
+  'Image evidence is not available yet. Submit without images; you can describe them in the narrative.';
+
+/** Replies to information requests do not take images yet (Phase 9b covers new reports). */
 function noImages(evidence: readonly unknown[]) {
-  if (evidence.length)
-    throw refuse(
-      'evidence_unavailable',
-      'Image evidence is not available yet. Submit without images; you can describe them in the narrative.',
-    );
+  if (evidence.length) throw refuse('evidence_unavailable', IMAGES_UNAVAILABLE);
 }
 
 export async function submitReport(
@@ -54,9 +56,10 @@ export async function submitReport(
   actor: UserActor,
   input: ReportInput,
   prefix: string,
+  options: { images: boolean } = { images: false },
 ) {
   requirePermission(actor, 'report:create');
-  noImages(input.evidence);
+  if (!options.images) noImages(input.evidence);
   const [first] = input.subjects;
   if (!first) throw new DomainError('invalid_request');
   return ctx.runtime.transaction(async (tx) => {
@@ -92,6 +95,13 @@ export async function submitReport(
         .insert(schema.reportSubjects)
         .values({ reportId: report.id, subjectId, role: subjectId === primary ? 'primary' : 'related' });
     }
+    await linkImagesToReport(
+      tx,
+      actor,
+      report.id,
+      input.evidence.map((e) => e.id),
+      options.images,
+    );
     const evidence = [
       ...input.txRefs.map((t) => ({
         kind: 'transaction_ref',
@@ -248,7 +258,21 @@ async function detail(
     ...summary(c, r),
     version: c.version,
     details,
-    evidenceNames: [],
+    // Members see their own images by position and status only (file names are not kept).
+    evidenceNames: items
+      .filter(({ e }) => e.kind === 'image')
+      .map(
+        ({ e }, i) =>
+          `Image ${i + 1}: ${
+            e.state === 'available'
+              ? 'received'
+              : e.state === 'rejected'
+                ? 'not accepted'
+                : e.state === 'purged'
+                  ? 'removed'
+                  : 'being checked'
+          }`,
+      ),
     timeline,
     infoRequest: r.status === 'needs_info' ? (lastRequest?.body ?? null) : null,
     submitterReason: r.submitterReason,

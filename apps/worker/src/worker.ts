@@ -10,14 +10,23 @@ import {
   verifyAudit,
   sweepDueAssessments,
   escalateOverdueAppeals,
+  processPendingEvidence,
+  purgeAbandonedUploads,
   RetryableDeliveryError,
+  type EvidenceProcessor,
+  type EvidenceStorage,
   type DeliveryContext,
   type SecurityMailer,
 } from '@blacklist/domain';
 
 // Each handler reloads its entity and account state in its domain protocol.
 // Jobs cannot supply actor/role/status fields or bearer values.
-export async function startWorker(ctx: DeliveryContext, mailer: SecurityMailer, pollingIntervalSeconds = 2) {
+export async function startWorker(
+  ctx: DeliveryContext,
+  mailer: SecurityMailer,
+  pollingIntervalSeconds = 2,
+  evidence?: { storage: EvidenceStorage; processor: EvidenceProcessor },
+) {
   const registrations: Array<Promise<unknown>> = [];
   const work = <S extends z.ZodType>(
     name: string,
@@ -121,6 +130,7 @@ export async function startWorker(ctx: DeliveryContext, mailer: SecurityMailer, 
   };
   setInterval(sweep, 15 * 60_000).unref();
   sweep();
+  if (evidence) startEvidenceLoop(ctx, evidence);
   await ctx.runtime.boss.send(
     'identity.cleanup',
     {},
@@ -131,4 +141,36 @@ export async function startWorker(ctx: DeliveryContext, mailer: SecurityMailer, 
     {},
     { singletonKey: `audit:${Math.floor(Date.now() / 86400000)}` },
   );
+}
+
+/**
+ * Image evidence (Phase 9b): due images are processed every 10 seconds, and abandoned
+ * uploads are purged once a day. Ticks never overlap; failures are logged by name only.
+ */
+function startEvidenceLoop(
+  ctx: DeliveryContext,
+  evidence: { storage: EvidenceStorage; processor: EvidenceProcessor },
+) {
+  let busy = false;
+  let lastPurge = 0;
+  const tick = () => {
+    if (busy) return;
+    busy = true;
+    const purge =
+      Date.now() - lastPurge > 86400_000
+        ? purgeAbandonedUploads(ctx.runtime, evidence.storage).then(() => {
+            lastPurge = Date.now();
+          })
+        : Promise.resolve();
+    void Promise.all([
+      processPendingEvidence(ctx.runtime, evidence.storage, evidence.processor).catch(() =>
+        console.error('evidence_processing_tick_failed'),
+      ),
+      purge.catch(() => console.error('evidence_purge_tick_failed')),
+    ]).finally(() => {
+      busy = false;
+    });
+  };
+  setInterval(tick, 10_000).unref();
+  tick();
 }

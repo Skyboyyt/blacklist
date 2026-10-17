@@ -1,7 +1,16 @@
 import type { FastifyInstance } from 'fastify';
 import type { ApiConfig } from '@blacklist/config';
 
-/** A bounded liveness request; queued work and the worker's delivery protocol remain authoritative. */
+/**
+ * A bounded liveness request; queued work and the worker's delivery protocol remain
+ * authoritative. Sent after accepted registration and reset requests (ADR 0017) and after
+ * an accepted evidence upload, which the worker processes (ADR 0020).
+ */
+const WAKE_ROUTES: Readonly<Record<string, number>> = {
+  '/api/v1/auth/register/start': 202,
+  '/api/v1/auth/password/forgot': 202,
+  '/api/v1/evidence/images': 200,
+};
 export function installMailWorkerWake(app: FastifyInstance, config: ApiConfig) {
   const target = config.MAIL_WORKER_HEALTH_URL;
   if (!target) return;
@@ -10,10 +19,7 @@ export function installMailWorkerWake(app: FastifyInstance, config: ApiConfig) {
     if (
       pending ||
       request.method !== 'POST' ||
-      reply.statusCode !== 202 ||
-      !['/api/v1/auth/register/start', '/api/v1/auth/password/forgot'].includes(
-        request.routeOptions.url ?? '',
-      )
+      reply.statusCode !== WAKE_ROUTES[request.routeOptions.url ?? '']
     ) {
       done();
       return;

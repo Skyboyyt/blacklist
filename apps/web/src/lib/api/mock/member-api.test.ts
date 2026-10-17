@@ -60,7 +60,9 @@ const report: ReportRequest = {
   incidentDate: '2026-09-01',
   txRefs: [],
   urls: ['https://claim-airdrop.example'],
-  evidence: [{ name: 'screenshot.png', type: 'image/png', size: 2048 }],
+  evidence: [
+    { id: '00000000-0000-4000-8000-000000000001', name: 'screenshot.png', type: 'image/png', size: 2048 },
+  ],
 };
 
 const suggestion: SuggestionRequest = {
@@ -122,12 +124,26 @@ describe('submissions', () => {
   it('refuses non-image evidence and oversized files', async () => {
     const result = await member.submitReport({
       ...report,
-      evidence: [{ name: 'page.html', type: 'text/html' as 'image/png', size: 10 }],
+      evidence: [
+        {
+          id: '00000000-0000-4000-8000-000000000001',
+          name: 'page.html',
+          type: 'text/html' as 'image/png',
+          size: 10,
+        },
+      ],
     });
     expect(code(result)).toBe('invalid');
     const big = await member.submitReport({
       ...report,
-      evidence: [{ name: 'big.png', type: 'image/png', size: 11 * 1024 * 1024 }],
+      evidence: [
+        {
+          id: '00000000-0000-4000-8000-000000000001',
+          name: 'big.png',
+          type: 'image/png',
+          size: 11 * 1024 * 1024,
+        },
+      ],
     });
     expect(code(big)).toBe('invalid');
   });
@@ -193,7 +209,14 @@ describe('appeals and standing (moderation §6, §9)', () => {
         standing: {
           mechanism: 'documentary',
           explanation: 'Refund records for each payment.',
-          evidence: [{ name: 'records.png', type: 'image/png', size: 1000 }],
+          evidence: [
+            {
+              id: '00000000-0000-4000-8000-000000000001',
+              name: 'records.png',
+              type: 'image/png',
+              size: 1000,
+            },
+          ],
         },
       }),
     );
@@ -254,7 +277,14 @@ describe('appeals and standing (moderation §6, §9)', () => {
         standing: {
           mechanism: 'documentary',
           explanation: 'Refund records for each payment.',
-          evidence: [{ name: 'records.png', type: 'image/png', size: 1000 }],
+          evidence: [
+            {
+              id: '00000000-0000-4000-8000-000000000001',
+              name: 'records.png',
+              type: 'image/png',
+              size: 1000,
+            },
+          ],
         },
       }),
     );

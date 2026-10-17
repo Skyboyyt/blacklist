@@ -68,14 +68,14 @@ describe('managed PostgreSQL staging deployment rehearsal (local PostgreSQL 18)'
     try {
       expect(
         (await migrator.query('SELECT count(*)::int AS n FROM blacklist_migrations.applied')).rows[0]?.n,
-      ).toBe(20);
+      ).toBe(22);
       expect(
         (
           await migrator.query(
             "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema='blacklist'",
           )
         ).rows[0]?.n,
-      ).toBe(78);
+      ).toBe(80);
     } finally {
       await migrator.end();
     }

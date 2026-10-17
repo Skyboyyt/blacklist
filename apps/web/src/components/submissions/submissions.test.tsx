@@ -178,11 +178,59 @@ describe('appeal form', () => {
 });
 
 describe('live build (Phase 9a slice 5)', () => {
-  it('replaces image uploads with a notice until the evidence processor exists', () => {
+  it('shows a notice instead of uploads on forms whose server side takes no images yet', () => {
     vi.stubEnv('NEXT_PUBLIC_API_MODE', 'live');
     render(<EvidenceUpload label="Screenshots" onChange={() => undefined} />);
     expect(screen.getByText(/Image uploads are not available yet/)).toBeInTheDocument();
     expect(screen.queryByLabelText('Choose images')).toBeNull();
+  });
+
+  it('uploads each image as its raw body and reports the id the server returned (Phase 9b)', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_MODE', 'live');
+    const serverId = '0192f0d0-0000-7000-8000-00000000abcd';
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ kind: 'ok', data: { id: serverId, state: 'processing' } }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    let latest: readonly EvidenceFile[] = [];
+    render(<EvidenceUpload label="Screenshots" onChange={(f) => (latest = f)} liveUploads />);
+    expect(screen.getByText(/upload test images only/)).toBeInTheDocument();
+    const shot = file('shot.png', 'image/png', 100);
+    await user.upload(screen.getByLabelText('Choose images'), [shot]);
+    await waitFor(() => expect(latest.map((f) => f.id)).toEqual([serverId]));
+    expect(screen.getByText('Uploaded')).toBeInTheDocument();
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('/api/v1/evidence/images');
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe(shot);
+    expect(new Headers(init.headers).get('content-type')).toBe('image/png');
+    vi.unstubAllGlobals();
+  });
+
+  it('explains a refused upload, and switches to the notice when the server has images off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_MODE', 'live');
+    const refusal = (status: number, code: string) =>
+      new Response(JSON.stringify({ type: 'about:blank', title: 'x', status, code, requestId: 'r' }), {
+        status,
+        headers: { 'content-type': 'application/problem+json' },
+      });
+    const fetchMock = vi.fn(async () => new Response('<html>too large</html>', { status: 413 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    let latest: readonly EvidenceFile[] = [];
+    render(<EvidenceUpload label="Screenshots" onChange={(f) => (latest = f)} liveUploads />);
+    await user.upload(screen.getByLabelText('Choose images'), [file('big.png', 'image/png', 5_000_000)]);
+    expect(await screen.findByText(/too large to upload/)).toBeInTheDocument();
+    expect(latest).toEqual([]);
+    fetchMock.mockImplementation(async () => refusal(409, 'evidence_unavailable'));
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText(/Image uploads are not available yet/)).toBeInTheDocument();
+    vi.unstubAllGlobals();
   });
 
   it('offers real wallet signing instead of a simulated signature', async () => {

@@ -199,12 +199,14 @@ No `public` columns. Reports never appear in public DTOs.
 `id`, `kind` (`image` | `transaction_ref` | `address_ref` | `url` | `statement`), `submitted_by`, `submitted_at`, `description`, kind-specific columns (`chain_id` + `tx_hash`; `chain_id` + `address`; `url_text`; `statement_text`), `state` (`upload_pending` | `quarantined` | `processing` | `available` | `rejected` | `unpublished` | `purge_requested` | `purged`), `visibility` (`staff_only` | `published`), `legal_hold` (bool), `case_id`.
 `CHECK` that kind-specific columns match `kind`.
 
-### `evidence_objects` (per item; **no cross-item sharing**)
-`id`, `evidence_item_id`, `role` (`original` | `quarantine`), `bucket`, `storage_key` (random), `object_version_id`, `sha256`, `size_bytes`, `detected_mime`, `width`, `height`, `state`, `created_at`, `purged_at`, `purge_reason`, `purge_approved_by`.
-Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplicate signal; never an access key).
+Phase 9b (migration 0011) adds image columns: `content_type` (declared `image/png` | `image/jpeg` | `image/webp`, set exactly for images), `processing_attempts`, `next_attempt_at` (the worker's retry time and lease: the row is the job) and `rejection_reason` (set exactly when an image is `rejected`). Images are uploaded unattached and linked when the member submits the report; unattached uploads are purged after 7 days.
 
-### `evidence_derivatives`
-`id`, `evidence_item_id`, `kind` (`sanitized_image` | `redacted`), `bucket`, `storage_key`, `object_version_id`, `sha256`, `processor_version`, `reason`, `created_by`, `created_at`.
+### `evidence_objects` (per item; **no cross-item sharing**) [Phase 9b]
+`id`, `evidence_item_id`, `role` (`quarantine` | `original`), `bucket`, `storage_key` (unique, random: `quarantine/<item>/<uuid>`, `original/<item>/<uuid>`), `object_version_id`, `sha256`, `size_bytes` (1 B–10 MiB), `created_at`, `purged_at`, `purge_reason` (set together, once).
+Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplicate signal; never an access key). Rows are never deleted; only the purge columns change, once (trigger). Detected format and dimensions live on the derivative; a purge approver is added with the purge workflow.
+
+### `evidence_derivatives` [Phase 9b]
+`id`, `evidence_item_id`, `kind` (`sanitized_image` | `redacted`), `bucket`, `storage_key` (unique: `derivative/<item>/<uuid>`), `sha256`, `size_bytes`, `format` (`png` | `jpeg` | `webp`), `width`, `height` (1–12,000), `processor_version`, `created_by_ref`, `created_at`, `purged_at`. Never deleted; only `purged_at` is set, once (trigger). Object versions are not recorded for derivatives in 9b.
 
 ### `evidence_links`
 `id`, `evidence_item_id`, exactly one of `report_id` | `finding_revision_id` | `appeal_id` | `response_id` | `standing_claim_id` | `correction_request_id` (`CHECK num_nonnulls = 1`), `linked_by`, `linked_at`, `unlinked_at`.

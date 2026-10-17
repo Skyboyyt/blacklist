@@ -10,7 +10,8 @@ import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { isMockApi } from '@/lib/api/mode';
-import { DEMO_UPLOAD_NOTICE } from '@/lib/submissions/copy';
+import { uploadEvidenceImage } from '@/lib/api/live/evidence';
+import { DEMO_UPLOAD_NOTICE, LIVE_UPLOAD_NOTICE } from '@/lib/submissions/copy';
 
 type Item =
   | {
@@ -20,12 +21,31 @@ type Item =
       readonly progress: number;
     }
   | { readonly key: string; readonly file: EvidenceFile; readonly state: 'done' }
-  | { readonly key: string; readonly file: EvidenceFile; readonly state: 'failed' };
+  | {
+      readonly key: string;
+      readonly file: EvidenceFile;
+      readonly state: 'failed';
+      readonly message?: string | undefined;
+    };
 
 interface EvidenceUploadProps {
   readonly label: string;
   readonly onChange: (files: readonly EvidenceFile[]) => void;
   readonly error?: string | undefined;
+  /** The server accepts images for this form (Phase 9b: new reports only). */
+  readonly liveUploads?: boolean;
+}
+
+function Unavailable({ label }: { readonly label: string }) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-sm font-medium text-text">{label}</legend>
+      <p className="rounded-md border border-dashed border-border-strong bg-surface-2 p-2 text-xs text-muted">
+        Image uploads are not available yet. Describe what the images show in the text, and add links or
+        transaction hashes where the form allows.
+      </p>
+    </fieldset>
+  );
 }
 
 const ALLOWED = new Set<string>(EVIDENCE_IMAGE_TYPES);
@@ -39,30 +59,24 @@ function sizeLabel(bytes: number): string {
 
 /**
  * Image evidence picker (PRD §5.12): PNG, JPEG or WebP, at most 10 MiB each and 10 in
- * total. Files are checked here for quick feedback; the server checks again. In the
- * demo nothing is uploaded: progress is simulated and only metadata is kept. A file
- * whose name contains "fail" simulates a failed upload so the retry path can be tried.
+ * total. Files are checked here for quick feedback; the server checks again. Live, each
+ * image is uploaded on its own and the form sends only the ids the server returned
+ * (Phase 9b). In the demo nothing is uploaded: progress is simulated and only metadata is
+ * kept; a file whose name contains "fail" simulates a failure so retry can be tried.
  */
 export function EvidenceUpload(props: EvidenceUploadProps) {
-  // Image uploads need the isolated evidence processor (Phase 9b); until then only text evidence is sent.
-  if (!isMockApi())
-    return (
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-text">{props.label}</legend>
-        <p className="rounded-md border border-dashed border-border-strong bg-surface-2 p-2 text-xs text-muted">
-          Image uploads are not available yet. Describe what the images show in the text, and add links or
-          transaction hashes where the form allows.
-        </p>
-      </fieldset>
-    );
-  return <EvidencePicker {...props} />;
+  const mock = isMockApi();
+  if (!mock && !props.liveUploads) return <Unavailable label={props.label} />;
+  return <EvidencePicker {...props} mock={mock} />;
 }
 
-function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
+function EvidencePicker({ label, onChange, error, mock }: EvidenceUploadProps & { readonly mock: boolean }) {
   const id = useId();
   const [items, setItems] = useState<readonly Item[]>([]);
   const [problems, setProblems] = useState<readonly string[]>([]);
+  const [unavailable, setUnavailable] = useState(false);
   const timers = useRef(new Map<string, ReturnType<typeof setInterval>>());
+  const files = useRef(new Map<string, File>());
   const seq = useRef(0);
 
   useEffect(() => {
@@ -90,6 +104,31 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
     timers.current.set(key, timer);
   }
 
+  /** Live: upload the file; the id the server returns replaces the local placeholder. */
+  async function send(key: string, file: EvidenceFile) {
+    const raw = files.current.get(key);
+    if (!raw) return;
+    const outcome = await uploadEvidenceImage(raw);
+    if (outcome.kind === 'unavailable') {
+      setUnavailable(true);
+      return;
+    }
+    setItems((current) =>
+      current.map((item) =>
+        item.key !== key
+          ? item
+          : outcome.kind === 'ok'
+            ? { key, file: { ...file, id: outcome.id }, state: 'done' }
+            : { key, file, state: 'failed', message: outcome.message },
+      ),
+    );
+  }
+
+  function start(key: string, file: EvidenceFile) {
+    if (mock) simulate(key, file);
+    else void send(key, file);
+  }
+
   function pick(event: ChangeEvent<HTMLInputElement>) {
     const chosen = Array.from(event.target.files ?? []);
     event.target.value = '';
@@ -107,9 +146,15 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
       } else {
         seq.current += 1;
         const key = `${f.name}-${f.size}-${seq.current}`;
+        files.current.set(key, f);
         accepted.push({
           key,
-          file: { name: f.name.slice(0, 200), type: f.type as EvidenceFile['type'], size: f.size },
+          file: {
+            id: crypto.randomUUID(),
+            name: f.name.slice(0, 200),
+            type: f.type as EvidenceFile['type'],
+            size: f.size,
+          },
           state: 'uploading',
           progress: 0,
         });
@@ -117,13 +162,14 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
     }
     setProblems(issues);
     setItems((current) => [...current, ...accepted]);
-    for (const item of accepted) simulate(item.key, item.file);
+    for (const item of accepted) start(item.key, item.file);
   }
 
   function remove(key: string) {
     const timer = timers.current.get(key);
     if (timer) clearInterval(timer);
     timers.current.delete(key);
+    files.current.delete(key);
     setItems((current) => current.filter((i) => i.key !== key));
   }
 
@@ -133,10 +179,12 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
         i.key === item.key ? { key: i.key, file: i.file, state: 'uploading', progress: 0 } : i,
       ),
     );
-    // A retried "fail" file succeeds, so the recovery path completes.
-    simulate(item.key, { ...item.file, name: item.file.name.replace(/fail/gi, 'retried') });
+    // Demo: a retried "fail" file succeeds, so the recovery path completes.
+    if (mock) simulate(item.key, { ...item.file, name: item.file.name.replace(/fail/gi, 'retried') });
+    else void send(item.key, item.file);
   }
 
+  if (unavailable) return <Unavailable label={label} />;
   const busy = items.some((i) => i.state === 'uploading');
   return (
     <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-help`}>
@@ -146,7 +194,7 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
         private keys or passwords in a screenshot.
       </p>
       <p className="rounded-md border border-dashed border-border-strong bg-surface-2 p-2 text-xs text-muted">
-        {DEMO_UPLOAD_NOTICE}
+        {mock ? DEMO_UPLOAD_NOTICE : LIVE_UPLOAD_NOTICE}
       </p>
       <label
         htmlFor={id}
@@ -164,7 +212,7 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
         />
       </label>
       <div role="status" aria-live="polite" className="text-sm">
-        {busy ? <p className="text-muted">Simulating upload…</p> : null}
+        {busy ? <p className="text-muted">{mock ? 'Simulating upload…' : 'Uploading…'}</p> : null}
       </div>
       {problems.length > 0 || error ? (
         <ul className="text-sm text-danger" role="alert">
@@ -184,17 +232,23 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
               <span className="min-w-0 flex-1 break-all text-text">{item.file.name}</span>
               <span className="text-xs text-muted">{sizeLabel(item.file.size)}</span>
               {item.state === 'uploading' ? (
-                <progress
-                  max={100}
-                  value={item.progress}
-                  aria-label={`Simulated upload of ${item.file.name}`}
-                  className="w-24"
-                />
+                mock ? (
+                  <progress
+                    max={100}
+                    value={item.progress}
+                    aria-label={`Simulated upload of ${item.file.name}`}
+                    className="w-24"
+                  />
+                ) : (
+                  <progress aria-label={`Uploading ${item.file.name}`} className="w-24" />
+                )
               ) : item.state === 'done' ? (
-                <span className="text-xs text-positive">Ready (demo)</span>
+                <span className="text-xs text-positive">{mock ? 'Ready (demo)' : 'Uploaded'}</span>
               ) : (
                 <>
-                  <span className="text-xs text-danger">Simulated upload failed</span>
+                  <span className="text-xs text-danger">
+                    {mock ? 'Simulated upload failed' : (item.message ?? 'Upload failed')}
+                  </span>
                   <Button size="sm" variant="secondary" onClick={() => retry(item)}>
                     Retry
                   </Button>

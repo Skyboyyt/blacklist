@@ -33,5 +33,9 @@ export function submissionHref(kind: SubmissionKind, id: string): string {
   }
 }
 
+/** Live image uploads (Phase 9b, ADR 0020): staging takes test images only. */
+export const LIVE_UPLOAD_NOTICE =
+  'Blacklist is still in testing: upload test images only, not real evidence or anything personal. Each image is checked and re-encoded by an isolated processor; staff only ever see the cleaned copy.';
+
 export const DEMO_UPLOAD_NOTICE =
   'Demo: files are not uploaded or scanned. Only each file’s name, type and size are kept in this demo session. In the real service, images are re-encoded in an isolated processor and originals are never shown.';

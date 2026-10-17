@@ -16,7 +16,10 @@ export type RouteSecurity = {
   auth: 'public' | 'authenticated' | 'member' | 'staff_pending' | 'staff' | 'internal';
   permission?: Permission;
   mutation: boolean;
+  /** Mutations take JSON; an evidence upload route declares a raw image body instead. */
+  body?: 'image';
 };
+const IMAGE_BODY_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 declare module 'fastify' {
   interface FastifyInstance {
     authorizationMatrix: readonly { method: string; path: string; policy: RouteSecurity }[];
@@ -62,6 +65,8 @@ export function installSecurity(app: FastifyInstance, ctx: IdentityContext, conf
       throw new Error('unsafe_method_policy');
     if (policy.auth === 'internal' && methods.some((m) => m !== 'GET' && m !== 'HEAD'))
       throw new Error('internal_mutation_forbidden');
+    if (policy.body === 'image' && (!policy.mutation || policy.auth !== 'member'))
+      throw new Error('image_body_member_mutation_only');
   });
   app.addHook('onRequest', async (req, reply) => {
     reply.header('x-request-id', req.id || randomUUID());
@@ -77,8 +82,11 @@ export function installSecurity(app: FastifyInstance, ctx: IdentityContext, conf
           code: 'origin_rejected',
           requestId: req.id,
         });
-      if (req.headers['content-type']?.split(';')[0]?.trim() !== 'application/json')
-        return reply.code(415).send({ code: 'json_required' });
+      const type = req.headers['content-type']?.split(';')[0]?.trim();
+      if (req.routeOptions.config.security?.body === 'image') {
+        if (!type || !IMAGE_BODY_TYPES.includes(type))
+          return reply.code(415).send({ code: 'image_required' });
+      } else if (type !== 'application/json') return reply.code(415).send({ code: 'json_required' });
     }
     const raw = req.raw.socket.remoteAddress ?? '';
     const family = isIP(raw);

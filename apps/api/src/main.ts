@@ -1,5 +1,5 @@
-import { readApiConfig, resolveRegistrationAccess } from '@blacklist/config';
-import { createIdentity, createResearch } from '@blacklist/domain';
+import { readApiConfig, resolveEvidenceStorage, resolveRegistrationAccess } from '@blacklist/config';
+import { createEvidenceStorage, createIdentity, createResearch } from '@blacklist/domain';
 import { createServer } from './server.ts';
 const config = readApiConfig();
 const ctx = createIdentity(config.DATABASE_URL, {
@@ -10,7 +10,14 @@ const ctx = createIdentity(config.DATABASE_URL, {
   breakGlassEnabled: config.BREAK_GLASS_ENABLED === 'true',
   registration: resolveRegistrationAccess(config),
 });
-const server = createServer(ctx, config, true, createResearch(ctx.runtime, config));
+const storage = resolveEvidenceStorage(config);
+const server = createServer(
+  ctx,
+  config,
+  true,
+  createResearch(ctx.runtime, config),
+  storage ? createEvidenceStorage(storage) : null,
+);
 try {
   await ctx.runtime.start();
   await server.listen({ host: config.API_HOST, port: config.API_PORT });

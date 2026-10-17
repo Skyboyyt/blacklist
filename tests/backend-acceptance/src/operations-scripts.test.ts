@@ -50,4 +50,16 @@ describe('Neon apply scripts embed the committed migrations exactly', () => {
       expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
     }
   });
+  it('0011: both files verbatim, with matching ledger checksums', async () => {
+    const script = await read('docs/operations/2026-10-17-apply-0011-evidence.sql');
+    expect(script).toContain('<> 20 THEN');
+    for (const [path, name] of [
+      ['packages/db/migrations/generated/0011_woozy_weapon_omega.sql', '0011_woozy_weapon_omega.sql'],
+      ['packages/db/migrations/0011_evidence_guards.sql', '0011_evidence_guards.sql'],
+    ] as const) {
+      const source = await read(path);
+      expect(script).toContain(source.trimEnd());
+      expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
+    }
+  });
 });

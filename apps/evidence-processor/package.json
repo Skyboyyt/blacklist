@@ -5,6 +5,19 @@
   "description": "Isolated image sanitizer for evidence uploads. No database access, no secrets, egress only to object storage.",
   "type": "module",
   "dependencies": {
-    "@blacklist/core": "workspace:*"
+    "@blacklist/core": "workspace:*",
+    "sharp": "0.35.5",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.2"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node src/main.ts"
   }
 }

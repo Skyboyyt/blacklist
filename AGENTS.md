@@ -17,7 +17,8 @@
   - **Phase 9a** is merged and deployed (PRs #17, #18, #20); the owner applied 0006 and 0007 on Neon staging and enrolled the first staff admin (2026-10-17).
   - **Phase 10 (Risk Engine & Admin Backend):** authorized by the owner on 2026-10-17. The plan is in [docs/phase10-plan.md](docs/phase10-plan.md). Public risk bands stay off until the owner signs O-12.
   - **Phase 11 (Integration, Hardening & Launch Readiness):** authorized by the owner on 2026-10-17. The plan is in [docs/phase11-plan.md](docs/phase11-plan.md); it ends when the owner signs [docs/launch-checklist.md](docs/launch-checklist.md). A production environment still needs an owner instruction (O-4).
-  - **Not authorized:** Phase 9b cloud resources, a production environment, paid resources, cloud migrations, provider activation, `activity_stream`.
+  - **Phase 9b (image evidence):** requested by the owner on 2026-10-17; [ADR 0020](docs/adr/0020-phase9b-evidence-hosting-on-staging.md) accepted for staging (test images only). The plan is in [docs/phase9b-plan.md](docs/phase9b-plan.md). Built for new reports and staff download; the owner switches it on from [the runbook](docs/operations/2026-10-17-phase9b-evidence-setup.md) (storage account, processor service, migration 0011).
+  - **Not authorized:** a production environment, paid resources, cloud migrations, provider activation, `activity_stream`.
   - **Owner instructions recorded in AI_HANDOFF** (direct pushes or merges to `main`, going live) applied to those occasions only; the ordinary Git, architecture and security rules below are unchanged.
 - **Execution is frontend-first** (owner decision; ARCHITECTURE.md §36):
   - Phases 1–6 build and review the primary frontend against `@blacklist/contracts` and a typed mock client.

@@ -38,3 +38,5 @@ Adds an explicit API-to-worker **liveness-only** dependency and can consume Free
 ## Decision (owner)
 
 Owner explicitly accepted the on-demand wake plan on2026-10-13. Scoped implementation/activation is authorized; Claude recommendation remains pending and no independent approval is invented. No scheduler, keepalive, paid service or identity-policy bypass.
+
+**Note (2026-10-17):** [ADR 0020](0020-phase9b-evidence-hosting-on-staging.md) extends the same single, bounded, secretless wake request to an accepted evidence upload (`POST /api/v1/evidence/images`), so the free worker processes the image. Nothing else about the wake changes.

@@ -78,6 +78,13 @@
       "when": 1792204019512,
       "tag": "0010_condemned_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792272126874,
+      "tag": "0011_woozy_weapon_omega",
+      "breakpoints": true
     }
   ]
 }
