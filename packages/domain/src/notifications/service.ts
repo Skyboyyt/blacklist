@@ -209,6 +209,12 @@ export async function escalateOverdueAppeals(
   let escalated = 0;
   for (const { id } of due)
     await runtime.transaction(async (tx) => {
+      // Find the case first: an appeal is marked escalated only when its alert is written.
+      const [c] = await tx
+        .select({ id: schema.moderationCases.id })
+        .from(schema.moderationCases)
+        .where(eq(schema.moderationCases.appealId, id));
+      if (!c) return;
       const [appeal] = await tx
         .update(schema.appeals)
         .set({ escalatedAt: now })
@@ -221,11 +227,6 @@ export async function escalateOverdueAppeals(
         )
         .returning({ id: schema.appeals.id });
       if (!appeal) return;
-      const [c] = await tx
-        .select({ id: schema.moderationCases.id })
-        .from(schema.moderationCases)
-        .where(eq(schema.moderationCases.appealId, id));
-      if (!c) return;
       const admins = await tx
         .select({ id: schema.user.id })
         .from(schema.roles)

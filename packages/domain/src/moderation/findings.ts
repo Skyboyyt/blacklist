@@ -871,7 +871,7 @@ export async function publicFindings(db: Database, chainId: string, address: str
     .select({ subjectId: schema.addresses.subjectId })
     .from(schema.addresses)
     .where(and(eq(schema.addresses.chainId, chainId), eq(schema.addresses.address, address)));
-  if (!row) return { subjectId: null, findings: [], timeline: [] };
+  if (!row) return { subjectId: null, findings: [], timeline: [], suspended: false };
   const findings = await db
     .select()
     .from(schema.findings)
@@ -931,5 +931,7 @@ export async function publicFindings(db: Database, chainId: string, address: str
     });
   }
   timeline.sort((a, b) => a.at.localeCompare(b.at));
-  return { subjectId: row.subjectId, findings: out, timeline };
+  // A suspended finding shows no text, but its subject's assessment is disputed (§8.3).
+  const suspended = findings.some((f) => f.status === 'suspended');
+  return { subjectId: row.subjectId, findings: out, timeline, suspended };
 }

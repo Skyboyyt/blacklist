@@ -42,9 +42,11 @@ export async function addressResearch(
     published.subjectId,
     published.findings.map((f) => f.id),
   );
-  const disputeState = published.findings.some((f) => redress.underAppeal.has(f.id))
-    ? ('under_appeal' as const)
-    : ('none' as const);
+  const disputeState = published.suspended
+    ? ('suspended_pending_review' as const)
+    : published.findings.some((f) => redress.underAppeal.has(f.id))
+      ? ('under_appeal' as const)
+      : ('none' as const);
   const assessment = await publicAssessment(ctx.runtime.db, published.subjectId, {
     publicBands,
     disputeState,

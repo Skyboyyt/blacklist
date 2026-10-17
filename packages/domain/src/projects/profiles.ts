@@ -165,7 +165,10 @@ export async function projectDetail(db: Database, slug: string, options: { publi
       attributedAt: row.attributedAt.toISOString(),
       assessment: await publicAssessment(db, row.addressSubjectId, {
         publicBands: options.publicBands,
-        disputeState: worst(own.map((f) => f.disputeState)),
+        disputeState: worst([
+          ...own.map((f) => f.disputeState),
+          ...(published.suspended ? (['suspended_pending_review'] as const) : []),
+        ]),
       }),
       disclosures: [],
     });
