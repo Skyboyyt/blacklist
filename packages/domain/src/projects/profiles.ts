@@ -1,6 +1,8 @@
 import { schema, eq, and, asc, desc, isNull, inArray, type Database } from '@blacklist/db';
 import { appendAudit } from '../audit/service.ts';
-import type { Actor } from '../access/types.ts';
+import type { Actor, UserActor } from '../access/types.ts';
+import { requirePermission } from '../access/policies.ts';
+import { DomainError } from '../shared/errors.ts';
 import { addressOf, addressSubject, type ChainSlug } from '../moderation/subjects.ts';
 import { publicFindings } from '../moderation/findings.ts';
 import { publicRedress } from '../moderation/redress.ts';
@@ -359,4 +361,23 @@ export async function projectsForSubjects(db: Database, subjectIds: readonly str
         isNull(schema.projectAddresses.retiredAt),
       ),
     );
+}
+
+/** The profile as a correction reviewer compares it (web `ProfileState`); staff only. */
+export async function projectProfileState(db: Database, actor: UserActor, slug: string) {
+  requirePermission(actor, 'moderation:case:read');
+  const [project] = await db.select().from(schema.projects).where(eq(schema.projects.slug, slug));
+  if (!project) throw new DomainError('not_found');
+  const latest = await latestRevision(db, project.id);
+  const domains = await db
+    .select({ hostname: schema.projectDomains.hostname })
+    .from(schema.projectDomains)
+    .where(and(eq(schema.projectDomains.projectId, project.id), isNull(schema.projectDomains.retiredAt)))
+    .orderBy(asc(schema.projectDomains.hostname));
+  return {
+    slug,
+    revision: latest.revisionNumber,
+    description: latest.description,
+    domains: domains.map((d) => d.hostname),
+  };
 }

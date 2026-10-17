@@ -16,6 +16,8 @@ import {
   caseQueue,
   projectDetail,
   listProjects,
+  projectScoreboard,
+  projectProfileState,
   type UserActor,
 } from '@blacklist/domain';
 import { createServer } from '../../../apps/api/src/server.ts';
@@ -268,6 +270,29 @@ describe('Phase 10 slice 3: projects', () => {
       const revised = await projectDetail(f.ctx.runtime.db, 'fictional-swap', { publicBands: false });
       expect(revised).toMatchObject({ profileRevision: 2, description: text('A fictional exchange, v2') });
       expect(revised?.domains.map((d) => d.hostname)).toContain('status.fictional-swap.example');
+      // The correction reviewer's view of the profile (staff only).
+      expect(await projectProfileState(f.ctx.runtime.db, moderator.actor, 'fictional-swap')).toMatchObject({
+        slug: 'fictional-swap',
+        revision: 2,
+        domains: expect.arrayContaining(['status.fictional-swap.example']),
+      });
+      await expect(projectProfileState(f.ctx.runtime.db, suggester.actor, 'fictional-swap')).rejects.toThrow(
+        'forbidden',
+      );
+      await expect(projectProfileState(f.ctx.runtime.db, moderator.actor, 'nope')).rejects.toThrow(
+        'not_found',
+      );
+      // ADR 0012: with public bands off nothing is ranked, and the reason is given.
+      expect(await projectScoreboard(f.ctx.runtime.db, {}, { publicBands: false })).toEqual({
+        asOf: null,
+        ranked: [],
+        notRanked: [{ slug: 'fictional-swap', name: 'Fictional Swap', reason: 'not_assessed' }],
+      });
+      expect(await projectScoreboard(f.ctx.runtime.db, { chain: 'solana' }, { publicBands: false })).toEqual({
+        asOf: null,
+        ranked: [],
+        notRanked: [],
+      });
       expect(revised?.history.map((h) => h.kind)).toEqual([
         'profile_created',
         'profile_revised',
@@ -334,6 +359,23 @@ describe('Phase 10 slice 3: projects', () => {
       expect((await app.inject({ method: 'GET', url: '/api/v1/projects' })).json()).toEqual({
         kind: 'empty_directory',
       });
+      expect((await app.inject({ method: 'GET', url: '/api/v1/projects/scoreboard' })).json()).toEqual({
+        asOf: null,
+        ranked: [],
+        notRanked: [],
+      });
+      expect(
+        (await app.inject({ method: 'GET', url: '/api/v1/projects/scoreboard?chain=bitcoin' })).statusCode,
+      ).toBe(400);
+      const state = (cookie?: string) =>
+        app.inject({
+          method: 'GET',
+          url: '/api/v1/mod/projects/no-such-project/state',
+          headers: cookie ? { cookie } : {},
+        });
+      expect((await state()).statusCode).toBe(401);
+      expect((await state(m.cookie)).statusCode).toBe(403);
+      expect((await state(staff.headers.get('cookie') ?? '')).statusCode).toBe(404);
       expect((await app.inject({ method: 'GET', url: '/api/v1/projects/no-such-project' })).json()).toEqual({
         kind: 'not_found',
       });

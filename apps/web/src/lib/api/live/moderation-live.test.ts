@@ -38,7 +38,18 @@ describe('live member and moderation adapters (Phase 9a slice 5)', () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
     expect(await liveMemberApi.getSubmission('../admin')).toEqual({ kind: 'error', code: 'not_found' });
-    expect(await liveMemberApi.submitSuggestion({} as never)).toMatchObject({ code: 'invalid_transition' });
+    expect(
+      await liveMemberApi.submitCorrection({
+        projectSlug: '../admin',
+        statement: 'x',
+        evidence: [],
+      } as never),
+    ).toEqual({ kind: 'error', code: 'not_found' });
+    expect(await liveModerationApi.getProfileState('Not A Slug')).toEqual({
+      kind: 'error',
+      code: 'not_found',
+    });
+    expect(await liveModerationApi.getAuditLog('../x')).toEqual({ kind: 'error', code: 'not_found' });
     expect(await liveMemberApi.getResponseChallenge({ kind: 'project', slug: 'fictional' })).toMatchObject({
       code: 'invalid_transition',
     });
@@ -103,6 +114,34 @@ describe('live member and moderation adapters (Phase 9a slice 5)', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('sends project submissions, the audit log and profile state to their routes', async () => {
+    const fetch = vi.fn().mockResolvedValue(reply({ kind: 'ok', data: { id: CASE } }));
+    vi.stubGlobal('fetch', fetch);
+    await liveMemberApi.submitSuggestion({ name: 'Fictional' } as never);
+    await liveMemberApi.submitCorrection({
+      projectSlug: 'fictional-swap',
+      statement: 'x',
+      evidence: [],
+    } as never);
+    expect(fetch.mock.calls.map((c) => c[0])).toEqual([
+      '/api/v1/projects/suggestions',
+      '/api/v1/projects/fictional-swap/corrections',
+    ]);
+    const state = { slug: 'fictional-swap', revision: 2, description: 'Fictional', domains: ['a.example'] };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ kind: 'ok', data: state })));
+    expect(await liveModerationApi.getProfileState('fictional-swap')).toEqual({ kind: 'ok', data: state });
+    const audit = vi.fn().mockResolvedValue(reply({ kind: 'ok', data: [] }));
+    vi.stubGlobal('fetch', audit);
+    expect(await liveModerationApi.getAuditLog(CASE)).toEqual({ kind: 'ok', data: [] });
+    expect(audit.mock.calls[0]?.[0]).toBe(`/api/v1/mod/audit?caseId=${CASE}`);
+    // A profile state with extra fields is refused.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply({ kind: 'ok', data: { ...state, owner: 'x' } })));
+    expect(await liveModerationApi.getProfileState('fictional-swap')).toEqual({
+      kind: 'error',
+      code: 'temporarily_unavailable',
+    });
+  });
+
   it('builds the queue query from the request and keeps Phase 10 reads unavailable', async () => {
     const fetch = vi.fn().mockResolvedValue(reply({ code: 'temporarily_unavailable' }, 503));
     vi.stubGlobal('fetch', fetch);
@@ -110,6 +149,7 @@ describe('live member and moderation adapters (Phase 9a slice 5)', () => {
     expect(fetch.mock.calls[0]?.[0]).toBe(
       '/api/v1/mod/queue?assignment=mine&sort=sla_due&page=2&type=appeal_review',
     );
+    // An unavailable API is reported as such, never as an empty audit log.
     expect(await liveModerationApi.getAuditLog()).toEqual({ kind: 'error', code: 'temporarily_unavailable' });
   });
 });

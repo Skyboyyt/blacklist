@@ -100,14 +100,26 @@ describe('live adapters preserve contracts and never invent success', () => {
       timeout.mockRestore();
     }
   });
-  it('requires an action assertion and keeps later-phase services unavailable', async () => {
+  it('requires an action assertion before any administrator change', async () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
     expect(await liveAdminApi.createInvitation({ email: 'fictional@example.test', role: 'admin' })).toEqual({
       kind: 'error',
       code: 'stepup_required',
     });
+    expect(
+      await liveAdminApi.suppressSignal({
+        chain: 'ethereum',
+        address: '0x' + '1'.repeat(40),
+        factorCode: 'eoa.delegated_to_flagged',
+        publicReason: 'Fictional public reason text.',
+        internalRationale: 'Fictional internal rationale.',
+      }),
+    ).toEqual({ kind: 'error', code: 'stepup_required' });
+    expect(await liveAdminApi.liftSuppression('fictional', 'Fictional reason text')).toEqual({
+      kind: 'error',
+      code: 'stepup_required',
+    });
     expect(fetch).not.toHaveBeenCalled();
-    expect(await liveAdminApi.listSuppressions()).toEqual({ kind: 'error', code: 'temporarily_unavailable' });
   });
 });

@@ -8,6 +8,7 @@ import {
   caseDecisionSchema,
   suspensionRequestSchema,
   findingRevisionSchema,
+  suppressionRequestSchema,
   type PasskeyResult,
 } from '@blacklist/contracts';
 
@@ -83,6 +84,15 @@ export async function verifyLiveStepup(
         action === 'finding.approve'
           ? { revisionNumber, contentHash: findingRevisionSchema.shape.contentHash.parse(parameters[2]) }
           : { revisionNumber, rationale: suspensionRequestSchema.shape.reason.parse(parameters[2]) };
+    } else if (action === 'signal.suppress') {
+      // Bound to the exact suppression request (the API re-parses it the same way).
+      if (targetId !== 'new') return { kind: 'failed' };
+      targetType = 'suppression';
+      params = suppressionRequestSchema.parse(parameters[0]);
+    } else if (action === 'signal.suppression.lift') {
+      if (parameters[0] !== targetId) return { kind: 'failed' };
+      targetType = 'suppression';
+      params = reasonRequestSchema.parse({ reason: parameters[1] });
     } else if (action === 'finding.suspend') {
       targetType = 'finding';
       if (parameters[0] !== targetId) return { kind: 'failed' };

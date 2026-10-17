@@ -91,6 +91,41 @@ describe('non-mock server research adapter', () => {
       expect(fetcher).toHaveBeenCalledTimes(1);
     }
   });
+  it('reads projects, the scoreboard and finalized addresses from fixed internal paths', async () => {
+    setup();
+    const ok = (body: unknown) => ({ ok: true, status: 200, json: async () => body });
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(ok({ kind: 'empty_directory' }))
+      .mockResolvedValueOnce(ok({ asOf: null, ranked: [], notRanked: [] }))
+      .mockResolvedValueOnce(ok({ kind: 'not_found' }))
+      .mockResolvedValueOnce(ok({ kind: 'not_found' }));
+    vi.stubGlobal('fetch', fetcher);
+    expect(
+      await liveResearchApi.listProjects({ query: 'swap', findings: 'any', sort: 'name', page: 2 }),
+    ).toEqual({ kind: 'empty_directory' });
+    expect(await liveResearchApi.getScoreboard({ chain: 'solana' })).toEqual({
+      asOf: null,
+      ranked: [],
+      notRanked: [],
+    });
+    expect(await liveResearchApi.getProject('fictional-swap')).toEqual({ kind: 'not_found' });
+    await liveResearchApi.getAddressResearch('ethereum', '0x' + '1'.repeat(40), { finality: 'final' });
+    expect(
+      fetcher.mock.calls.map(([url]) => String(url).replace('http://localhost:4107/api/internal/v1', '')),
+    ).toEqual([
+      '/projects?query=swap&findings=any&sort=name&page=2',
+      '/projects/scoreboard?chain=solana',
+      '/projects/fictional-swap',
+      `/addresses/ethereum/0x${'1'.repeat(40)}?finality=final`,
+    ]);
+    // A ranking that carries a numeric score is refused, never shown.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(ok({ asOf: null, ranked: [], notRanked: [], score: 1 })),
+    );
+    await expect(liveResearchApi.getScoreboard({})).rejects.toThrow();
+  });
   it('never fabricates data when unconfigured and never forwards an unsafe session cookie', async () => {
     vi.stubEnv('API_INTERNAL_URL', '');
     vi.stubEnv('INTERNAL_API_TOKEN', '');

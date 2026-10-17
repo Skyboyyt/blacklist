@@ -170,8 +170,9 @@ Implemented on the server (`apps/api/src/routes/moderation.ts`, `findings.ts`, `
 
 - Image pickers show a notice instead (uploads arrive with Phase 9b); documentary standing gains link and transaction fields.
 - Signature standing asks the browser wallet for `personal_sign` (EVM) or `signMessage` (Solana) from the subject address only, over the server's text, and sends `{ challengeId, signature }`. Never `eth_sign`, typed data or a transaction. Authority and DNS standing show "not available yet".
-- Project suggestions, project corrections, the audit search and project profile state answer `invalid_transition` or `temporarily_unavailable` until Phase 10.
-- Step-ups for `case.<action>`, `finding.approve`, `finding.reject` and `finding.suspend` are bound to the same canonical parameters the API checks.
+- Since Phase 10 slice 5, project suggestions and corrections, the project directory, profiles and scoreboard, the audit log, profile state, and admin labels and suppressions are live. Responses about a project as a whole still answer `invalid_transition` (they need DNS standing).
+- Step-ups for `case.<action>`, `finding.approve`, `finding.reject`, `finding.suspend`, `signal.suppress` and `signal.suppression.lift` are bound to the same canonical parameters the API checks.
+- Address pages offer "Show finalized data" (`?finality=final`), which reads the finalized block or slot instead of the newest.
 
 **Phase 10 slices 3–4 (2026-10-17, not yet deployed).** `apps/api/src/routes/projects.ts` and `admin.ts`:
 
@@ -184,6 +185,8 @@ Implemented on the server (`apps/api/src/routes/moderation.ts`, `findings.ts`, `
 | `GET /admin/suppressions`, `POST /admin/suppressions`, `POST /admin/suppressions/lift` | staff, `signal:suppress` (admin) | `{ request: suppressionRequestSchema, assertion }` with a step-up `signal.suppress`, target type `suppression`, target `new`, parameters = the request. Refused (`invalid_transition`) unless the address has an active analysis signal with that code. Lift: `{ id, reason, assertion }`, step-up `signal.suppression.lift` with `{ reason }` |
 | `GET /mod/audit?caseId=`                                                               | staff, `audit:read` (admin)      | Newest 200 entries the viewer understands. `reason` is always null (the audit log holds IDs and codes only); members appear as `Member`                                                                                                                                                                                                        |
 | `GET /admin/overview`                                                                  | as before                        | `activeLabels`, `activeSuppressions` and `alerts` (appeals escalated after 14 days) are now live                                                                                                                                                                                                                                               |
+| `GET /projects/scoreboard?chain=` | public | ADR 0012 band-only ranking (slice 5). With public bands off every address is `not_assessed`, so nothing is ranked and each project is listed under "not ranked" with its reason. No score field exists |
+| `GET /mod/projects/:slug/state` | staff, `moderation:case:read` | `profileStateSchema`: the current revision, description and active domains, for reviewing a correction |
 
 Errors carry `code`, and for moderation refusals a fixed server-written `detail` and, for `conflict`, `currentVersion`. HTTP: `invalid_transition` and `evidence_unavailable` 409; `not_eligible` and `stepup_required` 403.
 

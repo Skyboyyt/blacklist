@@ -7,6 +7,9 @@ import {
   findingRevisionSchema,
   staffFindingSchema,
   findingHistorySchema,
+  auditEntrySchema,
+  profileStateSchema,
+  projectSlugSchema,
   type ModerationError,
 } from '@blacklist/contracts';
 import type { ModerationApi, ModerationResult } from '../types';
@@ -66,8 +69,6 @@ async function call<T>(run: () => Promise<{ readonly data: T }>): Promise<Modera
 }
 
 const notFound = <T>(): Promise<ModerationResult<T>> => Promise.resolve({ kind: 'error', code: 'not_found' });
-const unavailable = <T>(): Promise<ModerationResult<T>> =>
-  Promise.resolve({ kind: 'error', code: 'temporarily_unavailable' });
 
 export const liveModerationApi: ModerationApi = {
   ...notConnectedModerationApi,
@@ -126,9 +127,20 @@ export const liveModerationApi: ModerationApi = {
         assertion: takeStepup('finding.reject', findingId),
       }),
     ),
-  // Audit search and project profiles arrive with Phase 10; case history is in the case detail.
-  getAuditLog: unavailable,
-  getProfileState: unavailable,
+  // Administrators only; the API returns the newest entries, optionally for one case.
+  getAuditLog: (caseId) =>
+    caseId === undefined || UUID.test(caseId)
+      ? call(() =>
+          request(
+            `/mod/audit${caseId ? `?caseId=${caseId}` : ''}`,
+            okEnvelopeSchema(auditEntrySchema.array()),
+          ),
+        )
+      : notFound(),
+  getProfileState: (slug) =>
+    projectSlugSchema.safeParse(slug).success
+      ? call(() => request(`/mod/projects/${slug}/state`, okEnvelopeSchema(profileStateSchema)))
+      : notFound(),
   listFindings: () => call(() => request('/mod/findings', okEnvelopeSchema(staffFindingSchema.array()))),
   suspendFinding: (findingId, reason) =>
     UUID.test(findingId)
