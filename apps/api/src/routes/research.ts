@@ -13,6 +13,7 @@ import {
 } from '@blacklist/contracts';
 import { DomainError, validateResearchIdentifier, type ResearchContext } from '@blacklist/domain';
 import { searchResearch, detectAndSearch } from '../presenters/search.ts';
+import { installResearchDiagnostics } from '../plugins/research-diagnostics.ts';
 import { addressResearch, transactionResearch } from '../presenters/research.ts';
 import {
   historyResearch,
@@ -27,6 +28,7 @@ const options = z.object({
   verify: z.enum(['true', 'false']).default('false'),
 });
 export function researchRoutes(app: FastifyInstance, ctx: ResearchContext | undefined, publicBands = false) {
+  installResearchDiagnostics(app);
   const limits = new Map<string, { start: number; cost: number }>();
   app.addHook('onRequest', async (req) => {
     if (
