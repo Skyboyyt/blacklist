@@ -16,7 +16,7 @@ This file holds the **current state only**. Each session adds one short entry un
 | Phase 7 (Backend Foundation) | Authorized 2026-10-13, merged (PRs #8–#11). Acceptance gates D1–D9 and S1–S17 recorded as passing by Codex. **Exit not closed:** independent security review; ADR 0013 accepted 2026-10-16 and part C implemented on the open branch (P-13 still open) |
 | Phase 8 (Chain Data & Research) | Authorized 2026-10-14, merged (PR #12) on explicit owner instruction despite disclosed blockers. **Research is off** (`RESEARCH_ENABLED=false`). ADR 0018 accepted provisionally 2026-10-16 (waiver recorded); O-3 open |
 | Deployment | Free staging services are public on explicit owner instruction (2026-10-13): Vercel web, Render API and worker, Neon PostgreSQL 18 staging database. **Not production-ready**; Phase 11 gates (legal, retention, recovery, monitoring) remain |
-| Authorized now | **Phase 9a** (owner, 2026-10-16): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Phase 9b (image evidence, object storage, processor) waits for a hosting ADR. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9b cloud resources, Phase 10 or later, paid resources, cloud migrations, provider activation |
+| Authorized now | **Phase 10** (owner, 2026-10-17): risk engine, assessments and jobs, projects, admin backend, notifications, band-only scoreboard; plan in [docs/phase10-plan.md](docs/phase10-plan.md); public bands only after O-12. **Phase 9a** (owner, 2026-10-16; merged and deployed): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Phase 9b (image evidence, object storage, processor) waits for a hosting ADR. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9b cloud resources, Phase 11, paid resources, cloud migrations, provider activation |
 | Primary / reviewer | Claude / Codex |
 | Last agent | Claude: Phase 9a slices 1–4 merged (PR #17); 0006 and 0007 applied to Neon staging by the owner and verified; Render deploy pending |
 | Last updated | 2026-10-16 |
@@ -43,6 +43,24 @@ This file holds the **current state only**. Each session adds one short entry un
 2. Responses still pending in earlier review files (see review CR-11).
 
 ## Session log
+
+### 2026-10-17: Claude, Phase 10 slices 1–2 (risk engine, assessments)
+
+- Slice 1: pure V1 risk engine (`packages/domain/src/risk/`), golden, invariant and replay tests.
+- Slice 2:
+  - risk tables in migration 0008, with an owner runbook rehearsed on disposable PostgreSQL 18 (16 entries, 69 tables);
+  - signals and assessments follow published findings in the same transaction;
+  - staff see the score in case detail;
+  - public bands stay off (`RISK_PUBLIC_BANDS=false`, O-12);
+  - the worker runs a 15-minute expiry sweep.
+- Slice 3: projects (migration 0009), suggestions and corrections through the case workflow, public profiles and directory.
+- Slice 4: labels, signal suppressions, notifications and 14-day appeal escalation (migration 0010), the audit viewer.
+- **Owner (after the PR):** apply 0008, 0009 then 0010 on Neon, then deploy the API, worker and Vercel.
+
+### 2026-10-17: Claude, Phase 10 authorized; plan drafted
+
+- The owner authorized Phase 10. [docs/phase10-plan.md](docs/phase10-plan.md) proposes five slices and four owner decisions (O-12 public-band switch, deferred analysis feeders, admin-only `project:manage`, interim status sets). Waiting for the owner's go-ahead before slice 1.
+- Earlier the same day: PR #19 (`main` into the old default branch) was closed unmerged; the owner switched the GitHub default branch to `main`. The Reports list and the live dashboard now list submissions from the member API (PR #20).
 
 ### 2026-10-17: Claude, first staff admin and slice 5 (web live adapters)
 

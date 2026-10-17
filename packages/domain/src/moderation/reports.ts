@@ -1,7 +1,8 @@
-import { schema, eq, and, asc, desc, inArray, type Database } from '@blacklist/db';
+import { schema, eq, and, asc, desc, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { requirePermission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
+import { notify } from '../notifications/service.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
@@ -14,6 +15,12 @@ import {
   withdrawRedress,
   replyAfterDeniedStanding,
 } from './redress.ts';
+import {
+  ownedProjectSubmission,
+  projectSubmissionDetail,
+  listOwnProjectSubmissions,
+  replyToSuggestion,
+} from '../projects/submissions.ts';
 
 // Reports are private to the reporter and staff and change nothing public while
 // unreviewed (moderation §10; AGENTS §5.7). Member views carry no staff identities.
@@ -134,6 +141,7 @@ export async function submitReport(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }
@@ -260,7 +268,11 @@ export async function listOwnSubmissions(ctx: IdentityContext, actor: UserActor)
     .where(eq(schema.reports.reporterUserId, actor.userId))
     .orderBy(desc(schema.reports.lastActivityAt))
     .limit(200);
-  const all = [...rows.map(({ c, r }) => summary(c, r)), ...(await listOwnRedress(ctx.runtime.db, actor))];
+  const all = [
+    ...rows.map(({ c, r }) => summary(c, r)),
+    ...(await listOwnRedress(ctx.runtime.db, actor)),
+    ...(await listOwnProjectSubmissions(ctx.runtime.db, actor)),
+  ];
   return all.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
@@ -269,6 +281,8 @@ export async function getOwnSubmission(ctx: IdentityContext, actor: UserActor, c
   return ctx.runtime.transaction(async (tx) => {
     const redress = await ownedRedress(tx, actor, caseId);
     if (redress) return redressDetail(tx, redress);
+    const project = await ownedProjectSubmission(tx, actor, caseId);
+    if (project) return projectSubmissionDetail(tx, project);
     const { c, r } = await ownedCase(tx, actor, caseId);
     return detail(tx, c, r);
   });
@@ -374,6 +388,14 @@ export async function respondToInfoRequest(
       if (!fresh) throw new Error('redress_missing');
       return redressDetail(tx, fresh);
     }
+    const project = await ownedProjectSubmission(tx, actor, caseId, true);
+    if (project) {
+      requireVersion(project.c, version);
+      await replyToSuggestion(tx, actor, project, input.message);
+      const fresh = await ownedProjectSubmission(tx, actor, caseId);
+      if (!fresh) throw new Error('project_submission_missing');
+      return projectSubmissionDetail(tx, fresh);
+    }
     const { c, r } = await ownedCase(tx, actor, caseId, true);
     requireVersion(c, version);
     if (r.status !== 'needs_info')
@@ -385,39 +407,4 @@ export async function respondToInfoRequest(
     const fresh = await ownedCase(tx, actor, caseId);
     return detail(tx, fresh.c, fresh.r);
   });
-}
-
-/** Plan interim decision 4: notices derive from the member's own report history. */
-export async function listOwnNotices(ctx: IdentityContext, actor: UserActor) {
-  requirePermission(actor, 'notification:read:own');
-  const rows = await ctx.runtime.db
-    .select({ h: schema.reportStatusHistory, c: schema.moderationCases, r: schema.reports })
-    .from(schema.reportStatusHistory)
-    .innerJoin(schema.reports, eq(schema.reports.id, schema.reportStatusHistory.reportId))
-    .innerJoin(schema.moderationCases, eq(schema.moderationCases.reportId, schema.reports.id))
-    .where(
-      and(
-        eq(schema.reports.reporterUserId, actor.userId),
-        inArray(schema.reportStatusHistory.toStatus, [
-          'queued',
-          'needs_info',
-          'accepted',
-          'rejected',
-          'rejected_abusive',
-        ]),
-      ),
-    )
-    .orderBy(desc(schema.reportStatusHistory.at))
-    .limit(50);
-  return rows.map(({ h, c, r }) => ({
-    id: h.id,
-    text:
-      h.fromStatus === null
-        ? `Your report “${r.title}” was received. It is private and has no public effect until staff review it.`
-        : h.toStatus === 'needs_info'
-          ? `Staff asked for more information about “${r.title}”.`
-          : `A decision was recorded on “${r.title}”: ${REPORT_STATUS_LABEL[h.toStatus] ?? h.toStatus}.`,
-    at: h.at.toISOString(),
-    href: `/reports/${c.id}`,
-  }));
 }

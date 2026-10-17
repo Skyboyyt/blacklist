@@ -828,7 +828,7 @@ Invariants (not calibration):
 ### 15.5 Expiry and recomputation
 
 - `risk.expiry_sweep` (every 15 minutes) recomputes subjects whose `next_review_at` has passed, **independent of page views**.
-- Signal changes enqueue `risk.recompute`.
+- Signal changes recompute the subject. Since Phase 10 this happens in the same transaction as the finding change, state-based and serialized per subject by locking `risk_subject_state` ([Phase 10 plan](docs/phase10-plan.md)); `risk.recompute` remains for stale views and ruleset batches.
 - Ruleset changes trigger a rate-limited batch.
 - Viewing a stale assessment (> 24 h) also enqueues a recompute; meanwhile the stored result is shown "as of".
 
@@ -930,9 +930,10 @@ Design unchanged and deferred:
 | `chain.pin_transaction` | Transaction evidence | Finalized + cross-verified |
 | `chain.verify_fact` | Scoring-signal facts | Receipts + verification records |
 | `risk.signal.upsert` | Finding publication/suspension/reversal, analysis facts | Carries source revision |
-| `risk.recompute` | Signal change, stale view, ruleset change | Reads current state; per-subject serialization |
+| `risk.recompute` | Stale view, ruleset change (signal changes recompute in the moderation transaction, Phase 10) | Reads current state; per-subject serialization |
 | `risk.expiry_sweep` | Every 15 minutes | `next_review_at` |
-| `notifications.fanout` | Domain events | Re-checks currency before sending |
+| `notifications.fanout` | Domain events (Phase 10: in-app notifications are written in the decision's transaction, so there is nothing to re-check) | Re-checks currency before sending |
+| `moderation.appeal_escalation` | Every 15 minutes (Phase 10) | Appeals open 14 days; `escalated_at` compare-and-set, once per appeal; alerts every administrator |
 | `audit.verify_chain` | Daily cron | Recomputes the hash chain; alerts on mismatch |
 | `providers.health_probe` | Cron | Latency, errors, freshness, disagreement |
 | `retention.purge` | Daily cron | Per retention map (§25) |

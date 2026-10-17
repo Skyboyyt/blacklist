@@ -2,6 +2,7 @@ import { schema, eq, ne, and, asc, desc, inArray, type Database } from '@blackli
 import type { UserActor } from '../access/types.ts';
 import { requirePermission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
+import { notify } from '../notifications/service.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
@@ -9,7 +10,14 @@ import { addressOf, addressSubject, type ChainSlug } from './subjects.ts';
 import { staffRefs, submitterPseudonym } from './refs.ts';
 import { REDRESS_STATUS_LABEL } from './labels.ts';
 import { issueChallenge, claimStanding, standingView, type StandingProofInput } from './standing.ts';
-import { participants, conflicted, proposeRevisionTx, POLICY_VERSION, type Severity } from './findings.ts';
+import {
+  setStatus,
+  participants,
+  conflicted,
+  proposeRevisionTx,
+  POLICY_VERSION,
+  type Severity,
+} from './findings.ts';
 
 // Appeals and right-of-reply responses (moderation §9). Filing an appeal does not hide the
 // finding; it shows "Disputed — under appeal" until decided.
@@ -113,6 +121,7 @@ export async function submitAppeal(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }
@@ -212,6 +221,7 @@ export async function submitResponse(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }
@@ -428,18 +438,13 @@ export async function decideRedress(
       );
     }
     if (decision.action === 'reverse') {
-      await tx
-        .update(schema.findings)
-        .set({ status: 'reversed', statusRevision: f.statusRevision + 1 })
-        .where(eq(schema.findings.id, f.id));
-      await tx.insert(schema.findingStatusHistory).values({
-        findingId: f.id,
-        fromStatus: f.status,
-        toStatus: 'reversed',
-        statusRevision: f.statusRevision + 1,
-        decisionId: row.id,
-        publicNote: publicSummary,
-      });
+      await setStatus(
+        tx,
+        f,
+        'reversed',
+        {},
+        { decisionId: row.id, ...(publicSummary ? { publicNote: publicSummary } : {}) },
+      );
       await appendAudit(tx, actor, 'finding.reversed', 'finding', f.id);
     }
     await tx

@@ -64,6 +64,13 @@ const moderationEvents = [
   'finding.suspended',
   'finding.reinstated',
   'finding.reversed',
+  'project.created',
+  'project.revised',
+  'moderation.appeal.escalated',
+  'label.added',
+  'label.retired',
+  'signal.suppressed',
+  'signal.suppression_lifted',
 ] as const;
 export type AuditAction =
   (typeof accountEvents)[number] | (typeof staffEvents)[number] | (typeof moderationEvents)[number];
@@ -90,6 +97,8 @@ const detailKeys: Record<string, readonly string[]> = {
   'finding.became_public': ['revisionNumber'],
   'finding.superseded': ['revisionNumber'],
   'finding.suspended': ['severity'],
+  'signal.suppressed': ['factorCode'],
+  'signal.suppression_lifted': ['factorCode'],
 };
 export async function actorReference(tx: Database, userId: string) {
   await tx.insert(schema.actorMap).values({ actorRef: randomUUID(), userId }).onConflictDoNothing();

@@ -79,7 +79,8 @@ export async function migrate(connectionString: string, runtimeRole: string) {
       REVOKE UPDATE,DELETE,TRUNCATE ON blacklist.report_status_history,blacklist.moderation_case_notes,blacklist.moderation_case_messages,
         blacklist.finding_revisions,blacklist.finding_approval_events,blacklist.finding_publication_events,
         blacklist.moderation_decisions,blacklist.decision_evidence,blacklist.finding_status_history,
-        blacklist.evidence_custody_events FROM ${runtimeRole};
+        blacklist.evidence_custody_events,blacklist.risk_signal_revisions,blacklist.risk_assessments,
+        blacklist.risk_assessment_inputs,blacklist.risk_assessment_factors,blacklist.assessment_annotations,blacklist.project_revisions FROM ${runtimeRole};
       REVOKE INSERT,UPDATE,DELETE,TRUNCATE ON blacklist.chains FROM ${runtimeRole};
       REVOKE UPDATE,DELETE,TRUNCATE ON blacklist.verification_receipts,blacklist.chain_fact_verifications,
         blacklist.chain_transactions,blacklist.asset_transfers,blacklist.chain_fact_invalidations FROM ${runtimeRole};

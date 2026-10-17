@@ -36,3 +36,15 @@ export const REDRESS_STATUS_LABEL: Readonly<Record<string, string>> = {
   rejected: 'Not accepted',
   withdrawn: 'Withdrawn',
 };
+
+/** Member-facing status text for project suggestions and corrections. */
+export const PROJECT_STATUS_LABEL: Readonly<Record<string, string>> = {
+  submitted: 'Submitted',
+  needs_information: 'Information requested',
+  in_review: 'In review',
+  accepted_into_profile: 'Accepted: profile published',
+  not_accepted: 'Not accepted',
+  accepted: 'Accepted',
+  rejected: 'Not accepted',
+  withdrawn: 'Withdrawn',
+};

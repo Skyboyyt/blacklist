@@ -158,6 +158,16 @@ PK `(chain_id, tx_hash)`; `block_number` / `slot`, `block_hash` (EVM), `block_ti
 ### `project_suggestions` (ADR 0010 Part A; not yet migrated)
 `id`, `submitter_user_id`, `name`, `category`, `chain_id`, `identifier`, `links_text` (defanged text, never fetched), `description`, `status` (`submitted` | `needs_information` | `accepted_into_profile` | `not_accepted`), `submitter_reason` (fixed list, visible to the submitter only), `resulting_project_id`, `revision`, `submitted_at`, `decided_at`. Private to the submitter and staff; a suggestion has no public effect until staff publish a project revision. Evidence links via `evidence_links.project_suggestion_id` (to be added with the migration).
 
+### Phase 10 implementation of projects (2026-10-17, slice 3; not yet applied to Neon)
+`generated/0009_fresh_shen.sql` and `0009_project_guards.sql`: **18 ledger entries, 75 tables**.
+- `projects`: `id`, `subject_id` (a `subjects` row of kind `project`, so cases and responses can refer to it), `slug` (unique), `current_revision`.
+- `project_revisions` [append-only]: `revision_number`, `name`, `category`, `description`, `author_ref`, `source_case_id`, `public_note`.
+- `project_addresses`: `address_subject_id`, `role`, `basis`, `basis_note`, `attributed_at`, `retired_at`; one active row per address. `project_domains` follows the same pattern per hostname.
+- `project_suggestions`: as planned, plus `withdrawn` in the status set. `chain_id` and `identifier` are normalized; `links_text` is a JSON array of defanged text.
+- `correction_requests`: profile corrections only: `project_id`, `base_revision`, `statement`, `proposed_description`, `add_domain`, `retire_domain`, `status` (`submitted` | `in_review` | `accepted` | `rejected` | `withdrawn`), `submitter_reason`. Corrections against findings stay with appeals (Phase 9a plan).
+- `moderation_cases` gains `suggestion_id` and `correction_id`, with source CHECKs and one case per source.
+- `address_labels` (slice 4, `generated/0010_condemned_hercules.sql` and `0010_admin_guards.sql`: **20 ledger entries, 78 tables**): `subject_id`, `text` (3–60), `provenance` (`moderator_finding` | `external_source`, per the contract), `source_name` (required exactly for external labels), `basis_note`, `created_by_ref`, `retired_at`, `retired_by_ref`, `retire_reason`. One active label per address and text (case-insensitive). A trigger allows a single retirement and refuses edits and deletion.
+
 ### `address_labels`, `projects`, `project_revisions` [append-only], `project_addresses`, `project_domains`
 As revision 1. `project_addresses.basis` is an attribution basis with time and evidence; it is **not** an ownership verdict. External labels have `provenance = 'external_source'`.
 
@@ -246,10 +256,22 @@ Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplic
 
 ## 7. Risk (ARCHITECTURE §15, §22)
 
+**Phase 10 implementation (2026-10-17, slice 2; not yet applied to Neon).** `generated/0008_sleepy_white_tiger.sql` and `0008_risk_guards.sql` create the nine tables below except `risk_signal_suppressions` (slice 4): **16 ledger entries, 69 tables**. Differences from the planned columns:
+- `risk_signals` adds `source_type` (`finding` | `chain_analysis`), and is unique per `(source_type, source_ref, factor_code)`. A finding whose published severity changes gets a new signal; the old one is `superseded`.
+- `risk_signal_revisions` and `risk_assessment_inputs` carry `independently_approved` (severe findings) and `evidence_refs`. `strength` is not stored: V1 contributions come from the ruleset.
+- `risk_assessments` has `ceiling` and a CHECK that a null score means `not_assessed`. `trigger` is `signal_change` | `expiry` | `ruleset` | `manual_replay`.
+- `risk_assessment_factors` stores `reason` (why a factor did not apply) instead of `explanation_params`.
+- `risk_subject_state` has no `locked_by_job`: a recompute locks the row in its transaction.
+- Guards:
+  - append-only triggers on the five history tables;
+  - `current_assessment_forward()` refuses moving the pointer to a lower sequence or another subject;
+  - `reject_risk_delete()` refuses deleting signals, rulesets or the pointer.
+- **Deviation (recorded in the Phase 10 plan):** signals and assessments are written in the same transaction as the finding change, instead of an asynchronous `risk.recompute` job. The worker keeps the 15-minute `risk.expiry_sweep`.
+
 - `risk_rulesets`: `version` (PK), `engine_version`, `definition` (jsonb snapshot), `checksum`, `activated_at`, `retired_at`.
 - `risk_signals`: `id`, `subject_id`, `factor_code`, `tier` (`verified` | `analysis` | `disclosure` | `weak`), `provenance`, `source_type`, `source_ref`, `current_revision`, `status` (`active` | `expired` | `retracted` | `suppressed` | `suspended` | `superseded`), `created_at`.
 - `risk_signal_revisions` [append-only]: `signal_id`, `revision`, `status`, `strength`, `source_revision` (e.g. finding revision ID + status revision; verification IDs), `valid_until`, `reason`, `at`. PK `(signal_id, revision)`.
-- `risk_signal_suppressions`: as revision 1 (decision-linked, public reason).
+- `risk_signal_suppressions` (slice 4): `subject_id`, `factor_code` (the suppressible analysis codes only), `public_reason`, `internal_rationale`, `stepup_challenge_id`, `created_by_ref`, and `lifted_at`, `lifted_by_ref`, `lift_reason`, `lift_stepup_challenge_id` (all set together). One active suppression per address and factor. A trigger allows a single lift and refuses edits and deletion. Suppressing appends a `suppressed` revision to the matching analysis signals; lifting appends `active`.
 - `risk_assessments` [append-only]: `id`, `subject_id`, `seq` (per subject, monotonic), `score` (`CHECK 0..100`, nullable for `not_assessed`), `band`, `confidence`, `ceiling_applied`, `ceiling_reason`, `ruleset_version`, `ruleset_checksum`, `engine_version`, `evaluation_time`, `effective_inputs_hash`, `coverage` (jsonb), `next_review_at`, `trigger`, `computed_at`. Unique `(subject_id, seq)`, unique `(subject_id, id)`.
 - `risk_assessment_inputs` [append-only]: `assessment_id`, `signal_id`, `signal_revision`, `factor_code`, `tier`, `provenance`, `status_at_evaluation`, `strength`, `source_revision`, `evidence_refs` (published artifact IDs only for public rendering), `contribution_inputs` (jsonb).
 - `risk_assessment_factors` [append-only]: `assessment_id`, `signal_id`, `contribution`, `applied`, `explanation_key`, `explanation_params`.
@@ -262,6 +284,7 @@ Invariant tests: a `severe` band requires a severe published finding input with 
 ## 8. Notifications
 
 - `notifications` [private]: `id`, `recipient_user_id`, `type`, `payload` (IDs and static template params only), `source_ref`, `source_revision`, `dedupe_key` (unique per recipient), `created_at`, `read_at`.
+  - Slice 4 implementation: `type` is `submission_received` | `information_requested` | `decision_recorded` | `standing_decided` | `appeal_escalated`; `payload` holds `caseId` and an `outcome` code; `dedupe_key` is `type:caseId:caseVersion`. A trigger allows only setting `read_at`, once.
 - Notification preferences, watchlists, alert rules and alert events are **deferred** (§10).
 
 ## 9. Audit and security telemetry (ADR 0006)

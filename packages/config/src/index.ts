@@ -69,6 +69,8 @@ const apiSchema = shared.extend({
     .regex(/^[A-Za-z0-9_-]{32,128}$/u)
     .optional(),
   RESEARCH_ENABLED: z.enum(['true', 'false']).default('false'),
+  /** Public risk bands stay off until the owner signs the V1 calibration (O-12; Phase 10 plan). */
+  RISK_PUBLIC_BANDS: z.enum(['true', 'false']).default('false'),
   RPC_PLAN_VERIFIED: z.enum(['true', 'false']).default('false'),
   ALCHEMY_INDEXED_HISTORY_VERIFIED: z.enum(['true', 'false']).default('false'),
   ALCHEMY_TOKEN_BALANCES_VERIFIED: z.enum(['true', 'false']).default('false'),

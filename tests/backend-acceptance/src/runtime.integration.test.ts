@@ -703,6 +703,9 @@ describe('Phase 7 application foundation (not disposable gate schema)', () => {
           '/api/v1/admin/roles',
           '/api/v1/admin/recoveries',
           '/api/v1/admin/members',
+          '/api/v1/admin/labels',
+          '/api/v1/admin/suppressions',
+          '/api/v1/mod/audit',
         ]) {
           const result = await app.inject({ method: 'GET', url, headers: { cookie } });
           expect(result.statusCode).toBe(assured.roles.includes('admin') ? 200 : 403);

@@ -2,6 +2,7 @@ import { schema, eq, and, asc, desc, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { hasPermission, requirePermission, type Permission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
+import { notifyCaseDecision } from '../notifications/service.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
@@ -10,7 +11,10 @@ import { addressOf, type ChainSlug } from './subjects.ts';
 import { staffRefs, submitterPseudonym, type StaffRefView } from './refs.ts';
 import { defangUrl } from './labels.ts';
 import { moveReport } from './reports.ts';
+import { staffAssessment } from '../risk/views.ts';
 import { decideRedress, redressCaseFields, syncRedressStatus } from './redress.ts';
+import { decideProjectCase, projectCaseFields } from '../projects/submissions.ts';
+import { latestRevision } from '../projects/profiles.ts';
 import {
   createFindingFromReport,
   decideSuspension,
@@ -80,7 +84,34 @@ const RESPONSE_RULES: Readonly<Record<string, Rule>> = {
   publish_response: { from: ['in_review'], to: 'published', permission: 'response:moderate', stepUp: true },
   reject_response: { from: ['in_review'], to: 'rejected', permission: 'response:moderate', stepUp: true },
 };
+const SUGGESTION_RULES: Readonly<Record<string, Rule>> = {
+  request_info: {
+    from: ['submitted'],
+    to: 'needs_information',
+    permission: 'correction:decide',
+    stepUp: false,
+  },
+  accept_suggestion: {
+    from: ['submitted'],
+    to: 'accepted_into_profile',
+    permission: 'project:manage',
+    stepUp: true,
+  },
+  reject_suggestion: {
+    from: ['submitted'],
+    to: 'not_accepted',
+    permission: 'correction:decide',
+    stepUp: true,
+  },
+};
+const CORRECTION_RULES: Readonly<Record<string, Rule>> = {
+  start_review: { from: ['submitted'], to: 'in_review', permission: 'correction:decide', stepUp: false },
+  accept_correction: { from: ['in_review'], to: 'accepted', permission: 'project:manage', stepUp: true },
+  reject_correction: { from: ['in_review'], to: 'rejected', permission: 'correction:decide', stepUp: true },
+};
 const RULES: Readonly<Record<string, Readonly<Record<string, Rule>>>> = {
+  project_suggestion: SUGGESTION_RULES,
+  correction_request: CORRECTION_RULES,
   report_review: REPORT_RULES,
   suspension_review: SUSPENSION_RULES,
   appeal_review: APPEAL_RULES,
@@ -105,12 +136,28 @@ async function loadCase(tx: Database, actor: UserActor, caseId: string, lock = f
   return { c, report };
 }
 
-async function subjectView(tx: Database, c: Case) {
+async function subjectView(
+  tx: Database,
+  c: Case,
+): Promise<{
+  subject:
+    | { kind: 'address'; chain: ChainSlug; address: string; displayAddress: string }
+    | { kind: 'project'; slug: string; name: string };
+  chain: ChainSlug | null;
+}> {
   const a = c.subjectId ? await addressOf(tx, c.subjectId) : null;
-  if (!a) throw new Error('case_subject_missing');
+  if (a)
+    return {
+      subject: { kind: 'address', chain: a.chain, address: a.address, displayAddress: a.address },
+      chain: a.chain,
+    };
+  const [project] = c.subjectId
+    ? await tx.select().from(schema.projects).where(eq(schema.projects.subjectId, c.subjectId))
+    : [];
+  if (!project) throw new Error('case_subject_missing');
   return {
-    subject: { kind: 'address' as const, chain: a.chain, address: a.address, displayAddress: a.address },
-    chain: a.chain,
+    subject: { kind: 'project', slug: project.slug, name: (await latestRevision(tx, project.id)).name },
+    chain: null,
   };
 }
 
@@ -144,6 +191,15 @@ function summaryOf(
       ...common,
       title:
         c.caseType === 'appeal_review' ? 'Appeal against a published finding' : 'Response about an address',
+      submittedAt: c.createdAt.toISOString(),
+      lastActivityAt: (c.closedAt ?? c.createdAt).toISOString(),
+      type: c.caseType,
+      status: c.status,
+    };
+  if (c.caseType === 'project_suggestion' || c.caseType === 'correction_request')
+    return {
+      ...common,
+      title: c.caseType === 'project_suggestion' ? 'Project suggestion' : 'Correction to a project profile',
       submittedAt: c.createdAt.toISOString(),
       lastActivityAt: (c.closedAt ?? c.createdAt).toISOString(),
       type: c.caseType,
@@ -268,7 +324,7 @@ async function detailOf(tx: Database, c: Case, r: Report | undefined) {
             : [],
       };
     }),
-    assessment: null,
+    assessment: await staffAssessment(tx, c.subjectId),
     submitterReason: r?.submitterReason ?? null,
     publicSummary: decision?.publicSummary ?? null,
     infoRequest: r?.status === 'needs_info' ? (lastRequest?.body ?? null) : null,
@@ -278,6 +334,17 @@ async function detailOf(tx: Database, c: Case, r: Report | undefined) {
   };
   if (r)
     return { ...summaryOf(c, r, subject, refs), ...common, reporterRef: reporter, narrative: r.narrative };
+  const project = await projectCaseFields(tx, c);
+  if (project)
+    return {
+      ...summaryOf(c, null, subject, refs),
+      ...common,
+      type: project.type,
+      title: project.title,
+      submitterReason: project.submitterReason,
+      infoRequest: c.status === 'needs_information' ? (lastRequest?.body ?? null) : null,
+      ...project.fields,
+    };
   const redress = await redressCaseFields(tx, c);
   if (redress)
     return {
@@ -311,16 +378,9 @@ export async function caseQueue(ctx: IdentityContext, actor: UserActor, q: Queue
     await lockActor(tx, actor);
     const types = visibleTypes(actor);
     const rows = await tx
-      .select({
-        c: schema.moderationCases,
-        r: schema.reports,
-        address: schema.addresses.address,
-        chain: schema.chains.slug,
-      })
+      .select({ c: schema.moderationCases, r: schema.reports })
       .from(schema.moderationCases)
       .leftJoin(schema.reports, eq(schema.reports.id, schema.moderationCases.reportId))
-      .innerJoin(schema.addresses, eq(schema.addresses.subjectId, schema.moderationCases.subjectId))
-      .innerJoin(schema.chains, eq(schema.chains.chainId, schema.addresses.chainId))
       .orderBy(desc(schema.moderationCases.createdAt))
       .limit(1000);
     const visible = rows.filter(({ c }) => !types || types.includes(c.caseType));
@@ -329,17 +389,8 @@ export async function caseQueue(ctx: IdentityContext, actor: UserActor, q: Queue
       tx,
       visible.map(({ c }) => c.assignedToRef).filter((r): r is string => !!r),
     );
-    const items = visible.map(({ c, r, address, chain }) =>
-      summaryOf(
-        c,
-        r,
-        {
-          subject: { kind: 'address', chain: chain as ChainSlug, address, displayAddress: address },
-          chain: chain as ChainSlug,
-        },
-        refs,
-      ),
-    );
+    const items = [];
+    for (const { c, r } of visible) items.push(summaryOf(c, r, await subjectView(tx, c), refs));
     const needle = q.query?.toLowerCase();
     const filtered = items.filter(
       (i) =>
@@ -503,7 +554,7 @@ export async function decideCase(
   decision: CaseDecisionInput,
   assertion?: AssertionInput,
 ) {
-  const apply = async (tx: Database) => {
+  const decide = async (tx: Database) => {
     const { c, report } = await loadCase(tx, actor, caseId, true);
     const rule = RULES[c.caseType]?.[decision.action];
     if (!rule) throw refuse('invalid_transition', 'This decision does not apply to this kind of case.');
@@ -533,6 +584,30 @@ export async function decideCase(
       );
     if (rule.stepUp && !assertion) throw new DomainError('stepup_required');
     const rationale = String(decision['internalRationale'] ?? '');
+    if (c.caseType === 'project_suggestion' || c.caseType === 'correction_request') {
+      const to = await decideProjectCase(tx, actor, c, decision, assertion?.challengeId ?? null);
+      const closed = !['in_review', 'needs_information', 'submitted'].includes(to);
+      await tx
+        .update(schema.moderationCases)
+        .set({
+          status: to,
+          version: c.version + 1,
+          ...(closed ? { closedAt: new Date() } : {}),
+          ...(decision.action === 'start_review' ? { assignedToRef: actor.actorRef } : {}),
+        })
+        .where(eq(schema.moderationCases.id, c.id));
+      await appendAudit(
+        tx,
+        actor,
+        decision.action === 'request_info'
+          ? 'moderation.case.info_requested'
+          : 'moderation.case.status_changed',
+        CASE_TARGET,
+        c.id,
+        { from: c.status, to },
+      );
+      return reload(tx, actor, caseId);
+    }
     if (c.caseType === 'appeal_review' || c.caseType === 'subject_response') {
       const to = await decideRedress(tx, actor, c, decision, assertion?.challengeId ?? null);
       if (to === null) {
@@ -634,6 +709,11 @@ export async function decideCase(
         await tx.update(schema.moderationCases).set({ findingId }).where(eq(schema.moderationCases.id, c.id));
     }
     return reload(tx, actor, caseId);
+  };
+  const apply = async (tx: Database) => {
+    const result = await decide(tx);
+    await notifyCaseDecision(tx, caseId, decision.action, result.status);
+    return result;
   };
   if (!assertion)
     return ctx.runtime.transaction(async (tx) => {
