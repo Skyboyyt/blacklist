@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 
 const service = process.argv[2];
-if (service !== 'api' && service !== 'worker') throw new Error('Choose api or worker');
+if (!['api', 'worker', 'processor'].includes(service)) throw new Error('Choose api, worker or processor');
 if (process.versions.node !== '24.21.0') throw new Error('Pinned Node 24.21.0 required');
 const installed = spawnSync('pnpm', ['--version'], { encoding: 'utf8' });
 const command = installed.status === 0 && installed.stdout.trim() === '12.7.0' ? 'pnpm' : 'npm';
@@ -31,4 +31,5 @@ function run(args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 run(['install', '--frozen-lockfile']);
-run(['build:backend']);
+// The processor runs its TypeScript directly and needs no backend build.
+if (service !== 'processor') run(['build:backend']);

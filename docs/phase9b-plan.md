@@ -23,3 +23,16 @@
 1. **ADR 0020:** accept or amend the staging hosting, and sign the risk acceptance (test images only on staging).
 2. Choose the storage provider at sign-up (Backblaze B2 or Cloudflare R2), using the conditions in ADR 0020.
 3. Production processor hosting is decided later with O-4 (launch requirement).
+
+## Status (2026-10-17)
+
+| Slice | State |
+|---|---|
+| 1 Processor | **Built.** 24 tests (bombs, APNG and animated WebP, polyglots, EXIF stripped, URL allowlist, import boundary) |
+| 2 Storage and upload | **Built.** SigV4 signer matches AWS's published example; upload route, unattached-upload cap, report linking |
+| 3 Worker orchestration | **Built.** Row-as-job with lease and five attempts; derivative re-checked; 7-day purge of unattached uploads |
+| 4 Access | **Built for staff.** 5-minute download links with custody events. **Not built:** public display of published derivatives |
+| 5 Web | **Built for new reports.** Info replies, suggestions, corrections and standing still refuse images |
+| 6 Ops | **Runbook ready:** [2026-10-17-phase9b-evidence-setup.md](operations/2026-10-17-phase9b-evidence-setup.md). Waiting for the owner |
+
+Not yet verified against real storage: signing against Backblaze, `response-content-disposition`, and Vercel's upload size limit (R-9b-1). These are covered by the runbook's test step.

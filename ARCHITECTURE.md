@@ -711,6 +711,7 @@ worker: verify derivative hash → copy original to EVIDENCE bucket (versioned/i
    any failure → state=rejected (reason); quarantine object purged after 30 days (hash retained)
 ```
 
+- **As built (Phase 9b):** each image is its own upload (`POST /api/v1/evidence/images`, raw PNG/JPEG/WebP body up to 10 MiB, member-only, exact Origin), stored unattached and linked when the report is submitted. The evidence row is the job (`next_attempt_at` is the retry time and lease; five attempts), so no separate queue is needed; the API wakes the free worker after an upload (ADR 0017 wake, extended by ADR 0020). Unattached uploads are purged after 7 days.
 - **Staging (ADR 0020):** the processor is a secretless Render free service. It accepts only presigned URLs for our own bucket host, buckets and key prefixes, so it cannot be fed outside files. Network isolation is not enforced there, so staging takes test images only.
 - Rejected types: PDF, SVG, HTML, archives, animated images, anything else. PDFs need a separate security design and ADR (ADR 0004 §8).
 - Transaction-reference evidence: verified against finalized, cross-verified chain data and pinned.
@@ -720,7 +721,7 @@ worker: verify derivative hash → copy original to EVIDENCE bucket (versioned/i
 ### 14.4 Evidence access
 
 - **Staff and public see sanitized derivatives only.** Originals have **no UI path** in V1. Forensic export of an original is an operator CLI procedure onto an isolated machine, recorded in custody events.
-- Derivative downloads use ≤ 5-minute presigned URLs on a **separate registrable domain**, with `attachment` and `nosniff`. Issuance is audited; revocation is bounded by the URL's lifetime.
+- Derivative downloads use ≤ 5-minute presigned URLs on a **separate registrable domain**, with `attachment` and `nosniff`. Issuance is audited; revocation is bounded by the URL's lifetime. As built (Phase 9b), staff download the derivative (`POST /api/v1/mod/evidence/:id/link`; a `derivative_link_issued` custody event); nothing is embedded in the app, so the CSP is unchanged. `nosniff` cannot be set through a presigned query and depends on the storage provider; derivatives are re-encoded images with an explicit content type. Public display of published derivatives is not built yet.
 - The public sees only derivatives published with a finding, redacted by staff where needed (visible personal data, QR codes, phishing text).
 
 ### 14.5 Evidence preservation (answers hard question 12)

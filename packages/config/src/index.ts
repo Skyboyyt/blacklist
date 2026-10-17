@@ -318,5 +318,8 @@ export const readWorkerConfig = (env = process.env) => {
     throw new Error('EVIDENCE_ENABLED requires EVIDENCE_PROCESSOR_URL on the worker');
   return config;
 };
+/** Every setting each service reads; deployment wrappers must pass these through. */
+export const API_CONFIG_FIELDS: readonly string[] = Object.keys(apiSchema.shape);
+export const WORKER_CONFIG_FIELDS: readonly string[] = Object.keys(workerSchema.shape);
 export type ApiConfig = ReturnType<typeof readApiConfig>;
 export type WorkerConfig = ReturnType<typeof readWorkerConfig>;

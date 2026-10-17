@@ -16,9 +16,9 @@ This file holds the **current state only**. Each session adds one short entry un
 | Phase 7 (Backend Foundation) | Authorized 2026-10-13, merged (PRs #8–#11). Acceptance gates D1–D9 and S1–S17 recorded as passing by Codex. **Exit not closed:** independent security review; ADR 0013 accepted 2026-10-16 and part C implemented on the open branch (P-13 still open) |
 | Phase 8 (Chain Data & Research) | Authorized 2026-10-14, merged (PR #12) on explicit owner instruction despite disclosed blockers. **Research on staging authorized by the owner 2026-10-17** (free Alchemy and Helius, default request caps; recorded in ADR 0018); production stays off. ADR 0018 accepted provisionally 2026-10-16 (waiver recorded); O-3 open |
 | Deployment | Free staging services are public on explicit owner instruction (2026-10-13): Vercel web, Render API and worker, Neon PostgreSQL 18 staging database. **Not production-ready**; Phase 11 gates (legal, retention, recovery, monitoring) remain |
-| Authorized now | **Phase 11** (owner, 2026-10-17, "launch readiness"): integration, hardening and launch readiness; plan in [docs/phase11-plan.md](docs/phase11-plan.md); exit is the owner-signed [docs/launch-checklist.md](docs/launch-checklist.md). **Phase 10** (owner, 2026-10-17; merged and deployed): risk engine, assessments and jobs, projects, admin backend, notifications, band-only scoreboard; plan in [docs/phase10-plan.md](docs/phase10-plan.md); public bands only after O-12. **Phase 9a** (owner, 2026-10-16; merged and deployed): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Phase 9b** (owner, 2026-10-17): ADR 0020 accepted for staging, test images only; plan in [docs/phase9b-plan.md](docs/phase9b-plan.md). **Not authorized:** a production environment (O-4), paid resources, cloud migrations, provider activation |
+| Authorized now | **Phase 11** (owner, 2026-10-17, "launch readiness"): integration, hardening and launch readiness; plan in [docs/phase11-plan.md](docs/phase11-plan.md); exit is the owner-signed [docs/launch-checklist.md](docs/launch-checklist.md). **Phase 10** (owner, 2026-10-17; merged and deployed): risk engine, assessments and jobs, projects, admin backend, notifications, band-only scoreboard; plan in [docs/phase10-plan.md](docs/phase10-plan.md); public bands only after O-12. **Phase 9a** (owner, 2026-10-16; merged and deployed): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Phase 9b** (owner, 2026-10-17): ADR 0020 accepted for staging, test images only; plan in [docs/phase9b-plan.md](docs/phase9b-plan.md); built, waiting for the owner's setup (runbook). **Not authorized:** a production environment (O-4), paid resources, cloud migrations, provider activation |
 | Primary / reviewer | Claude / Codex |
-| Last agent | Claude: Phase 10 merged and deployed (PRs #21–#29, Neon ledger 20, 78 tables); Phase 11 plan and launch checklist drafted |
+| Last agent | Claude: Phase 9b image evidence built (processor, storage, upload, worker, staff download, web); owner setup runbook ready |
 | Last updated | 2026-10-17 |
 
 ## Open work, by owner
@@ -43,6 +43,36 @@ This file holds the **current state only**. Each session adds one short entry un
 2. Responses still pending in earlier review files (see review CR-11).
 
 ## Session log
+
+### 2026-10-17: Claude, Phase 9b built (image evidence)
+
+- **Built on the working branch:**
+  - the isolated processor (`apps/evidence-processor`);
+  - migration 0011 (`evidence_objects`, `evidence_derivatives`, image columns; purge-once guards);
+  - a SigV4 signer (matches AWS's published example);
+  - the upload route `POST /api/v1/evidence/images` and report linking;
+  - the worker processing loop with a 7-day purge of unattached uploads;
+  - staff download links `POST /api/v1/mod/evidence/:id/link` with custody events;
+  - real uploads on the report form, and a staff download button.
+- **Fixed in passing:**
+  - staff case views would have shown image items as statements;
+  - the Render runtime wrapper silently dropped `RISK_PUBLIC_BANDS`, `CLIENT_IP_FORWARDING_TOKEN`, `REGISTRATION_*` and `RPC_API_BUDGET_WINDOW_HOURS`. A regression test now covers every setting.
+- **Tests (local, real output):**
+  - backend acceptance: 37 files, 174 tests pass, including the new evidence upload, processing and access suites (real processor and sharp, in-memory storage, Docker PostgreSQL 18); unit tests: contracts 83, chains 71, backend 84;
+  - web: 54 files, 438 tests; processor: 24 tests;
+  - lint, typecheck and format clean; `next build` and the mock-exclusion check pass.
+  - MinIO could not be pulled (Docker Hub blocked here), so storage behaviour against a real S3 service is verified only in the owner's staging check.
+- **Owner next:** merge, then follow [the 9b runbook](docs/operations/2026-10-17-phase9b-evidence-setup.md):
+  - Neon 0011 (ledger 20 → 22, tables 78 → 80);
+  - Backblaze buckets and key;
+  - the `blacklist-staging-evidence` Render service;
+  - API and worker settings, deploys, and the test.
+- **Open:**
+  - R-9b-1 (Vercel upload size limit unknown);
+  - public display of derivatives;
+  - images on info replies, suggestions, corrections and standing;
+  - production immutability (launch checklist).
+
 
 ### 2026-10-17: Claude, Phase 9b requested; hosting ADR proposed
 

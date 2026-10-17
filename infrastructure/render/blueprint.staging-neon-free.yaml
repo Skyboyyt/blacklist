@@ -76,3 +76,27 @@ services:
       - key: REGISTRATION_MODE
         value: open
     healthCheckPath: /healthz
+  # Phase 9b (ADR 0020): the isolated evidence processor. NO secrets: the wrapper refuses to
+  # start if any credential is set. Its address is public on Render Free; it accepts only
+  # presigned URLs for our storage origin and buckets. Test images only on staging.
+  - type: web
+    name: blacklist-staging-evidence
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: main
+    autoDeployTrigger: 'off'
+    buildCommand: node infrastructure/render/build.mjs processor
+    startCommand: node infrastructure/render/run.mjs processor
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: DEPLOYMENT_ENV
+        value: staging
+      - key: EVIDENCE_STORAGE_ORIGIN
+        sync: false
+      - key: S3_BUCKET_QUARANTINE
+        sync: false
+      - key: S3_BUCKET_DERIVATIVES
+        sync: false

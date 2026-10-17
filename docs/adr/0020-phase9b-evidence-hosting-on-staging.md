@@ -109,6 +109,23 @@ The full slice plan is in [docs/phase9b-plan.md](../phase9b-plan.md). New depend
 
 **Accept for staging only, with test images only.** Production keeps ADR 0004's full isolation as a launch requirement.
 
+## Implementation notes (Claude, 2026-10-17)
+
+Built on the Phase 9b branch; nothing here changes the decision.
+
+- **Upload path:** one image per request (`POST /api/v1/evidence/images`, raw body, 10 MiB route limit). The API never parses it; it stores it in quarantine and records the item. The report then refers to its uploaded images by id.
+- **Job model:** the evidence row is the job (`next_attempt_at` is the retry time and lease). No new pg-boss queue, so no queue setup on Neon. The API wakes the free worker after an accepted upload, the same bounded request ADR 0017 allows after sign-up; this ADR extends that wake to uploads.
+- **Staff access:** a download (attachment) of the derivative through a 5-minute link; nothing is embedded in the app, so the CSP is unchanged.
+- **Processor wrapper:** `node infrastructure/render/run.mjs processor` refuses to start if any password-like setting is present.
+- **Conditions at sign-up:**
+  - Object Lock stays **off** on staging: it would block the 7-day purge of abandoned uploads.
+  - Backblaze keys cannot be made "write but not delete", and the purge needs delete.
+  - So originals are not immutable on staging. Production must settle immutability together with legal holds and purge (ADR 0004 §5).
+- **Known risk (R-9b-1):** Vercel's request-size limit for proxied uploads could not be confirmed from its documentation (4.5 MB is documented for functions). A 413 shows "too large to upload". The staging check in the runbook tests a file over 5 MB.
+- **Scope:** new reports only. Info-request replies, suggestions, corrections and standing still refuse images. Public display of published derivatives is not built.
+- **Found and fixed:** the Render runtime wrapper silently dropped `RISK_PUBLIC_BANDS`, `CLIENT_IP_FORWARDING_TOKEN`, `REGISTRATION_*` and `RPC_API_BUDGET_WINDOW_HOURS`. A regression test now checks every setting each service reads.
+- **Owner runbook:** [2026-10-17-phase9b-evidence-setup.md](../operations/2026-10-17-phase9b-evidence-setup.md).
+
 ## Decision (owner)
 
 **Accepted for staging on 2026-10-17**, with the recommended condition: staging takes **test images only**. The owner accepts the recorded staging gaps (public processor address, unrestricted outbound traffic, no per-job disposable instance or read-only filesystem). Production processor hosting meeting ADR 0004 in full is decided with O-4 and is a launch checklist item. Creating the storage account and the third Render service is authorized for staging under this ADR; the owner performs it from the runbook.

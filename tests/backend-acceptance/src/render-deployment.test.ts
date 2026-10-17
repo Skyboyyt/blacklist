@@ -3,7 +3,11 @@ import Fastify from 'fastify';
 import { describe, it, expect } from 'vitest';
 import { readApiConfig } from '@blacklist/config';
 import { installStagingAccess } from '../../../apps/api/src/plugins/staging-access.ts';
-import { renderRuntimeEnvironment } from '../../../infrastructure/render/runtime.ts';
+import {
+  processorRuntimeEnvironment,
+  renderRuntimeEnvironment,
+} from '../../../infrastructure/render/runtime.ts';
+import { API_CONFIG_FIELDS, WORKER_CONFIG_FIELDS } from '@blacklist/config';
 
 const token = randomBytes(32).toString('base64url');
 const env = {
@@ -37,6 +41,62 @@ describe('Render deployment security boundaries', () => {
       expect(api).toHaveProperty(key);
       expect(worker).not.toHaveProperty(key);
     }
+  });
+  it('passes every setting each service reads, except those the wrapper sets itself', () => {
+    // Regression: RISK_PUBLIC_BANDS, CLIENT_IP_FORWARDING_TOKEN, REGISTRATION_* and the RPC
+    // budget window were read by the API but silently dropped on Render.
+    const wrapperOwned = [
+      'NODE_ENV',
+      'DEPLOYMENT_ENV',
+      'BREAK_GLASS_ENABLED',
+      'API_HOST',
+      'API_PORT',
+      'WORKER_HEALTH_PORT',
+    ];
+    for (const [service, fields] of [
+      ['api', API_CONFIG_FIELDS],
+      ['worker', WORKER_CONFIG_FIELDS],
+    ] as const) {
+      const all = Object.fromEntries(fields.map((key) => [key, `value-${key}`]));
+      const selected = renderRuntimeEnvironment(service, { ...all, ...env });
+      for (const key of fields.filter((k) => !wrapperOwned.includes(k) && !(k in env)))
+        expect(selected, `${service} drops ${key}`).toHaveProperty(key, `value-${key}`);
+    }
+    // The processor URL and storage keys never reach the web tier; provider keys stay off the worker.
+    const worker = renderRuntimeEnvironment('worker', { ...env, ALCHEMY_ETHEREUM_API_KEY: 'x' });
+    expect(worker).not.toHaveProperty('ALCHEMY_ETHEREUM_API_KEY');
+  });
+  it('starts the evidence processor with non-secret settings only, and refuses any credential', () => {
+    const settings = {
+      DEPLOYMENT_ENV: 'staging',
+      PORT: '10000',
+      EVIDENCE_STORAGE_ORIGIN: 'https://s3.example.test',
+      S3_BUCKET_QUARANTINE: 'bl-quarantine',
+      S3_BUCKET_DERIVATIVES: 'bl-derivatives',
+      PATH: '/usr/bin',
+    };
+    expect(processorRuntimeEnvironment(settings)).toEqual({
+      NODE_ENV: 'production',
+      PORT: '10000',
+      EVIDENCE_STORAGE_ORIGIN: 'https://s3.example.test',
+      S3_BUCKET_QUARANTINE: 'bl-quarantine',
+      S3_BUCKET_DERIVATIVES: 'bl-derivatives',
+    });
+    for (const key of [
+      'DATABASE_URL',
+      'S3_SECRET_ACCESS_KEY',
+      'S3_ACCESS_KEY_ID',
+      'BETTER_AUTH_SECRET',
+      'INTERNAL_API_TOKEN',
+      'RESEND_API_KEY',
+      'SMTP_PASSWORD',
+    ])
+      expect(() => processorRuntimeEnvironment({ ...settings, [key]: 'x' })).toThrow(
+        'processor_must_not_hold_secrets',
+      );
+    expect(() => processorRuntimeEnvironment({ ...settings, DEPLOYMENT_ENV: 'production' })).toThrow(
+      'restricted_staging_only',
+    );
   });
   it('maps the Render port and withholds operator credentials and unrelated environment', () => {
     const api = renderRuntimeEnvironment('api', {
