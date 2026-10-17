@@ -53,12 +53,13 @@ export async function addressResearch(
     : published.findings.some((f) => redress.underAppeal.has(f.id))
       ? ('under_appeal' as const)
       : ('none' as const);
+  const suppressions = await publicSuppressions(ctx.runtime.db, published.subjectId);
   const assessment = await publicAssessment(ctx.runtime.db, published.subjectId, {
     publicBands,
     disputeState,
+    suppressions: suppressions.active,
   });
   const labels = await publicLabels(ctx.runtime.db, published.subjectId);
-  const suppressions = await publicSuppressions(ctx.runtime.db, published.subjectId);
   const findings = published.findings.map((f) =>
     redress.underAppeal.has(f.id) ? { ...f, disputeState: 'under_appeal' as const } : f,
   );

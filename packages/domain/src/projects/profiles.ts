@@ -128,6 +128,24 @@ async function profileRows(db: Database, projectId: string) {
 const worst = (states: readonly Dispute[]) =>
   states.reduce<Dispute>((w, s) => (DISPUTE_RANK[s] > DISPUTE_RANK[w] ? s : w), 'none');
 
+const PROFILE_LOADS = 4;
+
+/** Several public profiles in slug order, loaded a few at a time on the pool (P10-06). */
+export async function projectDetails(
+  db: Database,
+  slugs: readonly string[],
+  options: { publicBands: boolean },
+) {
+  const loaded: Awaited<ReturnType<typeof projectDetail>>[] = [];
+  for (let i = 0; i < slugs.length; i += PROFILE_LOADS)
+    loaded.push(
+      ...(await Promise.all(
+        slugs.slice(i, i + PROFILE_LOADS).map((slug) => projectDetail(db, slug, options)),
+      )),
+    );
+  return loaded.filter((d) => d !== null);
+}
+
 /** Public project page (contracts `projectDetailSchema`). */
 export async function projectDetail(db: Database, slug: string, options: { publicBands: boolean }) {
   const [project] = await db.select().from(schema.projects).where(eq(schema.projects.slug, slug));
@@ -271,11 +289,11 @@ const TX = /^0x[0-9a-fA-F]{64}$|^[1-9A-HJ-NP-Za-km-z]{80,90}$/;
 export async function listProjects(db: Database, q: DirectoryQuery, options: { publicBands: boolean }) {
   const all = await db.select().from(schema.projects).orderBy(asc(schema.projects.slug));
   if (!all.length) return { kind: 'empty_directory' as const };
-  const details = [];
-  for (const p of all) {
-    const d = await projectDetail(db, p.slug, options);
-    if (d) details.push(d);
-  }
+  const details = await projectDetails(
+    db,
+    all.map((p) => p.slug),
+    options,
+  );
   const text = q.query?.trim() ?? '';
   let matched = details;
   if (text) {

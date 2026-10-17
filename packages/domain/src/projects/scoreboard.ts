@@ -1,5 +1,5 @@
 import { schema, asc, type Database } from '@blacklist/db';
-import { projectDetail } from './profiles.ts';
+import { projectDetails, type projectDetail } from './profiles.ts';
 import type { ChainSlug } from '../moderation/subjects.ts';
 
 // Band ranking of reviewed projects (ADR 0012, accepted band-only). The same rule as the
@@ -121,10 +121,10 @@ export async function projectScoreboard(
     .from(schema.projects)
     .orderBy(asc(schema.projects.slug))
     .limit(LIMIT);
-  const details: Detail[] = [];
-  for (const { slug } of rows) {
-    const detail = await projectDetail(db, slug, options);
-    if (detail) details.push(detail);
-  }
+  const details = await projectDetails(
+    db,
+    rows.map((r) => r.slug),
+    options,
+  );
   return rankProjectDetails(details, query.chain);
 }

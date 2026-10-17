@@ -16,10 +16,10 @@ This file holds the **current state only**. Each session adds one short entry un
 | Phase 7 (Backend Foundation) | Authorized 2026-10-13, merged (PRs #8–#11). Acceptance gates D1–D9 and S1–S17 recorded as passing by Codex. **Exit not closed:** independent security review; ADR 0013 accepted 2026-10-16 and part C implemented on the open branch (P-13 still open) |
 | Phase 8 (Chain Data & Research) | Authorized 2026-10-14, merged (PR #12) on explicit owner instruction despite disclosed blockers. **Research on staging authorized by the owner 2026-10-17** (free Alchemy and Helius, default request caps; recorded in ADR 0018); production stays off. ADR 0018 accepted provisionally 2026-10-16 (waiver recorded); O-3 open |
 | Deployment | Free staging services are public on explicit owner instruction (2026-10-13): Vercel web, Render API and worker, Neon PostgreSQL 18 staging database. **Not production-ready**; Phase 11 gates (legal, retention, recovery, monitoring) remain |
-| Authorized now | **Phase 10** (owner, 2026-10-17): risk engine, assessments and jobs, projects, admin backend, notifications, band-only scoreboard; plan in [docs/phase10-plan.md](docs/phase10-plan.md); public bands only after O-12. **Phase 9a** (owner, 2026-10-16; merged and deployed): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Phase 9b (image evidence, object storage, processor) waits for a hosting ADR. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9b cloud resources, Phase 11, paid resources, cloud migrations, provider activation |
+| Authorized now | **Phase 11** (owner, 2026-10-17, "launch readiness"): integration, hardening and launch readiness; plan in [docs/phase11-plan.md](docs/phase11-plan.md); exit is the owner-signed [docs/launch-checklist.md](docs/launch-checklist.md). **Phase 10** (owner, 2026-10-17; merged and deployed): risk engine, assessments and jobs, projects, admin backend, notifications, band-only scoreboard; plan in [docs/phase10-plan.md](docs/phase10-plan.md); public bands only after O-12. **Phase 9a** (owner, 2026-10-16; merged and deployed): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Phase 9b (image evidence, object storage, processor) waits for a hosting ADR. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9b cloud resources, a production environment (O-4), paid resources, cloud migrations, provider activation |
 | Primary / reviewer | Claude / Codex |
-| Last agent | Claude: Phase 9a slices 1–4 merged (PR #17); 0006 and 0007 applied to Neon staging by the owner and verified; Render deploy pending |
-| Last updated | 2026-10-16 |
+| Last agent | Claude: Phase 10 merged and deployed (PRs #21–#29, Neon ledger 20, 78 tables); Phase 11 plan and launch checklist drafted |
+| Last updated | 2026-10-17 |
 
 ## Open work, by owner
 
@@ -43,6 +43,13 @@ This file holds the **current state only**. Each session adds one short entry un
 2. Responses still pending in earlier review files (see review CR-11).
 
 ## Session log
+
+### 2026-10-17: Claude, Phase 11 authorized; plan and launch checklist
+
+- The owner authorized Phase 11 ("launch readiness"). [docs/phase11-plan.md](docs/phase11-plan.md) sets nine workstreams, each marked Claude, owner or paid; [docs/launch-checklist.md](docs/launch-checklist.md) is the exit document for the owner to sign.
+- Critical path: legal review (owner must engage counsel). No production environment exists; O-4 decides hosting and needs the owner's instruction.
+- Workstream 1: P10-07 and P10-08 fixed; P10-06 partly (profiles load four at a time). Tests: lint, typecheck and format clean; backend acceptance 34 files / 161 tests passed locally (Docker Postgres), then the project tests again after the extra assertion.
+- Next for Claude, needing nothing from the owner: the monitoring, restore and recovery runbooks, the security review brief and the counsel pack.
 
 ### 2026-10-17: Claude, Phase 10 slices 1–2 (risk engine, assessments)
 

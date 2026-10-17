@@ -240,7 +240,7 @@ describe('Phase 10 slice 3: projects', () => {
       expect(queue.items.find((i) => i.id === first.id)).toMatchObject({
         type: 'correction_request',
         chain: null,
-        subject: { kind: 'project', slug: 'fictional-swap' },
+        subject: { kind: 'project', slug: 'fictional-swap', name: 'Fictional Swap' },
       });
       await decide(f, moderator, first.id, { action: 'start_review' }, false);
       await expect(
