@@ -126,6 +126,19 @@ describe('non-mock server research adapter', () => {
     );
     await expect(liveResearchApi.getScoreboard({})).rejects.toThrow();
   });
+  it('asks for smaller Ethereum history pages (each row costs two verification reads)', async () => {
+    setup();
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ kind: 'not_found' }) });
+    vi.stubGlobal('fetch', fetcher);
+    await liveResearchApi.getAddressHistory?.('ethereum', '0x' + '1'.repeat(40), { direction: 'out' });
+    await liveResearchApi.getAddressHistory?.('solana', '1'.repeat(44), { direction: 'all' });
+    expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).searchParams.get('limit'))).toEqual([
+      '10',
+      '20',
+    ]);
+  });
   it('never fabricates data when unconfigured and never forwards an unsafe session cookie', async () => {
     vi.stubEnv('API_INTERNAL_URL', '');
     vi.stubEnv('INTERNAL_API_TOKEN', '');
@@ -158,7 +171,7 @@ describe('non-mock server research adapter', () => {
     expect(url.pathname).toContain('/addresses/ethereum/');
     expect(url.searchParams.get('cursor')).toBe('opaque/page?');
     expect(url.searchParams.get('direction')).toBe('in');
-    expect(url.searchParams.get('limit')).toBe('20');
+    expect(url.searchParams.get('limit')).toBe('10');
     for (const method of [
       liveResearchApi.getTokenResearch,
       liveResearchApi.getContractResearch,

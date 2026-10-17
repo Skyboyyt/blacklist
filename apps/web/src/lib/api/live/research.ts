@@ -106,8 +106,10 @@ export const liveResearchApi: ResearchApi = {
   },
   async getAddressHistory(chain, address, query) {
     try {
+      // Each Ethereum history row is verified with a receipt and a block read (two provider
+      // calls), so Ethereum pages are smaller to stay within the provider request limits.
       const params = new URLSearchParams({
-        limit: '20',
+        limit: chain === 'ethereum' ? '10' : '20',
         direction: query.direction,
         ...(query.cursor ? { cursor: query.cursor } : {}),
       });
