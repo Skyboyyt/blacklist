@@ -49,7 +49,41 @@ const shared = z.object({
         .every((item) => item === '' || /^[a-f0-9]{64}$/u.test(item)),
     ),
 });
+const bucket = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/u)
+  .optional();
+const httpsOrLocal = z
+  .url()
+  .refine((value) => {
+    const url = new URL(value);
+    const local = url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname);
+    return (url.protocol === 'https:' || local) && !url.username && !url.password && url.pathname === '/';
+  })
+  .transform((value) => new URL(value).origin)
+  .optional();
+/** Image evidence (Phase 9b; ADR 0004, ADR 0020). Off unless every storage field is set. */
+const evidence = {
+  EVIDENCE_ENABLED: z.enum(['true', 'false']).default('false'),
+  S3_ENDPOINT: httpsOrLocal,
+  S3_REGION: z
+    .string()
+    .regex(/^[a-z0-9-]{2,32}$/u)
+    .optional(),
+  S3_ACCESS_KEY_ID: z
+    .string()
+    .regex(/^[A-Za-z0-9]{8,128}$/u)
+    .optional(),
+  S3_SECRET_ACCESS_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9/+=]{16,128}$/u)
+    .optional(),
+  S3_BUCKET_QUARANTINE: bucket,
+  S3_BUCKET_EVIDENCE: bucket,
+  S3_BUCKET_DERIVATIVES: bucket,
+};
 const apiSchema = shared.extend({
+  ...evidence,
   DEPLOYMENT_ENV: z.enum(['local', 'staging', 'production']).default('local'),
   STAGING_ACCESS_TOKEN: z
     .string()
@@ -148,7 +182,58 @@ const workerSchema = shared.omit({ BETTER_AUTH_SECRET: true }).extend({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   EMAIL_FROM: z.string().email(),
+  ...evidence,
+  /** The isolated processor's address (ADR 0020: its public HTTPS address on staging). */
+  EVIDENCE_PROCESSOR_URL: httpsOrLocal,
 });
+export interface EvidenceStorageConfig {
+  readonly endpoint: string;
+  readonly region: string;
+  readonly accessKeyId: string;
+  readonly secretAccessKey: string;
+  readonly buckets: { readonly quarantine: string; readonly evidence: string; readonly derivatives: string };
+}
+/** The storage settings when image evidence is on; throws if it is on but incomplete. */
+export function resolveEvidenceStorage(config: {
+  readonly EVIDENCE_ENABLED: 'true' | 'false';
+  readonly S3_ENDPOINT?: string | undefined;
+  readonly S3_REGION?: string | undefined;
+  readonly S3_ACCESS_KEY_ID?: string | undefined;
+  readonly S3_SECRET_ACCESS_KEY?: string | undefined;
+  readonly S3_BUCKET_QUARANTINE?: string | undefined;
+  readonly S3_BUCKET_EVIDENCE?: string | undefined;
+  readonly S3_BUCKET_DERIVATIVES?: string | undefined;
+}): EvidenceStorageConfig | null {
+  if (config.EVIDENCE_ENABLED !== 'true') return null;
+  const {
+    S3_ENDPOINT: endpoint,
+    S3_REGION: region,
+    S3_ACCESS_KEY_ID: accessKeyId,
+    S3_SECRET_ACCESS_KEY: secretAccessKey,
+    S3_BUCKET_QUARANTINE: quarantine,
+    S3_BUCKET_EVIDENCE: evidenceBucket,
+    S3_BUCKET_DERIVATIVES: derivatives,
+  } = config;
+  if (
+    !endpoint ||
+    !region ||
+    !accessKeyId ||
+    !secretAccessKey ||
+    !quarantine ||
+    !evidenceBucket ||
+    !derivatives
+  )
+    throw new Error('EVIDENCE_ENABLED requires every S3_* field');
+  if (new Set([quarantine, evidenceBucket, derivatives]).size !== 3)
+    throw new Error('Evidence buckets must be three different buckets');
+  return Object.freeze({
+    endpoint,
+    region,
+    accessKeyId,
+    secretAccessKey,
+    buckets: Object.freeze({ quarantine, evidence: evidenceBucket, derivatives }),
+  });
+}
 export type RegistrationAccess =
   { readonly mode: 'open' } | { readonly mode: 'invite'; readonly emailDigests: ReadonlySet<string> };
 /** Public unless `REGISTRATION_MODE=invite` is set explicitly (owner decision 2026-10-16; ADR 0019). */
@@ -216,6 +301,7 @@ export const readApiConfig = (env = process.env) => {
     throw new Error('APP_ORIGIN requires HTTPS in production');
   if (new URL(config.APP_ORIGIN).hostname !== config.WEBAUTHN_RP_ID)
     throw new Error('WEBAUTHN_RP_ID must match APP_ORIGIN host');
+  resolveEvidenceStorage(config);
   return config;
 };
 export const readWorkerConfig = (env = process.env) => {
@@ -228,6 +314,8 @@ export const readWorkerConfig = (env = process.env) => {
     throw new Error('SMTP_SECURE required in production');
   if (config.NODE_ENV === 'production' && new URL(config.APP_ORIGIN).protocol !== 'https:')
     throw new Error('APP_ORIGIN requires HTTPS in production');
+  if (resolveEvidenceStorage(config) && !config.EVIDENCE_PROCESSOR_URL)
+    throw new Error('EVIDENCE_ENABLED requires EVIDENCE_PROCESSOR_URL on the worker');
   return config;
 };
 export type ApiConfig = ReturnType<typeof readApiConfig>;

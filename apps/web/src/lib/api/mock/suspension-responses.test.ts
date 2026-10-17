@@ -240,7 +240,9 @@ describe('right-of-reply responses (moderation §9)', () => {
         standing: {
           mechanism: 'documentary',
           explanation: 'Signed letter on company letterhead.',
-          evidence: [{ name: 'letter.png', type: 'image/png', size: 1200 }],
+          evidence: [
+            { id: '00000000-0000-4000-8000-000000000001', name: 'letter.png', type: 'image/png', size: 1200 },
+          ],
         },
       }),
     );

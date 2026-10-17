@@ -139,7 +139,7 @@ export const reportSubjects = bl.table(
   ],
 );
 
-/** Phase 9a stores non-image kinds only; image states are used from Phase 9b (ADR 0004). */
+/** Non-image kinds since Phase 9a; image items since Phase 9b (ADR 0004, ADR 0020). */
 export const evidenceItems = bl.table(
   'evidence_items',
   {
@@ -157,6 +157,11 @@ export const evidenceItems = bl.table(
     state: text('state').notNull(),
     visibility: text('visibility').notNull().default('staff_only'),
     legalHold: boolean('legal_hold').notNull().default(false),
+    /** Images: the declared upload type, processing attempts and the worker's retry time. */
+    contentType: text('content_type'),
+    processingAttempts: integer('processing_attempts').notNull().default(0),
+    nextAttemptAt: optionalAt('next_attempt_at'),
+    rejectionReason: text('rejection_reason'),
   },
   (t) => [
     check(
@@ -168,6 +173,16 @@ export const evidenceItems = bl.table(
       sql`${t.state} in ('upload_pending','quarantined','processing','available','rejected','unpublished','purge_requested','purged')`,
     ),
     check('evidence_visibility_valid', sql`${t.visibility} in ('staff_only','published')`),
+    check(
+      'evidence_image_columns',
+      sql`(${t.kind} = 'image') = (${t.contentType} is not null)
+        and (${t.contentType} is null or ${t.contentType} in ('image/png','image/jpeg','image/webp'))`,
+    ),
+    check(
+      'evidence_rejection_reason',
+      sql`(${t.state} = 'rejected') = (${t.rejectionReason} is not null) or ${t.kind} <> 'image'`,
+    ),
+    index('evidence_items_pending').on(t.state, t.nextAttemptAt),
     check(
       'evidence_kind_columns',
       sql`(${t.kind} = 'transaction_ref') = (${t.txHash} is not null)

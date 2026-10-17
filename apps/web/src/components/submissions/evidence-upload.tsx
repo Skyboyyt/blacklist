@@ -109,7 +109,12 @@ function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
         const key = `${f.name}-${f.size}-${seq.current}`;
         accepted.push({
           key,
-          file: { name: f.name.slice(0, 200), type: f.type as EvidenceFile['type'], size: f.size },
+          file: {
+            id: crypto.randomUUID(),
+            name: f.name.slice(0, 200),
+            type: f.type as EvidenceFile['type'],
+            size: f.size,
+          },
           state: 'uploading',
           progress: 0,
         });

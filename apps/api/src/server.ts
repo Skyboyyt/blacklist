@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import Fastify from 'fastify';
 import type { ApiConfig } from '@blacklist/config';
-import type { IdentityContext, ResearchContext } from '@blacklist/domain';
+import type { EvidenceStorage, IdentityContext, ResearchContext } from '@blacklist/domain';
 import { installSecurity } from './plugins/security.ts';
 import { installStagingAccess } from './plugins/staging-access.ts';
 import { installErrors } from './plugins/errors.ts';
@@ -16,11 +16,13 @@ import { findingRoutes } from './routes/findings.ts';
 import { redressRoutes } from './routes/redress.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { adminRoutes } from './routes/admin.ts';
+import { evidenceRoutes } from './routes/evidence.ts';
 export function createServer(
   ctx: IdentityContext,
   config: ApiConfig,
   logging = true,
   research?: ResearchContext,
+  evidence: EvidenceStorage | null = null,
 ) {
   const app = Fastify({
     bodyLimit: 65536,
@@ -49,7 +51,8 @@ export function createServer(
   authRoutes(app, ctx);
   accountRoutes(app, ctx);
   staffRoutes(app, ctx);
-  moderationRoutes(app, ctx);
+  moderationRoutes(app, ctx, evidence !== null);
+  evidenceRoutes(app, ctx, evidence);
   findingRoutes(app, ctx);
   redressRoutes(app, ctx);
   projectRoutes(app, ctx, config.RISK_PUBLIC_BANDS === 'true');
