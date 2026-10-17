@@ -7,7 +7,7 @@ import { ReportStatusBadge } from '@/components/app/report-status-badge';
 import { ButtonLink } from '@/components/ui/button';
 import { getResearchApi } from '@/lib/api/server';
 import { optionalFeature } from '@/lib/api/availability';
-import { NotAvailableYet } from '@/components/states/not-available';
+import { MySubmissions } from '@/components/submissions/my-submissions';
 import { formatDateUtc } from '@/lib/format/date';
 
 export const metadata: Metadata = { title: 'Reports' };
@@ -15,15 +15,27 @@ export const metadata: Metadata = { title: 'Reports' };
 export default async function ReportsPage() {
   const api = await getResearchApi(),
     dashboard = await optionalFeature(() => api.getDashboard());
-  if (!dashboard) return <NotAvailableYet feature="Reports" icon="reports" titleAs="h1" />;
+  const header = (
+    <PageHeader
+      title="My reports"
+      description="Your own reports. Only you and Blacklist staff can see them; nothing is public unless a moderator publishes a finding."
+      actions={<ButtonLink href="/reports/new">New report</ButtonLink>}
+    />
+  );
+  // The live API lists submissions through the member API (the research dashboard is Phase 10).
+  if (!dashboard)
+    return (
+      <div className="flex flex-col gap-6">
+        {header}
+        <DataCard>
+          <MySubmissions />
+        </DataCard>
+      </div>
+    );
   const { myReports } = dashboard;
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="My reports"
-        description="Your own reports. Only you and Blacklist staff can see them; nothing is public unless a moderator publishes a finding."
-        actions={<ButtonLink href="/reports/new">New report</ButtonLink>}
-      />
+      {header}
       <DataCard>
         {myReports.length === 0 ? (
           <EmptyState
