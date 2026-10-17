@@ -23,6 +23,12 @@ export function classifyResearchInput(slug: string, input: string) {
   const adapter = chain.family === 'evm' ? evmAdapter : solanaAdapter;
   return { classification: adapter.classifyInput(input), adapter };
 }
+/** The supported networks on which `input` is a valid address or transaction hash. */
+export function detectResearchChains(input: string) {
+  return (['ethereum', 'solana'] as const).filter(
+    (slug) => classifyResearchInput(slug, input).classification.kind !== 'unrecognized',
+  );
+}
 export function validateResearchIdentifier(slug: string, input: string, kind: 'address' | 'transaction') {
   const { adapter } = classifyResearchInput(slug, input);
   if (!(kind === 'address' ? adapter.parseAddress(input) : adapter.parseTxHash(input)))

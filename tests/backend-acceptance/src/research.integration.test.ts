@@ -177,7 +177,17 @@ describe('real API/domain/Postgres research boundary (synthetic RPC, mock mode o
         url: '/api/v1/search?query=' + address,
         remoteAddress: '192.0.2.5',
       });
-      expect(searchResponseSchema.parse(noNetwork.json()).kind).toBe('invalid_identifier');
+      // Without a chosen network the API detects it: an 0x address is Ethereum only.
+      expect(searchResponseSchema.parse(noNetwork.json())).toMatchObject({
+        kind: 'results',
+        hits: [{ chain: 'ethereum', kind: 'address' }],
+      });
+      const garbage = await app.inject({
+        method: 'GET',
+        url: '/api/v1/search?query=not-an-address',
+        remoteAddress: '192.0.2.5',
+      });
+      expect(searchResponseSchema.parse(garbage.json()).kind).toBe('invalid_identifier');
       const search = await app.inject({
         method: 'GET',
         url: '/api/v1/search?query=' + address + '&chain=ethereum',
