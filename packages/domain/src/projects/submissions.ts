@@ -1,4 +1,4 @@
-import { schema, eq, and, asc, type Database } from '@blacklist/db';
+import { schema, eq, and, asc, isNull, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { requirePermission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
@@ -533,16 +533,25 @@ export async function decideProjectCase(
         basisNote: 'Added after staff reviewed a correction request.',
       })
       .onConflictDoNothing();
-  if (r.retireDomain)
-    await tx
+  if (r.retireDomain) {
+    // Only an active domain can be retired; a retired row keeps its original history.
+    const retired = await tx
       .update(schema.projectDomains)
       .set({ retiredAt: new Date() })
       .where(
         and(
           eq(schema.projectDomains.projectId, project.id),
           eq(schema.projectDomains.hostname, r.retireDomain),
+          isNull(schema.projectDomains.retiredAt),
         ),
+      )
+      .returning({ id: schema.projectDomains.id });
+    if (!retired.length)
+      throw refuse(
+        'invalid_transition',
+        'That domain is not an active official domain of this profile. Reject the correction or ask for a new one.',
       );
+  }
   await record('correction_outcome', 'accepted', String(decision['publicSummary'] ?? '') || null);
   await tx
     .update(schema.correctionRequests)

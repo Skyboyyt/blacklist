@@ -316,6 +316,31 @@ describe('Phase 10 slice 3: projects', () => {
         true,
       );
       expect(rejected.status).toBe('rejected');
+      // Retiring a domain that is not an active official domain is refused; nothing changes.
+      const third = await submitCorrection(
+        f.ctx,
+        other.actor,
+        {
+          projectSlug: 'fictional-swap',
+          statement: text('Retire an unknown domain'),
+          retireDomain: 'unknown.fictional-swap.example',
+          evidence: [],
+        },
+        prefix,
+      );
+      await decide(f, admin, third.id, { action: 'start_review' }, false);
+      await expect(
+        decide(
+          f,
+          admin,
+          third.id,
+          { action: 'accept_correction', publicSummary: text('Revised'), internalRationale: text('Checked') },
+          true,
+        ),
+      ).rejects.toThrow('invalid_transition');
+      expect(
+        (await projectDetail(f.ctx.runtime.db, 'fictional-swap', { publicBands: false }))?.profileRevision,
+      ).toBe(2);
       expect(await getOwnSubmission(f.ctx, other.actor, second.id)).toMatchObject({
         status: 'Not accepted',
         submitterReason: 'already_corrected',

@@ -354,6 +354,8 @@ describe('Phase 9a slice 3: findings, approval and system publication (moderatio
       // Hidden from the public at once: only the suspension notice remains.
       const pub = await publicFindings(f.ctx.runtime.db, 'eip155:1', address);
       expect(pub.findings).toEqual([]);
+      // The subject is marked disputed, so its assessment and any ranking show the suspension.
+      expect(pub.suspended).toBe(true);
       expect(pub.timeline.map((t) => t.kind)).toEqual(['finding_published', 'finding_suspended']);
       expect(JSON.stringify(pub)).not.toContain('Public summary');
       // A severe suspension alerts every admin.
@@ -400,6 +402,7 @@ describe('Phase 9a slice 3: findings, approval and system publication (moderatio
       expect(reinstated.status).toBe('reinstated');
       const after = await publicFindings(f.ctx.runtime.db, 'eip155:1', address);
       expect(after.findings).toHaveLength(1);
+      expect(after.suspended).toBe(false);
       expect(after.timeline.map((t) => t.kind)).toEqual([
         'finding_published',
         'finding_suspended',

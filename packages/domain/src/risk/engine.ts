@@ -136,8 +136,14 @@ export function assess(
         : applied.length
           ? 'medium'
           : 'low';
+  // Only an applied input's expiry can change the result. Scheduling a review for any other
+  // input would leave a past review time that a recompute never moves (same inputs hash).
   const future = sorted
-    .map((i) => (i.status === 'active' && i.validUntil !== null ? Date.parse(i.validUntil) : NaN))
+    .map((i, idx) =>
+      i.status === 'active' && factors[idx]?.applied && i.validUntil !== null
+        ? Date.parse(i.validUntil)
+        : NaN,
+    )
     .filter((t) => Number.isFinite(t) && t > at);
   const checksum = rulesetChecksum(ruleset);
   const effectiveInputsHash = digest(

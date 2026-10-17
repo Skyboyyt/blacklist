@@ -180,6 +180,14 @@ describe('V1 risk engine: determinism, expiry and replay (§15.4)', () => {
     ]);
     expect(r.nextReviewAt).toBe('2026-10-20T00:00:00.000Z');
     expect(run([finding('high')]).nextReviewAt).toBeNull();
+    // An input that does not count cannot change the result when it expires, so it schedules
+    // no review (otherwise a past review time would never move and the sweep would loop).
+    expect(
+      run([
+        finding('high'),
+        finding('low', { factorCode: 'not.in.ruleset', validUntil: '2026-10-20T00:00:00.000Z' }),
+      ]).nextReviewAt,
+    ).toBeNull();
   });
 
   it('replays a stored result exactly with its ruleset, and refuses a different ruleset', () => {
