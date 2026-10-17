@@ -140,3 +140,15 @@ Next and its lint plugin are patched to **16.3.8** (2026-09-30). Narrow override
 The latest complete audit still fails: **1 high braces advisory, no published patched version; 0 critical/moderate/low**. It is a development-tooling dependency via the Next lint plugin/fast-glob/micromatch. No advisory is suppressed and no security exception is claimed. Earlier nine-advisory results above are historical, superseded by this run. OSV/SBOM and production vulnerability handling still require the planned CI/release workflow. The prepublication review ran Gitleaks 8.30.0 in an isolated, network-disabled container pinned to `sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9`; its specific prose/fictional-placeholder findings were manually classified, without disabling scanner rules.
 
 Prepublication validation adds the already-planned dev-only **@vitest/coverage-v8 5.0.2**, published 2026-09-25, matching Vitest exactly. It measures and enforces the documented domain branch floors rather than treating assertions alone as coverage evidence. No new build scripts or policy exceptions were needed. After the filtered addition, a complete `pnpm install --frozen-lockfile` restored every workspace's links; validation runs use that complete installation.
+
+## Phase 9b evidence processor (2026-10-17)
+
+Installed with pnpm 12.7.0 under Node 24.21.0, exact versions, at least 7 days old, with no `allowBuilds` change (sharp 0.35 ships prebuilt `@img/sharp-*` binaries and has no install script).
+
+| Package | Version | Where | Why / risk |
+|---|---|---|---|
+| `sharp` | 0.35.5 | `apps/evidence-processor` **only** | Decode and re-encode hostile images (ADR 0004). Native libvips is the reason the processor is isolated and secretless. libvips can read many formats (SVG, TIFF, HEIF, GIF, PDF); the processor checks magic bytes first so only the PNG, JPEG and WebP loaders run, and rejects APNG and animated WebP. Single maintainer; widely used; pinned exactly |
+| `zod` | 4.6.5 | `apps/evidence-processor` | Already used across the repo; validates the job request and environment |
+| `vitest`, `typescript`, `@types/node` | 5.0.2, 6.0.3, 24.19.0 | `apps/evidence-processor` (dev) | Existing toolchain versions |
+
+Storage URLs are signed with our own small SigV4 module on `node:crypto` (tested against AWS's published example) instead of adding an AWS SDK.

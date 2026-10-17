@@ -1,6 +1,6 @@
 # @blacklist/evidence-processor
 
-**Isolated** image sanitizer for user-submitted evidence ([ADR 0004](../../docs/adr/0004-hostile-evidence-isolation-and-lifecycle.md), ARCHITECTURE.md §14.3). **Status:** not implemented; Phase 9 (the evidence UI in Phase 4 uses mocks).
+**Isolated** image sanitizer for user-submitted evidence ([ADR 0004](../../docs/adr/0004-hostile-evidence-isolation-and-lifecycle.md), ARCHITECTURE.md §14.3). **Status:** implemented in Phase 9b (ADR 0020: on staging it runs as a secretless Render service that accepts only presigned URLs for our own buckets; test images only).
 
 ## Why a separate deployable
 

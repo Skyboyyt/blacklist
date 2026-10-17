@@ -26,11 +26,24 @@ export function detectFormat(bytes: Uint8Array): ImageFormat | null {
   return null;
 }
 
+/** APNG keeps a still first frame that libvips reads silently; an `acTL` chunk before the image data marks it. */
+export function isAnimatedPng(bytes: Uint8Array) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  for (let at = 8; at + 8 <= bytes.length;) {
+    const type = String.fromCharCode(...bytes.subarray(at + 4, at + 8));
+    if (type === 'acTL') return true;
+    if (type === 'IDAT' || type === 'IEND') return false;
+    at += 12 + view.getUint32(at);
+  }
+  return false;
+}
+
 /** Decode, check, re-encode with no metadata. Any doubt rejects (fail closed). */
 export async function sanitize(input: Uint8Array): Promise<Sanitized> {
   if (input.length > MAX_INPUT_BYTES) return { ok: false, reason: 'too_large' };
   const format = detectFormat(input);
   if (!format) return { ok: false, reason: 'unsupported_type' };
+  if (format === 'png' && isAnimatedPng(input)) return { ok: false, reason: 'animated' };
   const options = { limitInputPixels: MAX_PIXELS, failOn: 'warning', sequentialRead: true } as const;
   try {
     const meta = await sharp(input, options).metadata();
