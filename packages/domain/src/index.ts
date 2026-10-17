@@ -33,3 +33,4 @@ export * from './notifications/service.ts';
 export * from './audit/viewer.ts';
 export * from './evidence/storage.ts';
 export * from './evidence/uploads.ts';
+export * from './evidence/processing.ts';
