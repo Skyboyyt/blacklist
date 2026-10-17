@@ -110,12 +110,17 @@ function appFor(mode: 'ok' | 'no_code' | 'timeout' | 'rate_limited' | 'absent' |
   );
 }
 describe('API metadata/history/balance capabilities use actual adapters and database boundaries', () => {
-  it('search requires explicit network, resolves addresses/transactions and retains unavailable outcomes', async () => {
+  it('search detects an unambiguous network, honours a chosen one, resolves addresses/transactions and retains unavailable outcomes', async () => {
     const app = appFor();
     try {
       expect(
         searchResponseSchema.parse(
           (await app.inject({ method: 'GET', url: '/api/v1/search?query=' + address })).json(),
+        ),
+      ).toMatchObject({ kind: 'results', hits: [{ chain: 'ethereum', id: address }] });
+      expect(
+        searchResponseSchema.parse(
+          (await app.inject({ method: 'GET', url: '/api/v1/search?query=unrecognized' })).json(),
         ).kind,
       ).toBe('invalid_identifier');
       expect(

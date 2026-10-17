@@ -12,7 +12,7 @@ import {
   tokenBalancesSchema,
 } from '@blacklist/contracts';
 import { DomainError, validateResearchIdentifier, type ResearchContext } from '@blacklist/domain';
-import { searchResearch } from '../presenters/search.ts';
+import { searchResearch, detectAndSearch } from '../presenters/search.ts';
 import { addressResearch, transactionResearch } from '../presenters/research.ts';
 import {
   historyResearch,
@@ -119,13 +119,10 @@ export function researchRoutes(app: FastifyInstance, ctx: ResearchContext | unde
     });
     app.get(`${prefix}/search`, { config }, async (req) => {
       const query = searchRequestSchema.parse(req.query);
-      if (!query.chain)
-        return {
-          kind: 'invalid_identifier',
-          reason: 'Choose Ethereum or Solana explicitly before searching.',
-        };
       if (!ctx) return { kind: 'provider_unavailable', retryAfterSeconds: 30 };
-      return searchResearch(ctx, req.actor, query.chain, query.query);
+      return query.chain
+        ? searchResearch(ctx, req.actor, query.chain, query.query)
+        : detectAndSearch(ctx, req.actor, query.query);
     });
   }
 }
