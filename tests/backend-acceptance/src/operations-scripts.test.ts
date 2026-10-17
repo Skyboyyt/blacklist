@@ -28,4 +28,15 @@ describe('Neon apply scripts embed the committed migrations exactly', () => {
       expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
     }
   });
+  it('0009: both files verbatim, with matching ledger checksums', async () => {
+    const script = await read('docs/operations/2026-10-17-apply-0009-projects.sql');
+    for (const [path, name] of [
+      ['packages/db/migrations/generated/0009_fresh_shen.sql', '0009_fresh_shen.sql'],
+      ['packages/db/migrations/0009_project_guards.sql', '0009_project_guards.sql'],
+    ] as const) {
+      const source = await read(path);
+      expect(script).toContain(source.trimEnd());
+      expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
+    }
+  });
 });

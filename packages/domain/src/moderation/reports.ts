@@ -14,6 +14,12 @@ import {
   withdrawRedress,
   replyAfterDeniedStanding,
 } from './redress.ts';
+import {
+  ownedProjectSubmission,
+  projectSubmissionDetail,
+  listOwnProjectSubmissions,
+  replyToSuggestion,
+} from '../projects/submissions.ts';
 
 // Reports are private to the reporter and staff and change nothing public while
 // unreviewed (moderation §10; AGENTS §5.7). Member views carry no staff identities.
@@ -260,7 +266,11 @@ export async function listOwnSubmissions(ctx: IdentityContext, actor: UserActor)
     .where(eq(schema.reports.reporterUserId, actor.userId))
     .orderBy(desc(schema.reports.lastActivityAt))
     .limit(200);
-  const all = [...rows.map(({ c, r }) => summary(c, r)), ...(await listOwnRedress(ctx.runtime.db, actor))];
+  const all = [
+    ...rows.map(({ c, r }) => summary(c, r)),
+    ...(await listOwnRedress(ctx.runtime.db, actor)),
+    ...(await listOwnProjectSubmissions(ctx.runtime.db, actor)),
+  ];
   return all.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
@@ -269,6 +279,8 @@ export async function getOwnSubmission(ctx: IdentityContext, actor: UserActor, c
   return ctx.runtime.transaction(async (tx) => {
     const redress = await ownedRedress(tx, actor, caseId);
     if (redress) return redressDetail(tx, redress);
+    const project = await ownedProjectSubmission(tx, actor, caseId);
+    if (project) return projectSubmissionDetail(tx, project);
     const { c, r } = await ownedCase(tx, actor, caseId);
     return detail(tx, c, r);
   });
@@ -373,6 +385,14 @@ export async function respondToInfoRequest(
       const fresh = await ownedRedress(tx, actor, caseId);
       if (!fresh) throw new Error('redress_missing');
       return redressDetail(tx, fresh);
+    }
+    const project = await ownedProjectSubmission(tx, actor, caseId, true);
+    if (project) {
+      requireVersion(project.c, version);
+      await replyToSuggestion(tx, actor, project, input.message);
+      const fresh = await ownedProjectSubmission(tx, actor, caseId);
+      if (!fresh) throw new Error('project_submission_missing');
+      return projectSubmissionDetail(tx, fresh);
     }
     const { c, r } = await ownedCase(tx, actor, caseId, true);
     requireVersion(c, version);

@@ -53,7 +53,8 @@ This file holds the **current state only**. Each session adds one short entry un
   - staff see the score in case detail;
   - public bands stay off (`RISK_PUBLIC_BANDS=false`, O-12);
   - the worker runs a 15-minute expiry sweep.
-- **Owner:** merge, apply 0008 on Neon, then deploy the API and worker.
+- Slice 3: projects (migration 0009), suggestions and corrections through the case workflow, public profiles and directory.
+- **Owner (after the PR):** apply 0008 then 0009 on Neon, then deploy the API, worker and Vercel.
 
 ### 2026-10-17: Claude, Phase 10 authorized; plan drafted
 

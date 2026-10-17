@@ -104,7 +104,7 @@ describe('application migration and restore safety', () => {
         "SELECT count(*) FROM pg_catalog.pg_tables WHERE schemaname='blacklist'",
       );
       // Preserve all27 Phase7 tables and require the7 additive Phase8 tables.
-      expect(Number(tables.rows[0]?.count)).toBe(69);
+      expect(Number(tables.rows[0]?.count)).toBe(75);
       await h.runtime.query(`SELECT blacklist.append_audit(jsonb_build_object(
         'actor_type','system','actor_ref','migration-test','action','migration.test',
         'target_type','database','target_id','fixture','details','{}'::jsonb))`);

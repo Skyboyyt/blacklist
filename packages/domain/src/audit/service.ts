@@ -64,6 +64,8 @@ const moderationEvents = [
   'finding.suspended',
   'finding.reinstated',
   'finding.reversed',
+  'project.created',
+  'project.revised',
 ] as const;
 export type AuditAction =
   (typeof accountEvents)[number] | (typeof staffEvents)[number] | (typeof moderationEvents)[number];

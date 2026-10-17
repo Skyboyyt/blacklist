@@ -17,6 +17,7 @@ import {
 import { bl, id, at, optionalAt } from './columns.ts';
 import { user } from './auth.ts';
 import { chains } from './chain-verification.ts';
+import { projectSuggestions, correctionRequests } from './projects.ts';
 
 // Phase 9a (docs/data-model.md §4–§6, docs/design/moderation.md). Staff actors are
 // stored as pseudonymous actor references (actor_identity_map), as elsewhere in audit.
@@ -197,6 +198,8 @@ export const moderationCases = bl.table(
     findingId: uuid('finding_id').references(() => findings.id),
     appealId: uuid('appeal_id').references((): AnyPgColumn => appeals.id),
     responseId: uuid('response_id').references((): AnyPgColumn => subjectResponses.id),
+    suggestionId: uuid('suggestion_id').references((): AnyPgColumn => projectSuggestions.id),
+    correctionId: uuid('correction_id').references((): AnyPgColumn => correctionRequests.id),
     status: text('status').notNull(),
     priority: text('priority').notNull().default('normal'),
     assignedToRef: text('assigned_to_ref'),
@@ -214,6 +217,16 @@ export const moderationCases = bl.table(
     check('case_report_source', sql`(${t.caseType} = 'report_review') = (${t.reportId} is not null)`),
     check('case_appeal_source', sql`(${t.caseType} = 'appeal_review') = (${t.appealId} is not null)`),
     check('case_response_source', sql`(${t.caseType} = 'subject_response') = (${t.responseId} is not null)`),
+    check(
+      'case_suggestion_source',
+      sql`(${t.caseType} = 'project_suggestion') = (${t.suggestionId} is not null)`,
+    ),
+    check(
+      'case_correction_source',
+      sql`(${t.caseType} = 'correction_request') = (${t.correctionId} is not null)`,
+    ),
+    uniqueIndex('one_case_per_suggestion').on(t.suggestionId),
+    uniqueIndex('one_case_per_correction').on(t.correctionId),
     uniqueIndex('one_case_per_report').on(t.reportId),
     uniqueIndex('one_case_per_appeal').on(t.appealId),
     uniqueIndex('one_case_per_response').on(t.responseId),

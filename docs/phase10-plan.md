@@ -28,6 +28,13 @@
   - **The notifications table moves to slice 4** with the rest of the notification work.
   - **Viewing a stale assessment does not enqueue a recompute** yet; V1 inputs do not expire.
 
+- Slice 3: projects, done on the branch.
+  - Migration 0009 (runbook `docs/operations/2026-10-17-apply-0009-projects.md`, rehearsed together with 0008).
+  - Member suggestions (`POST /projects/suggestions`, `report:create`) and corrections (`POST /projects/:slug/corrections`, `correction:create`). Images are refused until 9b.
+  - The staff case workflow: suggestion `request_info` / `accept_suggestion` / `reject_suggestion`; correction `start_review` / `accept_correction` / `reject_correction`. Acceptance needs `project:manage` and a step-up; a correction against an outdated revision is a `conflict`.
+  - Public `GET /projects` and `GET /projects/:slug`, with each official address's own assessment (no combined rating).
+  - Deferred: responses about a project as a whole, which need DNS standing; responses about each official address already work.
+
 ## Slices
 
 Each slice is a pull request with tests, updates the data model and `AI_HANDOFF.md`, and (where it migrates) ships an owner-applied, rehearsed Neon runbook.

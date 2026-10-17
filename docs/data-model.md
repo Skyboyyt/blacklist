@@ -158,6 +158,16 @@ PK `(chain_id, tx_hash)`; `block_number` / `slot`, `block_hash` (EVM), `block_ti
 ### `project_suggestions` (ADR 0010 Part A; not yet migrated)
 `id`, `submitter_user_id`, `name`, `category`, `chain_id`, `identifier`, `links_text` (defanged text, never fetched), `description`, `status` (`submitted` | `needs_information` | `accepted_into_profile` | `not_accepted`), `submitter_reason` (fixed list, visible to the submitter only), `resulting_project_id`, `revision`, `submitted_at`, `decided_at`. Private to the submitter and staff; a suggestion has no public effect until staff publish a project revision. Evidence links via `evidence_links.project_suggestion_id` (to be added with the migration).
 
+### Phase 10 implementation of projects (2026-10-17, slice 3; not yet applied to Neon)
+`generated/0009_fresh_shen.sql` and `0009_project_guards.sql`: **18 ledger entries, 75 tables**.
+- `projects`: `id`, `subject_id` (a `subjects` row of kind `project`, so cases and responses can refer to it), `slug` (unique), `current_revision`.
+- `project_revisions` [append-only]: `revision_number`, `name`, `category`, `description`, `author_ref`, `source_case_id`, `public_note`.
+- `project_addresses`: `address_subject_id`, `role`, `basis`, `basis_note`, `attributed_at`, `retired_at`; one active row per address. `project_domains` follows the same pattern per hostname.
+- `project_suggestions`: as planned, plus `withdrawn` in the status set. `chain_id` and `identifier` are normalized; `links_text` is a JSON array of defanged text.
+- `correction_requests`: profile corrections only: `project_id`, `base_revision`, `statement`, `proposed_description`, `add_domain`, `retire_domain`, `status` (`submitted` | `in_review` | `accepted` | `rejected` | `withdrawn`), `submitter_reason`. Corrections against findings stay with appeals (Phase 9a plan).
+- `moderation_cases` gains `suggestion_id` and `correction_id`, with source CHECKs and one case per source.
+- `address_labels` arrives with slice 4.
+
 ### `address_labels`, `projects`, `project_revisions` [append-only], `project_addresses`, `project_domains`
 As revision 1. `project_addresses.basis` is an attribution basis with time and evidence; it is **not** an ownership verdict. External labels have `provenance = 'external_source'`.
 
