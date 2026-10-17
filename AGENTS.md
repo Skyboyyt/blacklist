@@ -9,7 +9,7 @@
 - **Current status (2026-10-16).** Detail and evidence live in `AI_HANDOFF.md`; this block is the summary.
   - **Frontend (Phases 1–6):** implemented on contracts and mocks and merged. The Phase 6 owner sign-off is not yet recorded.
   - **Phase 7 (Backend Foundation):** authorized 2026-10-13 and merged to `main` (PRs #8–#11). Its exit criteria are not closed: an independent (non-implementer) security review is still open. ADR 0013 was accepted on 2026-10-16 (P-13 open).
-  - **Phase 8 (Chain Data & Research):** authorized 2026-10-14 and merged to `main` (PR #12) on the owner's explicit instruction despite disclosed blockers. Research is off by default (`RESEARCH_ENABLED=false`); ADR 0018 is accepted provisionally (2026-10-16) and O-3 is open.
+  - **Phase 8 (Chain Data & Research):** authorized 2026-10-14 and merged to `main` (PR #12) on the owner's explicit instruction despite disclosed blockers. Research is off by default (`RESEARCH_ENABLED=false`); the owner authorized turning it on for **staging** on 2026-10-17 (ADR 0018); ADR 0018 is accepted provisionally (2026-10-16) and O-3 is open.
   - **Owner decisions 2026-10-16:** member passwords 12, staff 8 (ADR 0016, amended); public member sign-up with a recorded staging-data risk acceptance (ADR 0019 superseded; the invite gate is opt-in).
   - **Public foundation:** the Vercel web app, Render API and worker, and the Neon staging database went public on the owner's explicit instruction (2026-10-13). This is **not** production readiness; Phase 11 launch gates (legal, retention, recovery, monitoring) remain.
   - **Claude's review** of Phases 7–8 and its follow-up fixes: [docs/reviews/2026-10-15-claude-phase7-8-review.md](docs/reviews/2026-10-15-claude-phase7-8-review.md).
