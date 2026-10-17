@@ -44,6 +44,12 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-17: Claude, Phase 9b requested; hosting ADR proposed
+
+- The owner paused Phase 11 and asked to start Phase 9b (image evidence). Its gate is an accepted hosting ADR, so no code yet.
+- [ADR 0020](docs/adr/0020-phase9b-evidence-hosting-on-staging.md) (**Proposed**): object storage on Backblaze B2 or Cloudflare R2 free, and the processor as a secretless third Render free service. Verified from Render's docs: free services cannot receive private traffic, and there is no outbound restriction, so ADR 0004's network isolation is not met on staging. Proposed as an owner risk acceptance with **test images only**; production keeps full isolation (O-4). Provider card requirements and versioning or object lock were not confirmed from official sources, so they are listed as sign-up conditions.
+- [docs/phase9b-plan.md](docs/phase9b-plan.md): six slices. Waiting for the owner's decision on ADR 0020.
+
 ### 2026-10-17: Claude, Phase 11 authorized; plan and launch checklist
 
 - The owner authorized Phase 11 ("launch readiness"). [docs/phase11-plan.md](docs/phase11-plan.md) sets nine workstreams, each marked Claude, owner or paid; [docs/launch-checklist.md](docs/launch-checklist.md) is the exit document for the owner to sign.
