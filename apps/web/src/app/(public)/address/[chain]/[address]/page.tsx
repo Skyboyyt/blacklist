@@ -50,7 +50,6 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
   ]);
   const details: ChainDetailsData = {
     direction,
-    ...(history ? { history } : {}),
     ...(token ? { token } : {}),
     ...(contract ? { contract } : {}),
     ...(balances ? { balances } : {}),
@@ -58,7 +57,14 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
   return (
     <div className="flex flex-col gap-6">
       <FinalityToggle href={`/address/${chain}/${encodeURIComponent(input)}`} final={final} />
-      <AddressResearchView data={result.data} />
+      <AddressResearchView
+        data={result.data}
+        activity={
+          history ? <ChainDetails chain={chain} address={input} data={{ direction, history }} /> : undefined
+        }
+        // Following an Incoming/Outgoing or next-page link keeps the activity in view.
+        initialTab={query.direction || query.cursor ? 'transfers' : 'findings'}
+      />
       <ChainDetails chain={chain} address={input} data={details} />
     </div>
   );

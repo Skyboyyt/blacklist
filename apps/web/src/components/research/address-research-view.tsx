@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { AddressResearch } from '@blacklist/contracts';
 import { ChainBadge } from '@/components/app/chain-badge';
 import { CopyableValue } from '@/components/app/copyable-value';
@@ -31,7 +32,16 @@ const KIND_LABEL: Record<AddressResearch['kind'], string> = {
  * Research page layout: identity → assessment → evidence tabs.
  * Identity and network come first so the user always knows exactly what is assessed.
  */
-export function AddressResearchView({ data }: { readonly data: AddressResearch }) {
+export function AddressResearchView({
+  data,
+  activity,
+  initialTab = 'findings',
+}: {
+  readonly data: AddressResearch;
+  /** Live blockchain activity for this address, shown in the Transfers tab. */
+  readonly activity?: ReactNode;
+  readonly initialTab?: 'findings' | 'transfers';
+}) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -102,7 +112,7 @@ export function AddressResearchView({ data }: { readonly data: AddressResearch }
         </div>
       </div>
 
-      <Tabs defaultValue="findings">
+      <Tabs defaultValue={initialTab}>
         <TabsList aria-label="Research details">
           <TabsTrigger value="findings">
             {data.availability?.findings === 'unavailable'
@@ -143,12 +153,17 @@ export function AddressResearchView({ data }: { readonly data: AddressResearch }
           )}
         </TabsContent>
         <TabsContent value="transfers">
-          {data.availability?.transfers === 'unavailable' ? (
+          {data.availability?.transfers !== 'unavailable' ? (
+            <div className="flex flex-col gap-6">
+              <TransfersTable chain={data.chain} transfers={data.transfers} />
+              {activity}
+            </div>
+          ) : activity ? (
+            activity
+          ) : (
             <p className="text-sm text-muted">
               Transfer history is unavailable; a balance read does not establish activity.
             </p>
-          ) : (
-            <TransfersTable chain={data.chain} transfers={data.transfers} />
           )}
         </TabsContent>
         <TabsContent value="evidence">
