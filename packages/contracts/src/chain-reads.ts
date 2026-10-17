@@ -104,3 +104,22 @@ export const tokenBalancesSchema = z.strictObject({
   coverage: z.string().max(300),
 });
 export type AddressHistory = z.infer<typeof addressHistorySchema>;
+
+/**
+ * An exact, human-readable amount from raw base units: `1500000000000000000` with 18
+ * decimals is `1.5`. Never rounds; trims trailing zeros; groups thousands with commas.
+ */
+export function formatTokenAmount(raw: string, decimals: number): string {
+  if (!/^(0|[1-9]\d*)$/u.test(raw) || !Number.isInteger(decimals) || decimals < 0 || decimals > 255)
+    return raw;
+  const padded = raw.padStart(decimals + 1, '0');
+  const whole = padded.slice(0, padded.length - decimals).replace(/\B(?=(\d{3})+(?!\d))/gu, ',');
+  const fraction = padded.slice(padded.length - decimals).replace(/0+$/u, '');
+  return fraction ? `${whole}.${fraction}` : whole;
+}
+
+/** Native currency of each supported network, with its decimals. */
+export const NATIVE_CURRENCY = {
+  ethereum: { symbol: 'ETH', decimals: 18 },
+  solana: { symbol: 'SOL', decimals: 9 },
+} as const;
