@@ -2,6 +2,7 @@ import { schema, eq, and, asc, desc, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { hasPermission, requirePermission, type Permission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
+import { notifyCaseDecision } from '../notifications/service.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
@@ -553,7 +554,7 @@ export async function decideCase(
   decision: CaseDecisionInput,
   assertion?: AssertionInput,
 ) {
-  const apply = async (tx: Database) => {
+  const decide = async (tx: Database) => {
     const { c, report } = await loadCase(tx, actor, caseId, true);
     const rule = RULES[c.caseType]?.[decision.action];
     if (!rule) throw refuse('invalid_transition', 'This decision does not apply to this kind of case.');
@@ -708,6 +709,11 @@ export async function decideCase(
         await tx.update(schema.moderationCases).set({ findingId }).where(eq(schema.moderationCases.id, c.id));
     }
     return reload(tx, actor, caseId);
+  };
+  const apply = async (tx: Database) => {
+    const result = await decide(tx);
+    await notifyCaseDecision(tx, caseId, decision.action, result.status);
+    return result;
   };
   if (!assertion)
     return ctx.runtime.transaction(async (tx) => {

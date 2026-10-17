@@ -35,6 +35,8 @@ describe('single migration order (CR-14 D-2)', () => {
       '0008_risk_guards.sql',
       'generated/0009_fresh_shen.sql',
       '0009_project_guards.sql',
+      'generated/0010_condemned_hercules.sql',
+      '0010_admin_guards.sql',
     ]);
   });
 

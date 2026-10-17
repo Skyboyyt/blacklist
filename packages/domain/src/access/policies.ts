@@ -46,6 +46,8 @@ const admin = [
   'audit:read',
   'user:suspend',
   'project:manage',
+  'label:manage',
+  'signal:suppress',
 ] as const;
 const own = ['session:manage:own', 'profile:update:own'] as const;
 export type Permission =

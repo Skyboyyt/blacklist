@@ -26,3 +26,7 @@ export * from './risk/service.ts';
 export * from './risk/views.ts';
 export * from './projects/profiles.ts';
 export * from './projects/submissions.ts';
+export * from './risk/suppressions.ts';
+export * from './moderation/address-labels.ts';
+export * from './notifications/service.ts';
+export * from './audit/viewer.ts';

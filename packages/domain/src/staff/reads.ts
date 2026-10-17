@@ -1,4 +1,5 @@
-import { schema, eq, and, isNull, desc } from '@blacklist/db';
+import { schema, eq, and, isNull, desc, sql, type Database } from '@blacklist/db';
+import { adminAlerts } from '../notifications/service.ts';
 import type { UserActor } from '../access/types.ts';
 import { requirePermission } from '../access/policies.ts';
 import { lockActor } from '../identity/sessions.ts';
@@ -101,6 +102,18 @@ export async function listInvitations(ctx: IdentityContext, actor: UserActor) {
     );
   });
 }
+async function activeAdminRecords(tx: Database) {
+  const n = sql<number>`count(*)::int`;
+  const [labels] = await tx
+    .select({ n })
+    .from(schema.addressLabels)
+    .where(isNull(schema.addressLabels.retiredAt));
+  const [suppressions] = await tx
+    .select({ n })
+    .from(schema.riskSignalSuppressions)
+    .where(isNull(schema.riskSignalSuppressions.liftedAt));
+  return { labels: labels?.n ?? 0, suppressions: suppressions?.n ?? 0 };
+}
 export async function staffAdministration(ctx: IdentityContext, actor: UserActor) {
   requirePermission(actor, 'staff:invite');
   return ctx.runtime.transaction(async (tx) => {
@@ -126,6 +139,7 @@ export async function staffAdministration(ctx: IdentityContext, actor: UserActor
       .limit(100);
     const verifications = await tx.select().from(schema.recoveryVerifications);
     const objections = await tx.select().from(schema.recoveryObjections);
+    const active = await activeAdminRecords(tx);
     return {
       overview: {
         activeStaff: users.filter((u) => u.accountKind === 'staff' && u.status === 'active').length,
@@ -135,9 +149,9 @@ export async function staffAdministration(ctx: IdentityContext, actor: UserActor
         openRecoveryCases: recoveries.filter((r) => !['completed', 'cancelled', 'objected'].includes(r.state))
           .length,
         suspendedMembers: users.filter((u) => u.accountKind === 'member' && u.status === 'suspended').length,
-        activeLabels: 0,
-        activeSuppressions: 0,
-        alerts: [],
+        activeLabels: active.labels,
+        activeSuppressions: active.suppressions,
+        alerts: await adminAlerts(tx, actor.userId),
       },
       roles: roles.map((r) => ({
         id: r.id,

@@ -2,6 +2,7 @@ import { schema, eq, ne, and, asc, desc, inArray, type Database } from '@blackli
 import type { UserActor } from '../access/types.ts';
 import { requirePermission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
+import { notify } from '../notifications/service.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
@@ -120,6 +121,7 @@ export async function submitAppeal(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }
@@ -219,6 +221,7 @@ export async function submitResponse(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }

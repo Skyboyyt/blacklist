@@ -9,6 +9,7 @@ import {
   cleanupIdentity,
   verifyAudit,
   sweepDueAssessments,
+  escalateOverdueAppeals,
   RetryableDeliveryError,
   type DeliveryContext,
   type SecurityMailer,
@@ -105,7 +106,11 @@ export async function startWorker(ctx: DeliveryContext, mailer: SecurityMailer, 
   await Promise.all(registrations);
   // risk.expiry_sweep every 15 minutes while the worker runs (ARCHITECTURE §15.5). V1 inputs
   // do not expire yet, so this is a backstop; failures are retried on the next tick.
-  const sweep = () => void sweepDueAssessments(ctx.runtime).catch(() => undefined);
+  // The same tick escalates appeals open for 14 days to administrators, once each.
+  const sweep = () => {
+    void sweepDueAssessments(ctx.runtime).catch(() => undefined);
+    void escalateOverdueAppeals(ctx.runtime).catch(() => undefined);
+  };
   setInterval(sweep, 15 * 60_000).unref();
   sweep();
   await ctx.runtime.boss.send(

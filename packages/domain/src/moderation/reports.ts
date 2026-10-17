@@ -1,7 +1,8 @@
-import { schema, eq, and, asc, desc, inArray, type Database } from '@blacklist/db';
+import { schema, eq, and, asc, desc, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { requirePermission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
+import { notify } from '../notifications/service.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
@@ -140,6 +141,7 @@ export async function submitReport(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }
@@ -405,39 +407,4 @@ export async function respondToInfoRequest(
     const fresh = await ownedCase(tx, actor, caseId);
     return detail(tx, fresh.c, fresh.r);
   });
-}
-
-/** Plan interim decision 4: notices derive from the member's own report history. */
-export async function listOwnNotices(ctx: IdentityContext, actor: UserActor) {
-  requirePermission(actor, 'notification:read:own');
-  const rows = await ctx.runtime.db
-    .select({ h: schema.reportStatusHistory, c: schema.moderationCases, r: schema.reports })
-    .from(schema.reportStatusHistory)
-    .innerJoin(schema.reports, eq(schema.reports.id, schema.reportStatusHistory.reportId))
-    .innerJoin(schema.moderationCases, eq(schema.moderationCases.reportId, schema.reports.id))
-    .where(
-      and(
-        eq(schema.reports.reporterUserId, actor.userId),
-        inArray(schema.reportStatusHistory.toStatus, [
-          'queued',
-          'needs_info',
-          'accepted',
-          'rejected',
-          'rejected_abusive',
-        ]),
-      ),
-    )
-    .orderBy(desc(schema.reportStatusHistory.at))
-    .limit(50);
-  return rows.map(({ h, c, r }) => ({
-    id: h.id,
-    text:
-      h.fromStatus === null
-        ? `Your report “${r.title}” was received. It is private and has no public effect until staff review it.`
-        : h.toStatus === 'needs_info'
-          ? `Staff asked for more information about “${r.title}”.`
-          : `A decision was recorded on “${r.title}”: ${REPORT_STATUS_LABEL[h.toStatus] ?? h.toStatus}.`,
-    at: h.at.toISOString(),
-    href: `/reports/${c.id}`,
-  }));
 }

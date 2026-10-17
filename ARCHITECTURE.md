@@ -932,7 +932,8 @@ Design unchanged and deferred:
 | `risk.signal.upsert` | Finding publication/suspension/reversal, analysis facts | Carries source revision |
 | `risk.recompute` | Stale view, ruleset change (signal changes recompute in the moderation transaction, Phase 10) | Reads current state; per-subject serialization |
 | `risk.expiry_sweep` | Every 15 minutes | `next_review_at` |
-| `notifications.fanout` | Domain events | Re-checks currency before sending |
+| `notifications.fanout` | Domain events (Phase 10: in-app notifications are written in the decision's transaction, so there is nothing to re-check) | Re-checks currency before sending |
+| `moderation.appeal_escalation` | Every 15 minutes (Phase 10) | Appeals open 14 days; `escalated_at` compare-and-set, once per appeal; alerts every administrator |
 | `audit.verify_chain` | Daily cron | Recomputes the hash chain; alerts on mismatch |
 | `providers.health_probe` | Cron | Latency, errors, freshness, disagreement |
 | `retention.purge` | Daily cron | Per retention map (§25) |

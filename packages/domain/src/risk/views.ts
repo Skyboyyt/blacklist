@@ -1,5 +1,6 @@
 import type { Database } from '@blacklist/db';
 import { currentAssessment } from './service.ts';
+import { publicSuppressions } from './suppressions.ts';
 import { bandExplanation, coverageText, factorExplanation, factorWeight } from './explanations.ts';
 import { V1_RULESET } from './ruleset.ts';
 import type { Band, FactorResult } from './engine.ts';
@@ -77,7 +78,7 @@ export async function publicAssessment(
     asOf: assessment.computedAt.toISOString(),
     rulesetVersion: assessment.rulesetVersion,
     disputeState: options.disputeState,
-    suppressions: [],
+    suppressions: (await publicSuppressions(db, subjectId)).active,
   };
 }
 

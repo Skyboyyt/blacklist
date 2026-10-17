@@ -39,4 +39,15 @@ describe('Neon apply scripts embed the committed migrations exactly', () => {
       expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
     }
   });
+  it('0010: both files verbatim, with matching ledger checksums', async () => {
+    const script = await read('docs/operations/2026-10-17-apply-0010-admin.sql');
+    for (const [path, name] of [
+      ['packages/db/migrations/generated/0010_condemned_hercules.sql', '0010_condemned_hercules.sql'],
+      ['packages/db/migrations/0010_admin_guards.sql', '0010_admin_guards.sql'],
+    ] as const) {
+      const source = await read(path);
+      expect(script).toContain(source.trimEnd());
+      expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
+    }
+  });
 });

@@ -166,7 +166,7 @@ PK `(chain_id, tx_hash)`; `block_number` / `slot`, `block_hash` (EVM), `block_ti
 - `project_suggestions`: as planned, plus `withdrawn` in the status set. `chain_id` and `identifier` are normalized; `links_text` is a JSON array of defanged text.
 - `correction_requests`: profile corrections only: `project_id`, `base_revision`, `statement`, `proposed_description`, `add_domain`, `retire_domain`, `status` (`submitted` | `in_review` | `accepted` | `rejected` | `withdrawn`), `submitter_reason`. Corrections against findings stay with appeals (Phase 9a plan).
 - `moderation_cases` gains `suggestion_id` and `correction_id`, with source CHECKs and one case per source.
-- `address_labels` arrives with slice 4.
+- `address_labels` (slice 4, `generated/0010_condemned_hercules.sql` and `0010_admin_guards.sql`: **20 ledger entries, 78 tables**): `subject_id`, `text` (3–60), `provenance` (`moderator_finding` | `external_source`, per the contract), `source_name` (required exactly for external labels), `basis_note`, `created_by_ref`, `retired_at`, `retired_by_ref`, `retire_reason`. One active label per address and text (case-insensitive). A trigger allows a single retirement and refuses edits and deletion.
 
 ### `address_labels`, `projects`, `project_revisions` [append-only], `project_addresses`, `project_domains`
 As revision 1. `project_addresses.basis` is an attribution basis with time and evidence; it is **not** an ownership verdict. External labels have `provenance = 'external_source'`.
@@ -271,7 +271,7 @@ Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplic
 - `risk_rulesets`: `version` (PK), `engine_version`, `definition` (jsonb snapshot), `checksum`, `activated_at`, `retired_at`.
 - `risk_signals`: `id`, `subject_id`, `factor_code`, `tier` (`verified` | `analysis` | `disclosure` | `weak`), `provenance`, `source_type`, `source_ref`, `current_revision`, `status` (`active` | `expired` | `retracted` | `suppressed` | `suspended` | `superseded`), `created_at`.
 - `risk_signal_revisions` [append-only]: `signal_id`, `revision`, `status`, `strength`, `source_revision` (e.g. finding revision ID + status revision; verification IDs), `valid_until`, `reason`, `at`. PK `(signal_id, revision)`.
-- `risk_signal_suppressions`: as revision 1 (decision-linked, public reason).
+- `risk_signal_suppressions` (slice 4): `subject_id`, `factor_code` (the suppressible analysis codes only), `public_reason`, `internal_rationale`, `stepup_challenge_id`, `created_by_ref`, and `lifted_at`, `lifted_by_ref`, `lift_reason`, `lift_stepup_challenge_id` (all set together). One active suppression per address and factor. A trigger allows a single lift and refuses edits and deletion. Suppressing appends a `suppressed` revision to the matching analysis signals; lifting appends `active`.
 - `risk_assessments` [append-only]: `id`, `subject_id`, `seq` (per subject, monotonic), `score` (`CHECK 0..100`, nullable for `not_assessed`), `band`, `confidence`, `ceiling_applied`, `ceiling_reason`, `ruleset_version`, `ruleset_checksum`, `engine_version`, `evaluation_time`, `effective_inputs_hash`, `coverage` (jsonb), `next_review_at`, `trigger`, `computed_at`. Unique `(subject_id, seq)`, unique `(subject_id, id)`.
 - `risk_assessment_inputs` [append-only]: `assessment_id`, `signal_id`, `signal_revision`, `factor_code`, `tier`, `provenance`, `status_at_evaluation`, `strength`, `source_revision`, `evidence_refs` (published artifact IDs only for public rendering), `contribution_inputs` (jsonb).
 - `risk_assessment_factors` [append-only]: `assessment_id`, `signal_id`, `contribution`, `applied`, `explanation_key`, `explanation_params`.
@@ -284,6 +284,7 @@ Invariant tests: a `severe` band requires a severe published finding input with 
 ## 8. Notifications
 
 - `notifications` [private]: `id`, `recipient_user_id`, `type`, `payload` (IDs and static template params only), `source_ref`, `source_revision`, `dedupe_key` (unique per recipient), `created_at`, `read_at`.
+  - Slice 4 implementation: `type` is `submission_received` | `information_requested` | `decision_recorded` | `standing_decided` | `appeal_escalated`; `payload` holds `caseId` and an `outcome` code; `dedupe_key` is `type:caseId:caseVersion`. A trigger allows only setting `read_at`, once.
 - Notification preferences, watchlists, alert rules and alert events are **deferred** (§10).
 
 ## 9. Audit and security telemetry (ADR 0006)

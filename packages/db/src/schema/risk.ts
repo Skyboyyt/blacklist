@@ -10,6 +10,7 @@ import {
   timestamp,
   unique,
   uuid,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { bl, id, at, optionalAt } from './columns.ts';
 import { subjects } from './moderation.ts';
@@ -209,5 +210,45 @@ export const assessmentAnnotations = bl.table(
   },
   (t) => [
     check('annotation_kind_valid', sql`${t.kind} in ('superseded_by_reversal','finding_suspended','stale')`),
+  ],
+);
+
+/**
+ * Slice 4: an administrator's audited suppression of an analysis factor on one address
+ * (signal:suppress, step-up). Its public reason is shown with the assessment. A
+ * suppression is lifted, never deleted; findings are suspended or reversed instead.
+ */
+export const riskSignalSuppressions = bl.table(
+  'risk_signal_suppressions',
+  {
+    id: id(),
+    subjectId: uuid('subject_id')
+      .notNull()
+      .references(() => subjects.id),
+    factorCode: text('factor_code').notNull(),
+    publicReason: text('public_reason').notNull(),
+    internalRationale: text('internal_rationale').notNull(),
+    stepupChallengeId: uuid('stepup_challenge_id').notNull(),
+    createdByRef: text('created_by_ref').notNull(),
+    createdAt: at('created_at'),
+    liftedAt: optionalAt('lifted_at'),
+    liftedByRef: text('lifted_by_ref'),
+    liftReason: text('lift_reason'),
+    liftStepupChallengeId: uuid('lift_stepup_challenge_id'),
+  },
+  (t) => [
+    check(
+      'suppression_factor_valid',
+      sql`${t.factorCode} in ('token.symbol_impersonation','eoa.delegated_to_flagged')`,
+    ),
+    check('suppression_public_reason', sql`char_length(${t.publicReason}) between 10 and 300`),
+    check('suppression_rationale', sql`char_length(${t.internalRationale}) between 10 and 2000`),
+    check(
+      'suppression_lift_complete',
+      sql`num_nulls(${t.liftedAt}, ${t.liftedByRef}, ${t.liftReason}, ${t.liftStepupChallengeId}) in (0, 4)`,
+    ),
+    uniqueIndex('one_active_suppression')
+      .on(t.subjectId, t.factorCode)
+      .where(sql`${t.liftedAt} is null`),
   ],
 );

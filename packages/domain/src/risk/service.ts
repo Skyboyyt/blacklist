@@ -114,6 +114,61 @@ async function syncFindingSignals(tx: Database, findingId: string, reason: strin
   return { subjectId: f.subjectId, changed };
 }
 
+/**
+ * Appends a revision that moves analysis signals on a subject between `active` and
+ * `suppressed` (slice 4 suppressions). Returns the signals changed. Findings never take
+ * this path: they are suspended or reversed instead.
+ */
+export async function setAnalysisSignalStatus(
+  tx: Database,
+  subjectId: string,
+  factorCode: string,
+  from: SignalStatus,
+  to: SignalStatus,
+  sourceRevision: string,
+  reason: string,
+) {
+  const signals = await tx
+    .select()
+    .from(schema.riskSignals)
+    .where(
+      and(
+        eq(schema.riskSignals.subjectId, subjectId),
+        eq(schema.riskSignals.factorCode, factorCode),
+        eq(schema.riskSignals.sourceType, 'chain_analysis'),
+        eq(schema.riskSignals.status, from),
+      ),
+    )
+    .for('update');
+  for (const signal of signals) {
+    const rev = signal.currentRevision + 1;
+    const [last] = await tx
+      .select()
+      .from(schema.riskSignalRevisions)
+      .where(
+        and(
+          eq(schema.riskSignalRevisions.signalId, signal.id),
+          eq(schema.riskSignalRevisions.revision, signal.currentRevision),
+        ),
+      );
+    await tx.insert(schema.riskSignalRevisions).values({
+      signalId: signal.id,
+      revision: rev,
+      status: to,
+      sourceRevision,
+      validUntil: last?.validUntil ?? null,
+      independentlyApproved: false,
+      evidenceRefs: last?.evidenceRefs ?? [],
+      reason,
+    });
+    await tx
+      .update(schema.riskSignals)
+      .set({ currentRevision: rev, status: to })
+      .where(eq(schema.riskSignals.id, signal.id));
+  }
+  return signals.length;
+}
+
 async function currentInputs(tx: Database, subjectId: string) {
   const rows = await tx
     .select({ s: schema.riskSignals, r: schema.riskSignalRevisions })

@@ -2,12 +2,13 @@ import { schema, eq, and, asc, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { requirePermission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
+import { notify } from '../notifications/service.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
 import { addressSubject, type ChainSlug } from '../moderation/subjects.ts';
 import { submitterPseudonym } from '../moderation/refs.ts';
-import { defangUrl } from '../moderation/labels.ts';
+import { defangUrl, PROJECT_STATUS_LABEL } from '../moderation/labels.ts';
 import { POLICY_VERSION } from '../moderation/findings.ts';
 import { createProject, latestRevision, type ProjectCategory } from './profiles.ts';
 
@@ -17,16 +18,6 @@ import { createProject, latestRevision, type ProjectCategory } from './profiles.
 
 const CASE_TARGET = 'moderation_case';
 const SLA_MS = 7 * 86400_000;
-const LABEL: Readonly<Record<string, string>> = {
-  submitted: 'Submitted',
-  needs_information: 'Information requested',
-  in_review: 'In review',
-  accepted_into_profile: 'Accepted: profile published',
-  not_accepted: 'Not accepted',
-  accepted: 'Accepted',
-  rejected: 'Not accepted',
-  withdrawn: 'Withdrawn',
-};
 
 function noImages(evidence: readonly unknown[]) {
   if (evidence.length)
@@ -84,6 +75,7 @@ export async function submitSuggestion(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }
@@ -137,6 +129,7 @@ export async function submitCorrection(
       .returning();
     if (!created) throw new Error('case_creation_failed');
     await appendAudit(tx, actor, 'moderation.case.created', CASE_TARGET, created.id);
+    await notify(tx, actor.userId, 'submission_received', '0', { caseId: created.id });
     return { id: created.id };
   });
 }
@@ -190,7 +183,7 @@ async function summaryOf(tx: Database, o: Owned) {
       o.kind === 'project_suggestion'
         ? `Project suggestion: ${o.s.name}`
         : `Correction to ${await projectName(tx, o.r.projectId)}`,
-    status: LABEL[status] ?? status,
+    status: PROJECT_STATUS_LABEL[status] ?? status,
     submittedAt: (o.kind === 'project_suggestion' ? o.s.submittedAt : o.r.submittedAt).toISOString(),
     updatedAt: (o.c.closedAt ?? o.c.createdAt).toISOString(),
     needsAction: o.kind === 'project_suggestion' && o.s.status === 'needs_information',
@@ -246,7 +239,12 @@ export async function projectSubmissionDetail(tx: Database, o: Owned) {
           label: m.direction === 'to_submitter' ? 'Staff asked for more information' : 'You replied',
         })),
         ...(s.decidedAt
-          ? [{ at: s.decidedAt.toISOString(), label: `Status: ${LABEL[s.status] ?? s.status}` }]
+          ? [
+              {
+                at: s.decidedAt.toISOString(),
+                label: `Status: ${PROJECT_STATUS_LABEL[s.status] ?? s.status}`,
+              },
+            ]
           : []),
       ],
       infoRequest: s.status === 'needs_information' ? (lastRequest?.body ?? null) : null,
@@ -272,7 +270,7 @@ export async function projectSubmissionDetail(tx: Database, o: Owned) {
     timeline: [
       { at: r.submittedAt.toISOString(), label: 'Submitted' },
       ...(r.decidedAt
-        ? [{ at: r.decidedAt.toISOString(), label: `Status: ${LABEL[r.status] ?? r.status}` }]
+        ? [{ at: r.decidedAt.toISOString(), label: `Status: ${PROJECT_STATUS_LABEL[r.status] ?? r.status}` }]
         : []),
     ],
     infoRequest: null,

@@ -9,3 +9,5 @@ export * from './chain-facts.ts';
 export * from './moderation.ts';
 export * from './risk.ts';
 export * from './projects.ts';
+export * from './labels.ts';
+export * from './notifications.ts';

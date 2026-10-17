@@ -34,6 +34,16 @@
   - The staff case workflow: suggestion `request_info` / `accept_suggestion` / `reject_suggestion`; correction `start_review` / `accept_correction` / `reject_correction`. Acceptance needs `project:manage` and a step-up; a correction against an outdated revision is a `conflict`.
   - Public `GET /projects` and `GET /projects/:slug`, with each official address's own assessment (no combined rating).
   - Deferred: responses about a project as a whole, which need DNS standing; responses about each official address already work.
+- Slice 4: administration and notifications, done on the branch.
+  - Migration 0010 (runbook `docs/operations/2026-10-17-apply-0010-admin.md`, rehearsed after 0008 and 0009): `address_labels`, `risk_signal_suppressions`, `notifications`, with guards that allow only a single retirement, lift or read mark and no deletion.
+  - Labels and suppressions through `/admin/labels` and `/admin/suppressions`; a suppression appends a `suppressed` signal revision and recomputes in the same transaction. Public pages show active labels, and the suppression reasons when bands are on; the timeline records suppressions and lifts.
+  - Notifications are written at submission and at each case decision; the 15-minute worker tick escalates appeals open for 14 days to every administrator, once (`appeals.escalated_at`).
+  - The audit viewer `GET /mod/audit`. Member suspension and restoration already existed (Phase 7); a test confirms a suspended member cannot submit.
+  - **Deviations:**
+    - label provenance follows the contract (`moderator_finding` or `external_source`), not `platform_analysis`;
+    - labels need no step-up (as in the mock);
+    - suppressions apply only to analysis signals, which no feeder produces yet, so in staging they are refused until research is connected;
+    - earlier derived notices are not migrated.
 
 ## Slices
 

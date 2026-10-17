@@ -5,6 +5,8 @@ import {
   publicFindings,
   publicRedress,
   publicAssessment,
+  publicLabels,
+  publicSuppressions,
   type ResearchReadOptions,
   type ResearchContext,
   type Actor,
@@ -47,6 +49,8 @@ export async function addressResearch(
     publicBands,
     disputeState,
   });
+  const labels = await publicLabels(ctx.runtime.db, published.subjectId);
+  const suppressions = await publicSuppressions(ctx.runtime.db, published.subjectId);
   const findings = published.findings.map((f) =>
     redress.underAppeal.has(f.id) ? { ...f, disputeState: 'under_appeal' as const } : f,
   );
@@ -77,7 +81,7 @@ export async function addressResearch(
       availability: {
         assessment: publicBands ? 'available' : 'unavailable',
         findings: 'available',
-        labels: 'unavailable',
+        labels: 'available',
         responses: 'available',
         transfers: 'unavailable',
         evidence: 'unavailable',
@@ -106,12 +110,14 @@ export async function addressResearch(
         },
       ],
       disclosures: [],
-      labels: [],
+      labels,
       findings,
       responses: redress.responses,
       transfers: [],
       evidence: [],
-      timeline: [...published.timeline, ...redress.timeline].sort((a, b) => a.at.localeCompare(b.at)),
+      timeline: [...published.timeline, ...redress.timeline, ...suppressions.timeline].sort((a, b) =>
+        a.at.localeCompare(b.at),
+      ),
     }),
   };
 }

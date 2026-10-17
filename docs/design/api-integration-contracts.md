@@ -150,7 +150,7 @@ Implemented on the server (`apps/api/src/routes/moderation.ts`, `findings.ts`, `
 | `POST /reports` | member, `report:create` | **Deviation:** creates and submits in one request while image uploads are unavailable (Phase 9b). Non-empty `evidence` → `evidence_unavailable`. Limited to 10 per account and per IP prefix per 24 h |
 | `POST /reports/:id/withdraw` | member | `expectedVersion`; before any decision. **Deviation:** the one withdraw route takes any member submission's case ID, appeals and responses included (no separate `/appeals/:id/withdraw`) |
 | `POST /me/submissions/:id/responses` | member | `expectedVersion`; text only. A report: only while `needs_info`. An appeal or response: only after denied standing, which sends the claim back to `pending` |
-| `GET /me/notifications` | member, `notification:read:own` | Derived from the member's own report history (plan interim decision 4) |
+| `GET /me/notifications` | member, `notification:read:own` | **Phase 10 slice 4:** read from the `notifications` table (received, information requested, decision, standing decided). Text comes from fixed templates; it never quotes the submission. Earlier derived notices are not migrated |
 | `GET /mod/queue` | staff, `moderation:queue:read` | Query-string filters as `queueRequestSchema`; appeal reviewers see appeal cases only |
 | `GET /mod/cases/:id` | staff, `moderation:case:read` | Reporter shown as a per-case pseudonym `R-XXXXXX` |
 | `POST /mod/cases/:id/assignment`, `/notes` | staff | `expectedVersion`; take-over needs `takeOver: true`; unassign by the assignee or an admin |
@@ -171,6 +171,18 @@ Implemented on the server (`apps/api/src/routes/moderation.ts`, `findings.ts`, `
 - Signature standing asks the browser wallet for `personal_sign` (EVM) or `signMessage` (Solana) from the subject address only, over the server's text, and sends `{ challengeId, signature }`. Never `eth_sign`, typed data or a transaction. Authority and DNS standing show "not available yet".
 - Project suggestions, project corrections, the audit search and project profile state answer `invalid_transition` or `temporarily_unavailable` until Phase 10.
 - Step-ups for `case.<action>`, `finding.approve`, `finding.reject` and `finding.suspend` are bound to the same canonical parameters the API checks.
+
+**Phase 10 slices 3–4 (2026-10-17, not yet deployed).** `apps/api/src/routes/projects.ts` and `admin.ts`:
+
+| Endpoint | Guard | Notes |
+|---|---|---|
+| `GET /projects`, `GET /projects/:slug` | public | Directory and profile; each official address shows its own assessment, never a combined rating |
+| `POST /projects/suggestions` | member, `report:create` | Text only (images → `evidence_unavailable`); 5 per day |
+| `POST /projects/:slug/corrections` | member, `correction:create` | The body `projectSlug` must equal the path |
+| `GET /admin/labels`, `POST /admin/labels`, `POST /admin/labels/retire` | staff, `label:manage` (admin) | `labelRequestSchema` (address format checked per network); `{ id, reason }` to retire. No step-up, as in the mock. A duplicate active label → `conflict`; retiring twice → `invalid_transition` |
+| `GET /admin/suppressions`, `POST /admin/suppressions`, `POST /admin/suppressions/lift` | staff, `signal:suppress` (admin) | `{ request: suppressionRequestSchema, assertion }` with a step-up `signal.suppress`, target type `suppression`, target `new`, parameters = the request. Refused (`invalid_transition`) unless the address has an active analysis signal with that code. Lift: `{ id, reason, assertion }`, step-up `signal.suppression.lift` with `{ reason }` |
+| `GET /mod/audit?caseId=` | staff, `audit:read` (admin) | Newest 200 entries the viewer understands. `reason` is always null (the audit log holds IDs and codes only); members appear as `Member` |
+| `GET /admin/overview` | as before | `activeLabels`, `activeSuppressions` and `alerts` (appeals escalated after 14 days) are now live |
 
 Errors carry `code`, and for moderation refusals a fixed server-written `detail` and, for `conflict`, `currentVersion`. HTTP: `invalid_transition` and `evidence_unavailable` 409; `not_eligible` and `stepup_required` 403.
 
