@@ -137,8 +137,8 @@ export function SearchResults({
       return (
         <div className="flex flex-col gap-3">
           <Notice tone="warning" title="Blockchain data is temporarily unavailable">
-            Our blockchain data providers are not responding. Try again in about {response.retryAfterSeconds}{' '}
-            seconds. No assessment was made.
+            Blockchain data could not be loaded in time. The service may be starting up; try again in about{' '}
+            {response.retryAfterSeconds} seconds. No assessment was made.
           </Notice>
           <div>
             <ButtonLink href={searchHref(query)} variant="secondary" size="sm" prefetch={false}>

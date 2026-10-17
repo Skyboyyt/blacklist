@@ -52,6 +52,45 @@ describe('non-mock server research adapter', () => {
       retryAfterSeconds: 30,
     });
   });
+  it('retries once while the API wakes, and never retries a definite answer', async () => {
+    setup();
+    const hash = '1'.repeat(64);
+    const found = { ok: true, status: 200, json: async () => ({ kind: 'not_found' }) };
+    // A timeout or connection failure, then an answer.
+    let fetcher = vi.fn().mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce(found);
+    vi.stubGlobal('fetch', fetcher);
+    expect(await liveResearchApi.getTransactionResearch('solana', hash)).toEqual({ kind: 'not_found' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls.map(([, options]) => typeof options.signal)).toEqual(['object', 'object']);
+    // Render's waking gateway answers 503, then the API answers.
+    fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) })
+      .mockResolvedValueOnce(found);
+    vi.stubGlobal('fetch', fetcher);
+    expect(await liveResearchApi.getTransactionResearch('solana', hash)).toEqual({ kind: 'not_found' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    // Two failures: unavailable, after exactly one retry.
+    fetcher = vi.fn().mockRejectedValue(new Error('timeout'));
+    vi.stubGlobal('fetch', fetcher);
+    expect(await liveResearchApi.getTransactionResearch('solana', hash)).toEqual({
+      kind: 'provider_unavailable',
+      retryAfterSeconds: 30,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    // A definite refusal or a bad body is not retried.
+    for (const response of [
+      { ok: false, status: 400, json: async () => ({}) },
+      { ok: true, status: 200, json: async () => ({ kind: 'unknown' }) },
+    ]) {
+      fetcher = vi.fn().mockResolvedValue(response);
+      vi.stubGlobal('fetch', fetcher);
+      expect((await liveResearchApi.getTransactionResearch('solana', hash)).kind).toBe(
+        'provider_unavailable',
+      );
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    }
+  });
   it('never fabricates data when unconfigured and never forwards an unsafe session cookie', async () => {
     vi.stubEnv('API_INTERNAL_URL', '');
     vi.stubEnv('INTERNAL_API_TOKEN', '');

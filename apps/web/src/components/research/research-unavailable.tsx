@@ -55,7 +55,7 @@ export function ResearchProblem({
                   ? 'This type of blockchain data is not available yet.'
                   : problem.reason === 'under_verification'
                     ? 'Data is under verification because providers disagreed.'
-                    : `Our blockchain data providers are not responding. Try again in about ${problem.retryAfterSeconds} seconds.`}{' '}
+                    : `Blockchain data could not be loaded in time. The service may be starting up; try again in about ${problem.retryAfterSeconds} seconds.`}{' '}
             No assessment was made.
           </Notice>
         </>
