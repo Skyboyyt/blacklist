@@ -15,6 +15,14 @@
 - Published findings already exist with immutable revisions, status history and system publication (Phase 9a). They are the only active V1 risk inputs.
 - The analysis factors (`token.symbol_impersonation`, `eoa.delegated_to_flagged`) need verified chain facts. Chain research is off (`RESEARCH_ENABLED=false`, O-3), so their **feeders are deferred**; the rules themselves are implemented and tested.
 
+## Progress
+
+- Slice 1: risk engine core, done (`packages/domain/src/risk/`: `ruleset.ts`, `engine.ts`, `explanations.ts`; tests in `tests/backend-acceptance/src/risk-engine.test.ts`). Interpretations recorded for review:
+  - **Not assessed vs Low.** With no applied factor and no verified chain facts, the result is `not_assessed` (null score), never 0. With verified chain facts and nothing applying, it is Low (0).
+  - **Confidence.** High needs both published findings and verified chain facts; findings without chain facts give Medium; otherwise Low.
+  - **A severe finding without the independent-approval flag** still contributes, but the ceiling stays 74 (High at most).
+  - **Relative weight words.** The largest applied contribution is "primary"; at least half of it is "contributing"; anything smaller is "minor".
+
 ## Slices
 
 Each slice is a pull request with tests, updates the data model and `AI_HANDOFF.md`, and (where it migrates) ships an owner-applied, rehearsed Neon runbook.

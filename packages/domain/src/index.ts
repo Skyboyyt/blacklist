@@ -19,3 +19,6 @@ export * from './moderation/cases.ts';
 export * from './moderation/findings.ts';
 export * from './moderation/standing.ts';
 export * from './moderation/redress.ts';
+export * from './risk/ruleset.ts';
+export * from './risk/engine.ts';
+export * from './risk/explanations.ts';
