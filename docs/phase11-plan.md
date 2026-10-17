@@ -27,9 +27,9 @@
 |---|---|---|---|
 | 1 | **Performance and robustness** | Claude | The deferred scale items from the Phase 10 review (P10-06 to P10-08): batched reads for the project directory, ranking and moderation queue |
 | 2 | **End-to-end journeys on staging** | Owner clicks, Claude fixes | A scripted walkthrough: register; report; moderate; publish (with a second admin); appeal; respond; project suggestion and correction; research. Every failure becomes a fix |
-| 3 | **Monitoring and alerts** | Claude writes; owner sets up a free uptime monitor | Runbook: health checks for the API, worker and website; an alert email; what to do when an alert fires |
-| 4 | **Restore drill** | Claude writes; owner performs | Runbook: restore Neon to a point in time on a new branch, point a test API at it, check, time it, record the result |
-| 5 | **Recovery and break-glass drills** | Claude writes; owner (and a second admin) perform | Runbooks for "an admin lost their security keys" and "every admin is locked out", rehearsed on staging and recorded |
+| 3 | **Monitoring and alerts** | Claude writes; owner sets up a free uptime monitor | [Runbook](operations/monitoring.md): health checks for the API, worker and website; an alert email; what to do when an alert fires |
+| 4 | **Restore drill** | Claude writes; owner performs | [Runbook](operations/restore-drill.md): restore Neon to a point in time on a new branch, point a test API at it, check, time it, record the result |
+| 5 | **Recovery and break-glass drills** | Claude writes; owner (and a second admin) perform | [Runbook](operations/staff-recovery-and-break-glass-drills.md) for "an admin lost their security keys" and "every admin is locked out", rehearsed on staging and recorded |
 | 6 | **Staff security re-verification** | Owner, with Claude's checklist | Each staff account: correct roles, at least two security keys, no stale invitations |
 | 7 | **Independent security review** | Codex, or a hired tester (owner decides) | A review brief prepared by Claude; findings answered by Claude. O-13 decides whether an external audit is also required |
 | 8 | **Legal and retention** | **Owner, with a qualified lawyer** (paid) | Claude prepares a counsel pack: what the product publishes, the wording rules, the appeal process, Terms and Privacy drafts, and the retention map. Counsel's approval is a hard launch blocker |
@@ -41,6 +41,12 @@
 2. With the owner: the end-to-end walkthrough (2), staff checks (6), then the drills (4, 5).
 3. Owner decisions: O-4 (production hosting), O-13, the lawyer, O-12 for production.
 4. Production setup (9), a final walkthrough on production, then the launch checklist is signed.
+
+## Findings during Phase 11
+
+| ID | Severity | Finding | Outcome |
+|---|---|---|---|
+| P11-01 | Medium | `BREAK_GLASS_ENABLED` is read by the operator CLI from the operator's local settings, not from the hosting platform, so the platform's change history does not record break-glass (identity §10.13 assumes it does). Audit row, staff-wide email and session revocation still apply | **Open.** Procedural mitigation in [the drills runbook](operations/staff-recovery-and-break-glass-drills.md); a technical fix needs an ADR, decided with P-13 |
 
 ## Risks
 
