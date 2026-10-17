@@ -129,7 +129,11 @@ describe('real API/domain/Postgres research boundary (synthetic RPC, mock mode o
       const parsed = researchResultSchema(addressResearchSchema).parse(res.json());
       expect(parsed.kind).toBe('found');
       if (parsed.kind !== 'found') throw new Error('fixture_result_missing');
-      expect(parsed.data.facts[0]?.value).toBe('9007199254740993');
+      // Readable and exact: no rounding beyond JavaScript's safe integer range.
+      expect(parsed.data.facts.slice(0, 2).map((f) => [f.label, f.value])).toEqual([
+        ['Native balance', '0.009007199254740993 ETH'],
+        ['Native balance (wei)', '9007199254740993'],
+      ]);
       // Phase 9a slice 3 connects published findings; none exist for this address.
       expect(parsed.data.availability?.findings).toBe('available');
       expect(parsed.data.findings).toEqual([]);

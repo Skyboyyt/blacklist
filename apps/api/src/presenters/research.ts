@@ -1,4 +1,10 @@
-import { addressResearchSchema, transactionResearchSchema, type ChainSlugDto } from '@blacklist/contracts';
+import {
+  addressResearchSchema,
+  transactionResearchSchema,
+  formatTokenAmount,
+  NATIVE_CURRENCY,
+  type ChainSlugDto,
+} from '@blacklist/contracts';
 import {
   readResearchAddress,
   readResearchTransaction,
@@ -94,7 +100,16 @@ export async function addressResearch(
       facts: [
         {
           id: 'native-balance',
-          label: 'Native balance (raw base units)',
+          label: 'Native balance',
+          value: `${formatTokenAmount(data.nativeBalanceRaw, NATIVE_CURRENCY[chain].decimals)} ${NATIVE_CURRENCY[chain].symbol}`,
+          provenance: 'chain_fact',
+          finality: provenance.finality,
+          source: publicResearchSource(chain, provenance),
+          observedAt: at,
+        },
+        {
+          id: 'native-balance-raw',
+          label: chain === 'ethereum' ? 'Native balance (wei)' : 'Native balance (lamports)',
           value: data.nativeBalanceRaw,
           provenance: 'chain_fact',
           finality: provenance.finality,

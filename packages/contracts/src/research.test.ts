@@ -288,3 +288,17 @@ describe('search response', () => {
     expect(searchResponseSchema.safeParse({ kind: 'results', hits: [hit] }).success).toBe(false);
   });
 });
+
+describe('formatTokenAmount', () => {
+  it('formats exactly, without rounding, and trims trailing zeros', async () => {
+    const { formatTokenAmount } = await import('./chain-reads.ts');
+    expect(formatTokenAmount('511145937781869726780120', 18)).toBe('511,145.93778186972678012');
+    expect(formatTokenAmount('976857', 9)).toBe('0.000976857');
+    expect(formatTokenAmount('1500000000000000000', 18)).toBe('1.5');
+    expect(formatTokenAmount('1000000', 0)).toBe('1,000,000');
+    expect(formatTokenAmount('0', 18)).toBe('0');
+    // Anything that is not a plain non-negative integer is returned unchanged.
+    expect(formatTokenAmount('-5', 2)).toBe('-5');
+    expect(formatTokenAmount('12', 300)).toBe('12');
+  });
+});

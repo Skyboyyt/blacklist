@@ -1,3 +1,4 @@
+import { formatTokenAmount } from '@blacklist/contracts';
 import Link from 'next/link';
 import type {
   AddressHistory,
@@ -131,7 +132,12 @@ export function ChainDetails({
               {data.token.data.nameOnchain ? <UntrustedText value={data.token.data.nameOnchain} /> : null}
               {data.token.data.symbolOnchain ? <UntrustedText value={data.token.data.symbolOnchain} /> : null}
               <p className="text-sm break-all">
-                Supply in raw units: {data.token.data.totalSupplyRaw ?? 'unknown'}
+                Total supply:{' '}
+                {data.token.data.totalSupplyRaw === null
+                  ? 'unknown'
+                  : data.token.data.decimals === null
+                    ? `${data.token.data.totalSupplyRaw} raw units (decimals unknown)`
+                    : formatTokenAmount(data.token.data.totalSupplyRaw, data.token.data.decimals)}
               </p>
               <p className="text-sm text-muted">{data.token.data.coverage}</p>
             </div>
@@ -175,7 +181,10 @@ export function ChainDetails({
                       >
                         {truncateMiddle(item.token)}
                       </Link>{' '}
-                      · {item.amountRaw} raw units
+                      ·{' '}
+                      {item.decimals === null
+                        ? `${item.amountRaw} raw units (decimals unknown)`
+                        : formatTokenAmount(item.amountRaw, item.decimals)}
                     </li>
                   ))}
                 </ul>
