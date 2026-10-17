@@ -18,13 +18,13 @@ This file holds the **current state only**. Each session adds one short entry un
 | Deployment | Free staging services are public on explicit owner instruction (2026-10-13): Vercel web, Render API and worker, Neon PostgreSQL 18 staging database. **Not production-ready**; Phase 11 gates (legal, retention, recovery, monitoring) remain |
 | Authorized now | **Phase 9a** (owner, 2026-10-16): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Phase 9b (image evidence, object storage, processor) waits for a hosting ADR. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Not authorized:** Phase 9b cloud resources, Phase 10 or later, paid resources, cloud migrations, provider activation |
 | Primary / reviewer | Claude / Codex |
-| Last agent | Claude: Phase 9a slices 1–4 on `claude/amazing-goodall-drtbc9` (PR #17 open, not merged; 0007 not applied to Neon) |
+| Last agent | Claude: Phase 9a slices 1–4 merged (PR #17); 0006 and 0007 applied to Neon staging by the owner and verified; Render deploy pending |
 | Last updated | 2026-10-16 |
 
 ## Open work, by owner
 
 **Owner decisions and actions**
-1. **Deployed (owner-reported):** PRs #15 and #16 are live, 0006 is on Neon, and registration is public. Next: confirm a fresh sign-up receives its email and needs 12 characters, and share the runbook's remaining Step 4 output if convenient.
+1. **Neon migrated (verified 2026-10-16):** `blacklist_staging` has 0006 (19:31 UTC) and 0007 (19:38 UTC): ledger 14 rows `ok`, 60 tables. 0006 was **not** on this database before then, despite the earlier report. PR #17 merged (`ecc50ae`). Next: deploy the Render API and worker from `main`; confirm a fresh sign-up receives its email and needs 12 characters; the admin recovery screens should now load.
 2. **P-13:** name the recovery operator and decide whether a second person approves operator actions. Until then sole-admin recovery is break-glass only.
 3. ADRs 0014, 0015 and 0017: Claude's amendments still await decisions. Record the Phase 6 sign-off, Phase 7 closure, and waivers for going live (review CR-11).
 4. Run the two-network lockout test (decision brief §3) and report the result.
@@ -43,6 +43,24 @@ This file holds the **current state only**. Each session adds one short entry un
 2. Responses still pending in earlier review files (see review CR-11).
 
 ## Session log
+
+### 2026-10-17: Claude, first staff admin and slice 5 (web live adapters)
+
+- **First admin enrolled on staging** by the owner (`sanifahad24@gmail.com`, bootstrap via the operator CLI). Lessons and the manual step are in [docs/operations/2026-10-17-staff-bootstrap.md](docs/operations/2026-10-17-staff-bootstrap.md):
+  - the first invitation was never sent (the worker woke after the 15-minute window), and the owner expired it by SQL (no audit row);
+  - the worker now uses a second Resend account for the staff address, so **staging email reaches only `sanifahad24@gmail.com`** until a domain is verified (launch blocker);
+  - the GitHub default branch is still `chore/initial-repository`.
+- **Slice 5:**
+  - live `MemberApi` and `ModerationApi` adapters, with wallet signing for standing (`personal_sign` / Solana `signMessage` only);
+  - live-build notices replace image pickers;
+  - standing decisions need no step-up (aligned with identity §10.7 and the mock);
+  - the CLI prints a safe failure reason and a reminder to wake the worker.
+
+### 2026-10-16: Claude, PR #17 merged and Neon migrated
+
+- PR #17 merged on the owner's instruction (`ecc50ae`).
+- Owner checks on `blacklist_staging` showed 11 entries and 34 tables, so 0006 had not been applied there. The owner applied 0006, then 0007, with a backup branch taken first. Verified: 14 ledger rows `ok` with matching checksums and 60 tables.
+- Runbook status lines corrected. Next: Render deploy, then slice 5 (web live adapters).
 
 ### 2026-10-16: Claude, Phase 9a slice 4 (standing, appeals, responses)
 

@@ -10,6 +10,7 @@ import {
   breakGlass,
   operatorObjectRecovery,
 } from '@blacklist/domain';
+import { operatorFailureReason } from './failure-reason.ts';
 const args = parseArgs({
   options: {
     command: { type: 'string' },
@@ -70,6 +71,10 @@ try {
     process.stdout.write(
       `Invitation ${result.invitationId}\nEnrollment code (deliver through verified separate channel): ${result.enrollmentCode}\n`,
     );
+    // The worker sends the invitation only within 15 minutes; a sleeping free worker must be woken.
+    process.stdout.write(
+      'Make sure the worker is awake now (open its /healthz URL): the invitation email is sent only within 15 minutes.\n',
+    );
     if (command === 'break-glass')
       process.stdout.write('Unset BREAK_GLASS_ENABLED and record post-incident review.\n');
   } else {
@@ -80,8 +85,8 @@ try {
     else await operatorObjectRecovery(ctx, actor, id, z.string().min(10).max(1000).parse(args.values.reason));
     process.stdout.write('Audited operator action complete.\n');
   }
-} catch {
-  console.error('Operator action rejected or unavailable; no secret details exported.');
+} catch (error) {
+  console.error(`Operator action rejected (${operatorFailureReason(error)}); no secret details exported.`);
   process.exitCode = 1;
 } finally {
   await ctx.runtime.close();

@@ -5,7 +5,7 @@
 | Prepared by | Claude, 2026-10-16 |
 | Target | Neon staging database (ledger at 11 entries after the 0005 runbook) |
 | Change | One generated migration for ADR 0013 C: tables `staff_recovery_objections` and `staff_recovery_objection_links`, column `staff_recovery_cases.reopens_case_id`, and `one_open_recovery` rebuilt to exclude `objected` cases |
-| Status | **Applied to Neon staging by the owner on 2026-10-16.** Owner-reported ledger: 12 rows, all `ok`. Claude has not seen the other Step 4 output (tables, grants, counts) |
+| Status | **Applied to Neon staging (`blacklist_staging`) by the owner on 2026-10-16 at 19:31 UTC.** An earlier owner report of "12 rows ok" did not match this database: on 2026-10-16 it still showed 11 entries and 34 tables, so 0006 was applied then. Verified with the 14-row ledger query (rows 1–12 `ok`) |
 
 ## Order matters
 

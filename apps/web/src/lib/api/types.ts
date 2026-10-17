@@ -296,6 +296,15 @@ export interface ModerationApi {
   ): Promise<ModerationResult<RecoveryCase>>;
 }
 
+/**
+ * A standing challenge: the exact text to sign. The live API also returns the challenge ID
+ * the signature is bound to (single use, 10 minutes); the demo returns text only.
+ */
+export interface StandingChallengeView {
+  readonly message: string;
+  readonly challengeId?: string;
+}
+
 /** Result of a member submission call. */
 export type MemberResult<T> =
   { readonly kind: 'ok'; readonly data: T } | ({ readonly kind: 'error' } & MemberError);
@@ -322,11 +331,11 @@ export interface MemberApi {
   listNotices(): Promise<MemberResult<readonly MemberNotice[]>>;
   getAppealTarget(findingId: string): Promise<MemberResult<AppealTarget>>;
   /** The exact text the member would sign for signature standing (moderation §6.4). */
-  getStandingChallenge(findingId: string): Promise<MemberResult<{ readonly message: string }>>;
+  getStandingChallenge(findingId: string): Promise<MemberResult<StandingChallengeView>>;
   /** Right-of-reply response (moderation §9): plain text, published only after safety moderation. */
   submitResponse(request: ResponseRequest): Promise<MemberResult<{ readonly id: string }>>;
   getResponseTarget(target: ResponseTargetRef): Promise<MemberResult<ResponseTarget>>;
-  getResponseChallenge(target: ResponseTargetRef): Promise<MemberResult<{ readonly message: string }>>;
+  getResponseChallenge(target: ResponseTargetRef): Promise<MemberResult<StandingChallengeView>>;
   /** The member's own private profile (PRD §5.3). */
   getProfile(): Promise<MemberResult<Profile>>;
   updateProfile(update: ProfileUpdate): Promise<MemberResult<Profile>>;

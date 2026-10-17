@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { getMemberApi } from '@/lib/api/browser';
+import type { StandingChallengeView } from '@/lib/api/types';
 import { issuesToErrors, memberErrorAlert } from '@/lib/submissions/errors';
 import { INITIAL_STANDING, StandingFields, standingProof, type StandingState } from './standing-fields';
 
@@ -55,9 +56,9 @@ export function AppealForm({ findingId }: { readonly findingId: string }) {
     };
   }, [findingId]);
 
-  async function loadChallenge(): Promise<string | null> {
+  async function loadChallenge(): Promise<StandingChallengeView | null> {
     const result = await (await getMemberApi()).getStandingChallenge(findingId);
-    if (result.kind === 'ok') return result.data.message;
+    if (result.kind === 'ok') return result.data;
     setAlert(memberErrorAlert(result));
     return null;
   }
@@ -65,7 +66,7 @@ export function AppealForm({ findingId }: { readonly findingId: string }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
-    const proof = standingProof(standing);
+    const proof = standingProof(standing, load.kind === 'ready' ? load.target.subject.chain : undefined);
     if (!proof.ok) {
       setErrors({ standing: proof.message });
       return;
@@ -140,6 +141,7 @@ export function AppealForm({ findingId }: { readonly findingId: string }) {
         value={standing}
         onChange={setStanding}
         loadChallenge={loadChallenge}
+        subject={target.subject}
         errors={errors}
       />
 

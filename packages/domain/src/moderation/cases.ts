@@ -63,8 +63,8 @@ const SUSPENSION_RULES: Readonly<Record<string, Rule>> = {
   reverse_finding: { from: ['open'], to: 'reversed', permission: 'finding:publish', stepUp: true },
 };
 const STANDING_RULES: Readonly<Record<string, Rule>> = {
-  grant_standing: { from: ['in_review'], to: '', permission: 'standing:decide', stepUp: true },
-  deny_standing: { from: ['in_review'], to: '', permission: 'standing:decide', stepUp: true },
+  grant_standing: { from: ['in_review'], to: '', permission: 'standing:decide', stepUp: false },
+  deny_standing: { from: ['in_review'], to: '', permission: 'standing:decide', stepUp: false },
 };
 // `to` is decided by the redress workflow for outcomes (amend stays a pending revision).
 const APPEAL_RULES: Readonly<Record<string, Rule>> = {

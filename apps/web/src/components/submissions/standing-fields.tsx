@@ -6,11 +6,15 @@ import {
   type EvidenceFile,
   type StandingProof,
 } from '@blacklist/contracts';
-import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
+import { Notice } from '@/components/app/notice';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { isMockApi } from '@/lib/api/mode';
+import type { StandingChallengeView } from '@/lib/api/types';
+import { signStandingMessage } from '@/lib/submissions/wallet-sign';
 import { EvidenceUpload } from './evidence-upload';
 
 export type StandingSubjectKind = 'wallet' | 'contract' | 'token' | 'unknown' | 'project';
@@ -19,24 +23,40 @@ type Mechanism = StandingProof['mechanism'];
 export interface StandingState {
   readonly mechanism: Mechanism;
   readonly challenge: string | null;
+  /** Live API: the challenge the signature is bound to, and the wallet's signature. */
+  readonly challengeId: string | null;
+  readonly signature: string | null;
   readonly signed: boolean;
   readonly authorityRole: AuthorityRole;
   readonly domain: string;
   readonly checked: boolean;
   readonly explanation: string;
   readonly evidence: readonly EvidenceFile[];
+  /** Documentary standing without uploads: links (stored as text, never opened) and transactions. */
+  readonly links: string;
+  readonly txHashes: string;
 }
 
 export const INITIAL_STANDING: StandingState = {
   mechanism: 'documentary',
   challenge: null,
+  challengeId: null,
+  signature: null,
   signed: false,
   authorityRole: 'owner',
   domain: '',
   checked: false,
   explanation: '',
   evidence: [],
+  links: '',
+  txHashes: '',
 };
+
+const lines = (text: string) =>
+  text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
 
 const AUTHORITY_LABEL: Readonly<Record<AuthorityRole, string>> = {
   owner: 'Owner',
@@ -72,16 +92,28 @@ export function mechanismsFor(kind: StandingSubjectKind): readonly Mechanism[] {
   return ['signature', 'documentary'];
 }
 
+const AUTHORITY_UNAVAILABLE =
+  'Authority checks need verified chain data, which is not enabled yet. Use documents instead.';
+const DNS_UNAVAILABLE = 'DNS standing arrives with project profiles. Use documents instead.';
+
 /** The proof to send, or the message explaining what is still missing. */
 export function standingProof(
   s: StandingState,
+  chain?: string,
 ): { readonly ok: true; readonly proof: unknown } | { readonly ok: false; readonly message: string } {
   switch (s.mechanism) {
     case 'signature':
+      if (s.challengeId && s.signature)
+        return {
+          ok: true,
+          proof: { mechanism: 'signature', challengeId: s.challengeId, signature: s.signature },
+        };
+      if (!isMockApi()) return { ok: false, message: 'Show the message and sign it with your wallet first.' };
       return s.signed
         ? { ok: true, proof: { mechanism: 'signature', simulated: true } }
         : { ok: false, message: 'Show the message and complete the simulated signature first.' };
     case 'authority_signature':
+      if (!isMockApi()) return { ok: false, message: AUTHORITY_UNAVAILABLE };
       return s.signed
         ? {
             ok: true,
@@ -89,13 +121,22 @@ export function standingProof(
           }
         : { ok: false, message: 'Show the message and complete the simulated authority signature first.' };
     case 'dns_txt':
+      if (!isMockApi()) return { ok: false, message: DNS_UNAVAILABLE };
       return s.checked
         ? { ok: true, proof: { mechanism: 'dns_txt', domain: s.domain, simulated: true } }
         : { ok: false, message: 'Choose a domain and complete the simulated DNS check first.' };
     case 'documentary':
       return {
         ok: true,
-        proof: { mechanism: 'documentary', explanation: s.explanation, evidence: [...s.evidence] },
+        proof: {
+          mechanism: 'documentary',
+          explanation: s.explanation,
+          evidence: [...s.evidence],
+          ...(lines(s.links).length ? { urls: lines(s.links) } : {}),
+          ...(lines(s.txHashes).length && chain
+            ? { txRefs: lines(s.txHashes).map((hash) => ({ chain, hash })) }
+            : {}),
+        },
       };
   }
 }
@@ -109,7 +150,9 @@ interface StandingFieldsProps {
   /** A state setter, so the evidence callback stays stable across renders. */
   readonly onChange: Dispatch<SetStateAction<StandingState>>;
   /** Loads the exact text to sign, built by the service (moderation §6.4). */
-  readonly loadChallenge: () => Promise<string | null>;
+  readonly loadChallenge: () => Promise<StandingChallengeView | null>;
+  /** The address whose control a signature proves. */
+  readonly subject: { readonly chain: string; readonly address: string } | null;
   readonly errors: Readonly<Record<string, string>>;
 }
 
@@ -125,15 +168,29 @@ export function StandingFields({
   value,
   onChange,
   loadChallenge,
+  subject,
   errors,
 }: StandingFieldsProps) {
+  const mock = isMockApi();
+  const [signError, setSignError] = useState<string | null>(null);
+  const [signing, setSigning] = useState(false);
   const set = (patch: Partial<StandingState>) => onChange((prev) => ({ ...prev, ...patch }));
   const onEvidence = useCallback(
     (files: readonly EvidenceFile[]) => onChange((prev) => ({ ...prev, evidence: files })),
     [onChange],
   );
   const options = mechanismsFor(subjectKind);
-  const signing = value.mechanism === 'signature' || value.mechanism === 'authority_signature';
+  const signable = value.mechanism === 'signature' || value.mechanism === 'authority_signature';
+
+  async function sign() {
+    if (!subject || !value.challenge) return;
+    setSigning(true);
+    setSignError(null);
+    const outcome = await signStandingMessage(subject.chain, subject.address, value.challenge);
+    setSigning(false);
+    if (outcome.kind === 'signed') set({ signature: outcome.signature });
+    else setSignError(outcome.message);
+  }
 
   return (
     <>
@@ -170,7 +227,13 @@ export function StandingFields({
         ) : null}
       </fieldset>
 
-      {signing ? (
+      {!mock && (value.mechanism === 'authority_signature' || value.mechanism === 'dns_txt') ? (
+        <Notice tone="info" title="Not available yet">
+          {value.mechanism === 'dns_txt' ? DNS_UNAVAILABLE : AUTHORITY_UNAVAILABLE}
+        </Notice>
+      ) : null}
+
+      {signable && (mock || value.mechanism === 'signature') ? (
         <div className="flex flex-col gap-3 rounded-md border border-border p-3">
           {value.mechanism === 'authority_signature' ? (
             <Field id={`${idPrefix}-authority`} label="Which authority will sign?">
@@ -201,12 +264,17 @@ export function StandingFields({
             <Button
               variant="secondary"
               className="w-fit"
-              onClick={() => void loadChallenge().then((text) => text && set({ challenge: text }))}
+              onClick={() =>
+                void loadChallenge().then(
+                  (c) =>
+                    c && set({ challenge: c.message, challengeId: c.challengeId ?? null, signature: null }),
+                )
+              }
             >
               Show the message to sign
             </Button>
           )}
-          {value.challenge ? (
+          {value.challenge && mock ? (
             <Button
               variant="secondary"
               className="w-fit"
@@ -216,10 +284,33 @@ export function StandingFields({
               {value.signed ? 'Signature simulated' : 'Simulate signing (demo only)'}
             </Button>
           ) : null}
+          {value.challenge && !mock ? (
+            <>
+              <p className="text-sm text-muted">
+                Your wallet will show this text and ask you to sign a message. Only sign if it matches. The
+                message expires 10 minutes after it was shown; get a new one if it does.
+              </p>
+              <Button
+                variant="secondary"
+                className="w-fit"
+                loading={signing}
+                loadingLabel="Waiting for your wallet…"
+                disabled={!!value.signature}
+                onClick={() => void sign()}
+              >
+                {value.signature ? 'Signed' : 'Sign with your wallet'}
+              </Button>
+              {signError ? (
+                <p className="text-sm text-danger" role="alert">
+                  {signError}
+                </p>
+              ) : null}
+            </>
+          ) : null}
         </div>
       ) : null}
 
-      {value.mechanism === 'dns_txt' ? (
+      {value.mechanism === 'dns_txt' && mock ? (
         <div className="flex flex-col gap-3 rounded-md border border-border p-3">
           <Field id={`${idPrefix}-domain`} label="Official domain" error={errors['standing.domain']}>
             {(control) => (
@@ -271,6 +362,39 @@ export function StandingFields({
             )}
           </Field>
           <EvidenceUpload label="Document images" onChange={onEvidence} error={errors['standing.evidence']} />
+          {mock ? null : (
+            <>
+              <Field
+                id={`${idPrefix}-links`}
+                label="Links to documents (one per line)"
+                hint="Stored as text. Blacklist never opens them; a reviewer checks them by hand."
+                error={errors['standing.urls']}
+              >
+                {(control) => (
+                  <Textarea
+                    {...control}
+                    rows={2}
+                    value={value.links}
+                    onChange={(e) => set({ links: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field
+                id={`${idPrefix}-txs`}
+                label="Transaction hashes that support your claim (one per line)"
+                error={errors['standing.txRefs']}
+              >
+                {(control) => (
+                  <Textarea
+                    {...control}
+                    rows={2}
+                    value={value.txHashes}
+                    onChange={(e) => set({ txHashes: e.target.value })}
+                  />
+                )}
+              </Field>
+            </>
+          )}
         </div>
       ) : null}
     </>

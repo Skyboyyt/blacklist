@@ -9,6 +9,7 @@ import {
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { isMockApi } from '@/lib/api/mode';
 import { DEMO_UPLOAD_NOTICE } from '@/lib/submissions/copy';
 
 type Item =
@@ -42,7 +43,22 @@ function sizeLabel(bytes: number): string {
  * demo nothing is uploaded: progress is simulated and only metadata is kept. A file
  * whose name contains "fail" simulates a failed upload so the retry path can be tried.
  */
-export function EvidenceUpload({ label, onChange, error }: EvidenceUploadProps) {
+export function EvidenceUpload(props: EvidenceUploadProps) {
+  // Image uploads need the isolated evidence processor (Phase 9b); until then only text evidence is sent.
+  if (!isMockApi())
+    return (
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium text-text">{props.label}</legend>
+        <p className="rounded-md border border-dashed border-border-strong bg-surface-2 p-2 text-xs text-muted">
+          Image uploads are not available yet. Describe what the images show in the text, and add links or
+          transaction hashes where the form allows.
+        </p>
+      </fieldset>
+    );
+  return <EvidencePicker {...props} />;
+}
+
+function EvidencePicker({ label, onChange, error }: EvidenceUploadProps) {
   const id = useId();
   const [items, setItems] = useState<readonly Item[]>([]);
   const [problems, setProblems] = useState<readonly string[]>([]);
