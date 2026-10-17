@@ -25,6 +25,7 @@ Status key: ☐ open · ☑ done (with date and evidence link)
 - ☐ At least two active administrators
 - ☐ All production secrets are new (never used in staging) and stored only in the hosting platforms
 - ☐ `BREAK_GLASS_ENABLED=false`, and research provider keys exist only on the API
+- ☐ The evidence processor meets ADR 0004 isolation in production: outbound only to object storage, inbound only from the worker, disposable read-only instances (ADR 0020)
 
 ## Operations
 

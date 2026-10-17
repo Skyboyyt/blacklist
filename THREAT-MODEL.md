@@ -385,7 +385,7 @@ This threat model is written **before** implementation so that mitigations are d
 #### T-33 Malware in evidence
 - **Threat:** Weaponized PDFs/images aimed at moderators' machines (stepping stone to staff compromise).
 - **Impact:** High. **Likelihood:** Medium.
-- **Mitigation:** No document formats in V1 (PDF requires a separate isolated-sanitization design and ADR). Images are re-encoded in the isolated processor, so derivatives carry only fresh pixel data. Staff and public see derivatives only; **originals have no UI path** (operator forensic export to an isolated machine only). Antivirus is deferred: it adds little for re-encoded images and is never relied on alone. A decoder exploit is contained in a credential-free, egress-restricted, disposable processor.
+- **Mitigation:** No document formats in V1 (PDF requires a separate isolated-sanitization design and ADR). Images are re-encoded in the isolated processor, so derivatives carry only fresh pixel data. Staff and public see derivatives only; **originals have no UI path** (operator forensic export to an isolated machine only). Antivirus is deferred: it adds little for re-encoded images and is never relied on alone. A decoder exploit is contained in a credential-free, egress-restricted, disposable processor. **Staging (ADR 0020):** the processor is credential-free and accepts only our own bucket URLs, but egress, inbound and disposability are not enforced, so a compromise could falsify later derivatives until restart; the worker re-checks every derivative and staging takes test images only.
 - **Detection:** Scan results; endpoint protection on staff devices (operational policy).
 - **Recovery:** Block and purge; incident response for exposed staff devices; rotate staff credentials.
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Requested | Owner, 2026-10-17 ("let do the 9b"). Phase 11 paused at the owner's request |
-| Gate | **ADR 0020 accepted** (hosting), plus the owner's staging risk acceptance. No code before that |
+| Gate | **ADR 0020 accepted for staging** (owner, 2026-10-17), with the staging risk acceptance: test images only |
 | Design | ADR 0004 (accepted with amendments), ARCHITECTURE §14.3–§14.6, data model `evidence_items` / `evidence_custody_events` (states already migrated in 9a) |
 | Limits | Images only (PNG, JPEG, WebP), 10 MiB per file, 10 per report, 40 megapixels, 12,000 px per side, single frame. Originals never shown in any UI. Staging takes test images only |
 

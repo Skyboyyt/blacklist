@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | **Proposed** |
+| Status | **Accepted for staging** (owner, 2026-10-17): test images only; production isolation stays a launch requirement |
 | Proposed by | Claude, 2026-10-17, on the owner's request to start Phase 9b |
 | Reviewed by | Pending (Codex review recommended: it changes an isolation boundary) |
-| Decided by | Pending project owner |
+| Decided by | Project owner, 2026-10-17 ("Accept, test images only") |
 | Affects | ARCHITECTURE §14.3, §14.4, §30; ADR 0004 (isolation requirements); `.env.example` (S3 and processor names already listed); THREAT-MODEL T-32, T-33, T-11; O-4 |
 
 ## Problem
@@ -111,4 +111,4 @@ The full slice plan is in [docs/phase9b-plan.md](../phase9b-plan.md). New depend
 
 ## Decision (owner)
 
-Pending.
+**Accepted for staging on 2026-10-17**, with the recommended condition: staging takes **test images only**. The owner accepts the recorded staging gaps (public processor address, unrestricted outbound traffic, no per-job disposable instance or read-only filesystem). Production processor hosting meeting ADR 0004 in full is decided with O-4 and is a launch checklist item. Creating the storage account and the third Render service is authorized for staging under this ADR; the owner performs it from the runbook.

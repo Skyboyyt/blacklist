@@ -702,7 +702,7 @@ client ──multipart (exact Origin)──► api: auth + quota; stream with 10
                                      enqueue evidence.process (same transaction)
 worker: evidence.process  (orchestration only — never parses the file)
    verify object hash/size → issue one scoped presigned GET (quarantine object) + one presigned PUT (derivative key)
-   → call apps/evidence-processor (internal network) with the two URLs and limits
+   → call apps/evidence-processor (internal network; on staging its public HTTPS address, ADR 0020) with the two URLs and limits
 evidence-processor (no DB, no secrets, egress only to object store, non-root, read-only FS, CPU/mem/time caps)
    magic-byte check: PNG | JPEG | WebP only; reject animated, > 40 MP, > 12,000 px per side, decoder errors (fail closed)
    decode → re-encode → strip all metadata → PUT derivative → return {width, height, derivative sha256}
@@ -711,6 +711,7 @@ worker: verify derivative hash → copy original to EVIDENCE bucket (versioned/i
    any failure → state=rejected (reason); quarantine object purged after 30 days (hash retained)
 ```
 
+- **Staging (ADR 0020):** the processor is a secretless Render free service. It accepts only presigned URLs for our own bucket host, buckets and key prefixes, so it cannot be fed outside files. Network isolation is not enforced there, so staging takes test images only.
 - Rejected types: PDF, SVG, HTML, archives, animated images, anything else. PDFs need a separate security design and ADR (ADR 0004 §8).
 - Transaction-reference evidence: verified against finalized, cross-verified chain data and pinned.
 - URLs: stored as text, shown defanged, **never fetched**.
@@ -1101,7 +1102,7 @@ Repository protections: protected `main`; required checks; owner review, plus Co
 Hosting is open decision O-4.
 
 - Four container images (web, api, worker, evidence-processor) in one region.
-- **The evidence processor** runs with no database or application secrets, egress only to object storage, non-root, read-only filesystem, and CPU, memory and time limits.
+- **The evidence processor** runs with no database or application secrets, egress only to object storage, non-root, read-only filesystem, and CPU, memory and time limits. On staging (ADR 0020) only the no-secrets, URL-allowlist and in-process limits hold; network isolation and disposable instances are a production launch requirement.
 - Managed PostgreSQL with point-in-time recovery and encrypted backups; separate staging and production.
 - S3-compatible buckets: `quarantine`, `evidence` (versioned/immutable), `derivatives`. Downloads come from a **separate registrable domain**.
 - Edge provider for TLS, WAF, DDoS, bots and `/api` routing.
