@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { formatDateTimeUtc } from '@/lib/format/date';
 import { EVIDENCE_STATE_COPY } from '@/lib/staff/copy';
+import { isMockApi } from '@/lib/api/mode';
+import { DerivativeDownload } from './derivative-download';
 
 const SUBMITTER = {
   reporter: 'Reporter',
@@ -34,7 +36,8 @@ function Body({ item }: { readonly item: StaffEvidence }) {
   }
   switch (item.kind) {
     case 'image':
-      // Only a sanitized derivative is ever shown; this demo has no file at all.
+      // Only a sanitized derivative is ever offered, as a download. The demo has no files.
+      if (!isMockApi()) return <DerivativeDownload evidenceId={item.id} size={item.derivative} />;
       return (
         <div className="flex aspect-video max-w-sm items-center justify-center rounded-md border border-border bg-surface-2 text-sm text-muted">
           <span className="flex flex-col items-center gap-1 text-center">
@@ -75,8 +78,8 @@ function Body({ item }: { readonly item: StaffEvidence }) {
 
 /**
  * Evidence with source role, time, state and visibility. Nothing is rendered as markup:
- * statements are text, URLs are defanged text, and images appear only as sanitized
- * derivatives (here, placeholders). Unavailable items explain why.
+ * statements are text, URLs are defanged text, and images are offered only as sanitized
+ * derivatives to download (placeholders in the demo). Unavailable items explain why.
  */
 export function EvidenceList({ evidence }: { readonly evidence: readonly StaffEvidence[] }) {
   if (evidence.length === 0) return <p className="text-sm text-muted">No evidence was submitted.</p>;
