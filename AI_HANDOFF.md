@@ -49,7 +49,9 @@ This file holds the **current state only**. Each session adds one short entry un
 - The owner authorized Phase 11 ("launch readiness"). [docs/phase11-plan.md](docs/phase11-plan.md) sets nine workstreams, each marked Claude, owner or paid; [docs/launch-checklist.md](docs/launch-checklist.md) is the exit document for the owner to sign.
 - Critical path: legal review (owner must engage counsel). No production environment exists; O-4 decides hosting and needs the owner's instruction.
 - Workstream 1: P10-07 and P10-08 fixed; P10-06 partly (profiles load four at a time). Tests: lint, typecheck and format clean; backend acceptance 34 files / 161 tests passed locally (Docker Postgres), then the project tests again after the extra assertion.
-- Next for Claude, needing nothing from the owner: the monitoring, restore and recovery runbooks, the security review brief and the counsel pack.
+- Runbooks written: [restore drill](docs/operations/restore-drill.md), [staff recovery and break-glass drills](docs/operations/staff-recovery-and-break-glass-drills.md), [monitoring](docs/operations/monitoring.md). Checked against the code: staff recovery needs two admins plus the subject; free-tier health monitors would keep Render/Neon awake (CR-04), so staging monitors only the website.
+- **P11-01 (Medium, open):** the break-glass flag is read from the operator's local `.env`, not the hosting platform, so identity §10.13's platform audit trail does not exist. Mitigated by the audit row, staff-wide email and session revocation; technical fix needs an ADR with P-13.
+- Next for Claude, needing nothing from the owner: the independent security review brief and the counsel pack (legal and retention).
 
 ### 2026-10-17: Claude, Phase 10 slices 1–2 (risk engine, assessments)
 
