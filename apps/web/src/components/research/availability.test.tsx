@@ -47,4 +47,16 @@ describe('live research does not turn absent backends into reassuring empty resu
     expect(screen.queryByText('No risk factors were found in the available data.')).not.toBeInTheDocument();
     expect(screen.queryByText(/Ruleset unavailable/)).not.toBeInTheDocument();
   });
+
+  it('shows live blockchain activity in the Transfers tab instead of "unavailable"', () => {
+    const { unmount } = render(
+      <AddressResearchView data={data} activity={<p>Live activity list</p>} initialTab="transfers" />,
+    );
+    expect(screen.getByText('Live activity list')).toBeInTheDocument();
+    expect(screen.queryByText(/Transfer history is unavailable/)).not.toBeInTheDocument();
+    unmount();
+    // Without live activity, the tab still says it is unavailable rather than showing nothing.
+    render(<AddressResearchView data={data} initialTab="transfers" />);
+    expect(screen.getByText(/Transfer history is unavailable/)).toBeInTheDocument();
+  });
 });
