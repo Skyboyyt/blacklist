@@ -88,3 +88,12 @@ Read-only GitHub retrieval of Alchemy's official `alchemyplatform/alchemy-sdk-js
 - **Waiver recorded:** the provider code was merged (PR #12) before this ADR was accepted. The owner accepts that ordering for this case; it does not change the AGENTS §6 rule for future work.
 - **Conditions:** `RESEARCH_ENABLED`, `RPC_PLAN_VERIFIED` and every capability flag stay `false` until the "Outstanding provider verification" table is met and recorded. Cross-verification stays `unavailable` until an independent secondary provider is documented. **O-3 stays open** for the secondary.
 
+## Owner authorization: research on staging (2026-10-17)
+
+The owner explicitly authorized turning research on in the **staging** API ("authorize research on staging", 2026-10-17). This switches on the free Alchemy (Ethereum) and Helius (Solana) reads through the existing guards:
+- `RESEARCH_ENABLED=true` and `RPC_PLAN_VERIFIED=true`;
+- both keys stored only in the Render API service's protected settings;
+- the default in-process caps: 30 requests a minute and 100 per 24 hours.
+
+Indexed history and token balances stay off (`ALCHEMY_*_VERIFIED=false`). This is a staging authorization only. O-3 stays open: the plan terms, archival depth and an independent secondary are still unverified, and this is not production readiness.
+
