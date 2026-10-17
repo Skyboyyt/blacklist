@@ -10,6 +10,7 @@ import { withStepup, type AssertionInput } from '../staff/webauthn.ts';
 import type { ChainSlug } from './subjects.ts';
 import { staffRefs, submitterPseudonym, type StaffRefView } from './refs.ts';
 import { defangUrl } from './labels.ts';
+import { currentDerivatives, IMAGE_REJECTION_NOTE } from '../evidence/access.ts';
 import { moveReport } from './reports.ts';
 import { staffAssessment } from '../risk/views.ts';
 import { decideRedress, redressCaseFields, syncRedressStatus } from './redress.ts';
@@ -318,6 +319,10 @@ async function detailOf(tx: Database, c: Case, r: Report | undefined) {
       const [network] = await tx.select().from(schema.chains).where(eq(schema.chains.chainId, e.chainId));
       if (network) chainSlugs.set(e.chainId, network.slug);
     }
+  const derivatives = await currentDerivatives(
+    tx,
+    items.filter(({ e }) => e.kind === 'image').map(({ e }) => e.id),
+  );
   const evidence = items.map(({ e }) => {
     const common = {
       id: e.id,
@@ -339,6 +344,21 @@ async function detailOf(tx: Database, c: Case, r: Report | undefined) {
       };
     if (e.kind === 'url')
       return { ...common, kind: 'url' as const, defangedUrl: defangUrl(e.urlText ?? '').slice(0, 500) };
+    if (e.kind === 'image') {
+      const d = e.state === 'available' ? derivatives.get(e.id) : undefined;
+      return {
+        ...common,
+        kind: 'image' as const,
+        description: (e.description ?? 'Image from the reporter').slice(0, 300),
+        stateNote:
+          e.state === 'rejected'
+            ? (IMAGE_REJECTION_NOTE[e.rejectionReason ?? ''] ?? 'The image was not accepted.')
+            : e.state === 'available'
+              ? null
+              : 'Being checked by the isolated image processor.',
+        derivative: d ? { width: d.width, height: d.height } : null,
+      };
+    }
     return { ...common, kind: 'statement' as const, stateNote: null, text: e.statementText ?? '' };
   });
   const [decision] = await tx

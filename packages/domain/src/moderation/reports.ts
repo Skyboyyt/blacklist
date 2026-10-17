@@ -258,7 +258,21 @@ async function detail(
     ...summary(c, r),
     version: c.version,
     details,
-    evidenceNames: [],
+    // Members see their own images by position and status only (file names are not kept).
+    evidenceNames: items
+      .filter(({ e }) => e.kind === 'image')
+      .map(
+        ({ e }, i) =>
+          `Image ${i + 1}: ${
+            e.state === 'available'
+              ? 'received'
+              : e.state === 'rejected'
+                ? 'not accepted'
+                : e.state === 'purged'
+                  ? 'removed'
+                  : 'being checked'
+          }`,
+      ),
     timeline,
     infoRequest: r.status === 'needs_info' ? (lastRequest?.body ?? null) : null,
     submitterReason: r.submitterReason,

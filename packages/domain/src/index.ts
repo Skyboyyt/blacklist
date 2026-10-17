@@ -34,3 +34,4 @@ export * from './audit/viewer.ts';
 export * from './evidence/storage.ts';
 export * from './evidence/uploads.ts';
 export * from './evidence/processing.ts';
+export * from './evidence/access.ts';

@@ -1,7 +1,9 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { evidenceUploadResponseSchema } from '@blacklist/contracts';
+import { z } from 'zod';
+import { evidenceLinkSchema, evidenceUploadResponseSchema } from '@blacklist/contracts';
 import {
   uploadEvidenceImage,
+  issueDerivativeLink,
   DomainError,
   IMAGE_TYPES,
   MAX_IMAGE_BYTES,
@@ -44,6 +46,19 @@ export function evidenceRoutes(app: FastifyInstance, ctx: IdentityContext, stora
             req.clientPrefix,
           ),
         ),
+      };
+    },
+  );
+  // Staff download of a sanitized copy; every issued link is recorded in custody history.
+  app.post(
+    '/api/v1/mod/evidence/:id/link',
+    { config: { security: { auth: 'staff', permission: 'moderation:case:read', mutation: true } } },
+    async (req) => {
+      z.strictObject({}).parse(req.body ?? {});
+      const { id } = z.strictObject({ id: z.uuid() }).parse(req.params);
+      return {
+        kind: 'ok',
+        data: evidenceLinkSchema.parse(await issueDerivativeLink(ctx, storage, actor(req), id)),
       };
     },
   );
