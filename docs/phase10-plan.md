@@ -44,6 +44,13 @@
     - labels need no step-up (as in the mock);
     - suppressions apply only to analysis signals, which no feeder produces yet, so in staging they are refused until research is connected;
     - earlier derived notices are not migrated.
+- Slice 5: scoreboard and web, done on the branch.
+  - `GET /projects/scoreboard` applies the ADR 0012 band-only rule (`packages/domain/src/projects/scoreboard.ts`, same rule as the web reference). With public bands off nothing is ranked.
+  - `GET /mod/projects/:slug/state` for correction reviews (`profileStateSchema` added to contracts).
+  - Live web adapters for: project directory, profiles and scoreboard; member suggestions and corrections; the audit log and profile state; admin labels and suppressions (with step-up bindings).
+  - Address pages have a "Show finalized data" option.
+  - The mock build is unchanged.
+  - Not in this slice: `stale_profile` and `assessment_unavailable` are never produced, because profiles are always current and every official address has an assessment. Methodology stays static content.
 
 ## Slices
 

@@ -55,6 +55,8 @@ This file holds the **current state only**. Each session adds one short entry un
   - the worker runs a 15-minute expiry sweep.
 - Slice 3: projects (migration 0009), suggestions and corrections through the case workflow, public profiles and directory.
 - Slice 4: labels, signal suppressions, notifications and 14-day appeal escalation (migration 0010), the audit viewer.
+- Merged and deployed 2026-10-17: PR #21 (slices 1–4; owner applied 0008–0010 on Neon: 20 ledger entries, 78 tables), #22 (search detects the network), #23 (research retry while the API wakes), #24 (privacy-safe research failure log). Research on staging is on (owner authorization, ADR 0018), with `RPC_API_TOTAL_REQUEST_BUDGET=1000`.
+- Slice 5: band-only scoreboard and profile-state routes; live web adapters for projects, scoreboard, suggestions, corrections, audit log, labels and suppressions; "Show finalized data" on address pages. No migration.
 - **Owner (after the PR):** apply 0008, 0009 then 0010 on Neon, then deploy the API, worker and Vercel.
 
 ### 2026-10-17: Claude, Phase 10 authorized; plan drafted

@@ -8,6 +8,7 @@ import {
   responseTargetSchema,
   standingChallengeSchema,
   createdIdSchema,
+  projectSlugSchema,
   type MemberError,
   type ResponseTargetRef,
 } from '@blacklist/contracts';
@@ -20,7 +21,8 @@ import { request, ApiFailure } from './transport';
 const created = okEnvelopeSchema(createdIdSchema);
 const detail = okEnvelopeSchema(memberSubmissionDetailSchema);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PROJECTS_LATER = 'Project suggestions and project corrections arrive with project profiles.';
+const PROJECTS_LATER =
+  'Responses about a project as a whole are not available yet. Respond about one of its official addresses instead.';
 
 /** Maps an API refusal to the member error contract (api-integration-contracts §7). */
 export function memberError(error: unknown): { readonly kind: 'error' } & MemberError {
@@ -77,8 +79,11 @@ export const liveMemberApi: MemberApi = {
     call(() => request('/me/submissions', okEnvelopeSchema(memberSubmissionSummarySchema.array()))),
   getSubmission: (id) => (UUID.test(id) ? call(() => request(`/me/submissions/${id}`, detail)) : notFound()),
   submitReport: (body) => call(() => request('/reports', created, body)),
-  submitSuggestion: projectsLater,
-  submitCorrection: projectsLater,
+  submitSuggestion: (body) => call(() => request('/projects/suggestions', created, body)),
+  submitCorrection: (body) =>
+    projectSlugSchema.safeParse(body.projectSlug).success
+      ? call(() => request(`/projects/${body.projectSlug}/corrections`, created, body))
+      : notFound(),
   submitAppeal: (body) =>
     UUID.test(body.findingId)
       ? call(() => request(`/findings/${body.findingId}/appeals`, created, body))

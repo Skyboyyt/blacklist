@@ -11,6 +11,8 @@ import {
   okEnvelopeSchema,
   invitationIssueSchema,
   idResponseSchema,
+  adminLabelSchema,
+  suppressionSchema,
 } from '@blacklist/contracts';
 import type { z } from 'zod';
 import type { AdminApi, ModerationResult } from '../types';
@@ -67,6 +69,15 @@ const invitations = () => read('/admin/invitations', invitationSchema.array());
 const roles = () => read('/admin/roles', roleRequestSchema.array());
 const recoveries = () => read('/admin/recoveries', recoveryCaseSchema.array());
 const members = () => read('/admin/members', memberAccountSchema.array());
+const labels = () => read('/admin/labels', adminLabelSchema.array());
+const suppressions = () => read('/admin/suppressions', suppressionSchema.array());
+/** Label and suppression writes answer with the full, refreshed list. */
+const write = <S extends z.ZodType>(path: string, schema: S, body: unknown) =>
+  request(path, okEnvelopeSchema(schema), body).then((envelope: unknown) => {
+    if (typeof envelope !== 'object' || envelope === null || !('data' in envelope))
+      throw new ApiFailure('temporarily_unavailable');
+    return schema.parse(envelope.data);
+  });
 async function mutate(path: string, body: unknown) {
   const res = await request(path, accountActionResultSchema, body);
   if (res.kind !== 'ok') throw new ApiFailure(res.code);
@@ -235,4 +246,24 @@ export const liveAdminApi: AdminApi = {
       });
       return members();
     }),
+  listLabels: () => result(labels),
+  addLabel: (body) => result(() => write('/admin/labels', adminLabelSchema.array(), body)),
+  retireLabel: (id, reason) =>
+    result(() => write('/admin/labels/retire', adminLabelSchema.array(), { id, reason })),
+  listSuppressions: () => result(suppressions),
+  suppressSignal: (body) =>
+    result(async () =>
+      write('/admin/suppressions', suppressionSchema.array(), {
+        request: body,
+        assertion: takeStepup('signal.suppress', 'new'),
+      }),
+    ),
+  liftSuppression: (id, reason) =>
+    result(async () =>
+      write('/admin/suppressions/lift', suppressionSchema.array(), {
+        id,
+        reason,
+        assertion: takeStepup('signal.suppression.lift', id),
+      }),
+    ),
 };

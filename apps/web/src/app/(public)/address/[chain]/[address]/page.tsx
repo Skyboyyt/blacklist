@@ -2,13 +2,14 @@ import type { Metadata } from 'next';
 import { isSupportedChain } from '@/components/app/chain-badge';
 import { AddressResearchView } from '@/components/research/address-research-view';
 import { ChainDetails, type ChainDetailsData } from '@/components/research/chain-details';
+import { FinalityToggle } from '@/components/research/finality-toggle';
 import { ResearchProblem, UnsupportedNetwork } from '@/components/research/research-unavailable';
 import { getResearchApi } from '@/lib/api/server';
 import { safeDecodeSegment, truncateMiddle } from '@/lib/format/address';
 
 interface AddressPageProps {
   readonly params: Promise<{ chain: string; address: string }>;
-  readonly searchParams: Promise<{ cursor?: string; direction?: string }>;
+  readonly searchParams: Promise<{ cursor?: string; direction?: string; finality?: string }>;
 }
 
 export async function generateMetadata({ params }: AddressPageProps): Promise<Metadata> {
@@ -21,18 +22,19 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
   if (!isSupportedChain(chain)) return <UnsupportedNetwork network={chain} />;
 
   const api = await getResearchApi(),
-    input = safeDecodeSegment(address);
-  const result = await api.getAddressResearch(chain, input);
+    input = safeDecodeSegment(address),
+    query = await searchParams,
+    final = query.finality === 'final';
+  const result = await api.getAddressResearch(chain, input, final ? { finality: 'final' } : {});
   if (result.kind !== 'found') return <ResearchProblem problem={result} subject="address" />;
-  const query = await searchParams,
-    direction =
-      query.direction === 'in'
-        ? 'in'
-        : query.direction === 'out'
+  const direction =
+    query.direction === 'in'
+      ? 'in'
+      : query.direction === 'out'
+        ? 'out'
+        : chain === 'ethereum'
           ? 'out'
-          : chain === 'ethereum'
-            ? 'out'
-            : 'all';
+          : 'all';
   const [history, token, contract, balances] = await Promise.all([
     api.getAddressHistory?.(chain, input, {
       direction,
@@ -55,6 +57,7 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
   };
   return (
     <div className="flex flex-col gap-6">
+      <FinalityToggle href={`/address/${chain}/${encodeURIComponent(input)}`} final={final} />
       <AddressResearchView data={result.data} />
       <ChainDetails chain={chain} address={input} data={details} />
     </div>

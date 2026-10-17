@@ -277,3 +277,11 @@ export const scoreboardResponseSchema = z.strictObject({
   ),
 });
 export type ScoreboardResponse = z.infer<typeof scoreboardResponseSchema>;
+
+/** A profile as a correction reviewer compares it (staff only; `GET /mod/projects/:slug/state`). */
+export const profileStateSchema = z.strictObject({
+  slug: projectSlugSchema,
+  revision: z.number().int().positive(),
+  description: z.string(),
+  domains: z.array(z.string()),
+});

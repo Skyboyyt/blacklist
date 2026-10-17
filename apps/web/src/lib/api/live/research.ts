@@ -9,6 +9,9 @@ import {
   tokenResearchSchema,
   contractResearchSchema,
   tokenBalancesSchema,
+  projectDirectoryResponseSchema,
+  projectDetailSchema,
+  scoreboardResponseSchema,
   type ChainSlugDto,
   type SearchRequest,
 } from '@blacklist/contracts';
@@ -81,10 +84,10 @@ export const liveResearchApi: ResearchApi = {
       return unavailable;
     }
   },
-  async getAddressResearch(chain: ChainSlugDto, address: string) {
+  async getAddressResearch(chain: ChainSlugDto, address: string, options = {}) {
     try {
       return await read(
-        `/addresses/${chain}/${encodeURIComponent(address)}`,
+        `/addresses/${chain}/${encodeURIComponent(address)}${options.finality === 'final' ? '?finality=final' : ''}`,
         researchResultSchema(addressResearchSchema),
       );
     } catch {
@@ -145,5 +148,26 @@ export const liveResearchApi: ResearchApi = {
     } catch {
       return unavailable;
     }
+  },
+  // Project reads (Phase 10 slice 5). A failed directory or ranking read throws to the
+  // route error boundary; a profile read reports "unavailable" like any research result.
+  async listProjects(request) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(request))
+      if (value !== undefined && value !== '') params.set(key, String(value));
+    return read(`/projects?${params}`, projectDirectoryResponseSchema);
+  },
+  async getProject(slug) {
+    try {
+      return await read(`/projects/${encodeURIComponent(slug)}`, researchResultSchema(projectDetailSchema));
+    } catch {
+      return unavailable;
+    }
+  },
+  async getScoreboard(request) {
+    return read(
+      `/projects/scoreboard${request.chain ? `?chain=${request.chain}` : ''}`,
+      scoreboardResponseSchema,
+    );
   },
 };

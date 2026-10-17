@@ -5,6 +5,9 @@ import {
   projectDirectoryResponseSchema,
   projectDetailSchema,
   projectSlugSchema,
+  scoreboardRequestSchema,
+  profileStateSchema,
+  scoreboardResponseSchema,
   researchResultSchema,
   suggestionRequestSchema,
   correctionRequestSchema,
@@ -13,6 +16,8 @@ import {
 import {
   listProjects,
   projectDetail,
+  projectScoreboard,
+  projectProfileState,
   submitSuggestion,
   submitCorrection,
   DomainError,
@@ -47,6 +52,13 @@ export function projectRoutes(app: FastifyInstance, ctx: IdentityContext, public
       });
       return projectDirectoryResponseSchema.parse(await listProjects(ctx.runtime.db, query, { publicBands }));
     });
+    // ADR 0012 band-only ranking; registered before `/projects/:slug`.
+    app.get(`${prefix}/projects/scoreboard`, { config }, async (req) => {
+      const query = scoreboardRequestSchema.parse(req.query ?? {});
+      return scoreboardResponseSchema.parse(
+        await projectScoreboard(ctx.runtime.db, { chain: query.chain }, { publicBands }),
+      );
+    });
     app.get(`${prefix}/projects/:slug`, { config }, async (req) => {
       const parsed = slugParam.safeParse(req.params);
       if (!parsed.success) return { kind: 'not_found' };
@@ -56,6 +68,16 @@ export function projectRoutes(app: FastifyInstance, ctx: IdentityContext, public
       );
     });
   }
+  app.get(
+    '/api/v1/mod/projects/:slug/state',
+    { config: { security: { auth: 'staff', permission: 'moderation:case:read', mutation: false } } },
+    async (req) => ({
+      kind: 'ok',
+      data: profileStateSchema.parse(
+        await projectProfileState(ctx.runtime.db, actor(req), slugParam.parse(req.params).slug),
+      ),
+    }),
+  );
   app.post('/api/v1/projects/suggestions', { config: member('report:create') }, async (req) => ({
     kind: 'ok',
     data: createdIdSchema.parse(

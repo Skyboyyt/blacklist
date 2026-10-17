@@ -110,7 +110,12 @@ export type ResearchResult<T> =
 export interface ResearchApi {
   getViewer(): Promise<Viewer>;
   search(request: SearchRequest): Promise<SearchResponse>;
-  getAddressResearch(chain: ChainSlugDto, address: string): Promise<ResearchResult<AddressResearch>>;
+  /** `finality: 'final'` reads the finalized block or slot instead of the newest one. */
+  getAddressResearch(
+    chain: ChainSlugDto,
+    address: string,
+    options?: { readonly finality?: 'final' },
+  ): Promise<ResearchResult<AddressResearch>>;
   getTransactionResearch(chain: ChainSlugDto, hash: string): Promise<ResearchResult<TransactionResearch>>;
   /** Optional capability reads. Mock adapters do not fabricate these backend results. */
   getAddressHistory?(
