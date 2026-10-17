@@ -1,14 +1,23 @@
-import { httpProblemSchema } from '@blacklist/contracts';
+import { httpProblemSchema, httpRefusalSchema as refusalSchema } from '@blacklist/contracts';
 import type { z } from 'zod';
 export class ApiFailure extends Error {
   readonly code: string;
   readonly requestId: string;
   readonly retryAfterSeconds: number;
-  constructor(code: string, requestId = 'unavailable', retryAfterSeconds = 60) {
+  readonly detail: string | undefined;
+  readonly currentVersion: number | undefined;
+  constructor(
+    code: string,
+    requestId = 'unavailable',
+    retryAfterSeconds = 60,
+    refusal: z.infer<typeof refusalSchema> = {},
+  ) {
     super(code);
     this.code = code;
     this.requestId = requestId;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.detail = refusal.detail;
+    this.currentVersion = refusal.currentVersion;
   }
 }
 export async function request<S extends z.ZodType>(
@@ -31,11 +40,13 @@ export async function request<S extends z.ZodType>(
     const payload: unknown = await response.json();
     if (!response.ok) {
       const problem = httpProblemSchema.safeParse(payload);
+      const refusal = refusalSchema.safeParse(payload);
       const delay = Number(response.headers.get('retry-after'));
       throw new ApiFailure(
         problem.success ? problem.data.code : 'temporarily_unavailable',
         problem.success ? problem.data.requestId : undefined,
         Number.isSafeInteger(delay) && delay > 0 ? delay : 60,
+        refusal.success ? refusal.data : {},
       );
     }
     const result = schema.safeParse(payload);

@@ -21,6 +21,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 beforeEach(() => {
+  // These cases exercise the demo build; the live build is covered at the end.
+  vi.stubEnv('NEXT_PUBLIC_API_MODE', 'mock');
   cookies = 'bl_mock_viewer=member';
   push.mockReset();
   api = createMockMemberApi({
@@ -166,11 +168,41 @@ describe('appeal form', () => {
     );
     await user.type(screen.getByLabelText('What do the documents show?'), 'Refund records for each payment.');
     await user.click(screen.getByRole('button', { name: 'Send appeal' }));
-    expect(await screen.findByText('Attach at least one document image.')).toBeInTheDocument();
+    expect(await screen.findByText('Attach a document image, a link or a transaction.')).toBeInTheDocument();
   });
 
   it('explains when the finding cannot be appealed here', async () => {
     render(<AppealForm findingId="no-such-finding" />);
     expect(await screen.findByText('Not found')).toBeInTheDocument();
+  });
+});
+
+describe('live build (Phase 9a slice 5)', () => {
+  it('replaces image uploads with a notice until the evidence processor exists', () => {
+    vi.stubEnv('NEXT_PUBLIC_API_MODE', 'live');
+    render(<EvidenceUpload label="Screenshots" onChange={() => undefined} />);
+    expect(screen.getByText(/Image uploads are not available yet/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Choose images')).toBeNull();
+  });
+
+  it('offers real wallet signing instead of a simulated signature', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_MODE', 'live');
+    const user = userEvent.setup();
+    const submit = vi.spyOn(api, 'submitAppeal');
+    render(<AppealForm findingId="demo-finding-301" />);
+    await user.type(
+      await screen.findByLabelText('Why is the finding wrong?'),
+      'The payments were refunds I made.',
+    );
+    await user.click(screen.getByLabelText('Sign a message with the address'));
+    await user.click(screen.getByRole('button', { name: 'Show the message to sign' }));
+    expect(await screen.findByRole('button', { name: 'Sign with your wallet' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Simulate signing (demo only)' })).toBeNull();
+    // Without a wallet in the browser nothing is signed and nothing is sent.
+    await user.click(screen.getByRole('button', { name: 'Sign with your wallet' }));
+    expect(await screen.findByText('No Ethereum wallet was found in this browser.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Send appeal' }));
+    expect(screen.getByText('Show the message and sign it with your wallet first.')).toBeInTheDocument();
+    expect(submit).not.toHaveBeenCalled();
   });
 });

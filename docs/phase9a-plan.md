@@ -19,6 +19,7 @@
 - Slice 1: data model and permission catalog, done (PR #17).
 - Slice 2: reports and cases on the server, done (same PR).
 - Slice 3: findings, approve-and-publish, rejection, revisions, emergency suspension and its review, public findings on address research; done (same PR). Risk signals from findings are Phase 10. Public findings appear only where research is enabled (`RESEARCH_ENABLED`).
+- Slice 5: live web adapters for member submissions, appeals, responses, the staff queue, cases, decisions, approvals, findings and revisions; wallet signing for standing in the live build; image pickers replaced by a notice. Standing decisions no longer need a step-up (identity §10.7 does not list them; the mock never did). The mock build is unchanged. In progress on the branch after PR #17.
 - Slice 4: standing (server-built challenges, EVM and Solana signature verification, documentary standing decided by a non-participant standing reviewer), appeals (uphold, amend through a new revision that still needs approval, reverse) and right-of-reply responses, the "under appeal" public state and published responses on address research; done (same PR). Deferred, with reasons:
   - **Authority signatures** return `temporarily_unavailable`: they need a finalized chain read of the contract's authority, and chain research is off by default (O-3). Documentary standing covers the gap.
   - **DNS TXT standing** applies to project domains only, so it arrives with project profiles (Phase 10). No resolver module exists yet.

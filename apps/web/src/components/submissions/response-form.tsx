@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import { getMemberApi } from '@/lib/api/browser';
+import type { StandingChallengeView } from '@/lib/api/types';
 import { issuesToErrors, memberErrorAlert } from '@/lib/submissions/errors';
 import { INITIAL_STANDING, StandingFields, standingProof, type StandingState } from './standing-fields';
 
@@ -54,10 +55,10 @@ export function ResponseForm({ target: ref }: { readonly target: ResponseTargetR
     };
   }, [key]);
 
-  async function loadChallenge(): Promise<string | null> {
+  async function loadChallenge(): Promise<StandingChallengeView | null> {
     if (load.kind !== 'ready') return null;
     const result = await (await getMemberApi()).getResponseChallenge(load.target.target);
-    if (result.kind === 'ok') return result.data.message;
+    if (result.kind === 'ok') return result.data;
     setAlert(memberErrorAlert(result));
     return null;
   }
@@ -65,7 +66,8 @@ export function ResponseForm({ target: ref }: { readonly target: ResponseTargetR
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending || load.kind !== 'ready') return;
-    const proof = standingProof(standing);
+    const ref = load.target.target;
+    const proof = standingProof(standing, ref.kind === 'address' ? ref.chain : undefined);
     if (!proof.ok) {
       setErrors({ standing: proof.message });
       return;
@@ -139,6 +141,11 @@ export function ResponseForm({ target: ref }: { readonly target: ResponseTargetR
         value={standing}
         onChange={setStanding}
         loadChallenge={loadChallenge}
+        subject={
+          target.target.kind === 'address'
+            ? { chain: target.target.chain, address: target.target.address }
+            : null
+        }
         errors={errors}
       />
       <Button

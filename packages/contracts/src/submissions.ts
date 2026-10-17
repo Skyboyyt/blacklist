@@ -200,7 +200,7 @@ export const standingProofSchema = z.discriminatedUnion('mechanism', [
       urls: z.array(urlTextSchema).max(10).optional(),
     })
     .refine((v) => v.evidence.length + (v.txRefs?.length ?? 0) + (v.urls?.length ?? 0) > 0, {
-      message: 'Attach at least one document image.',
+      message: 'Attach a document image, a link or a transaction.',
       path: ['evidence'],
     }),
 ]);
@@ -334,3 +334,6 @@ export const responseTargetSchema = z.strictObject({
   alreadyResponding: z.boolean(),
 });
 export type ResponseTarget = z.infer<typeof responseTargetSchema>;
+
+/** The ID of a newly created submission (its case). */
+export const createdIdSchema = z.strictObject({ id: z.string() });

@@ -44,6 +44,18 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-17: Claude, first staff admin and slice 5 (web live adapters)
+
+- **First admin enrolled on staging** by the owner (`sanifahad24@gmail.com`, bootstrap via the operator CLI). Lessons and the manual step are in [docs/operations/2026-10-17-staff-bootstrap.md](docs/operations/2026-10-17-staff-bootstrap.md):
+  - the first invitation was never sent (the worker woke after the 15-minute window), and the owner expired it by SQL (no audit row);
+  - the worker now uses a second Resend account for the staff address, so **staging email reaches only `sanifahad24@gmail.com`** until a domain is verified (launch blocker);
+  - the GitHub default branch is still `chore/initial-repository`.
+- **Slice 5:**
+  - live `MemberApi` and `ModerationApi` adapters, with wallet signing for standing (`personal_sign` / Solana `signMessage` only);
+  - live-build notices replace image pickers;
+  - standing decisions need no step-up (aligned with identity §10.7 and the mock);
+  - the CLI prints a safe failure reason and a reminder to wake the worker.
+
 ### 2026-10-16: Claude, PR #17 merged and Neon migrated
 
 - PR #17 merged on the owner's instruction (`ecc50ae`).

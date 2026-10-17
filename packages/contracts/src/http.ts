@@ -6,6 +6,11 @@ export const invitationIssueSchema = z.strictObject({
   enrollmentCode: z.string(),
 });
 export const idResponseSchema = z.strictObject({ id: z.string().uuid() });
+/** Moderation refusals add a fixed server-written explanation and, for conflicts, the current version. */
+export const httpRefusalSchema = z.object({
+  detail: z.string().max(500).optional(),
+  currentVersion: z.number().int().positive().optional(),
+});
 export const httpProblemSchema = z.object({
   code: z.string().min(1).max(80),
   requestId: z.string().max(100).optional(),
