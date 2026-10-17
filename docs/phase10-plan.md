@@ -23,6 +23,11 @@
   - **A severe finding without the independent-approval flag** still contributes, but the ceiling stays 74 (High at most).
   - **Relative weight words.** The largest applied contribution is "primary"; at least half of it is "contributing"; anything smaller is "minor".
 
+- Slice 2: assessments and signals, done on the branch. Risk tables (migration 0008, runbook `docs/operations/2026-10-17-apply-0008-risk.md`, rehearsed); signals follow published findings; assessments with input snapshots, factors and replay; forward-only current pointer; annotations on suspension and reversal; staff score in the case view; public band only with `RISK_PUBLIC_BANDS=true`; 15-minute expiry sweep in the worker. Deviations:
+  - **Recompute inside the moderation transaction**, not in a queued job. The public result never lags a publication, suspension or reversal; a recompute always reads current signals, so a repeated or delayed one changes nothing (stale-job suite). Render Free's sleeping worker is the reason not to depend on a queue.
+  - **The notifications table moves to slice 4** with the rest of the notification work.
+  - **Viewing a stale assessment does not enqueue a recompute** yet; V1 inputs do not expire.
+
 ## Slices
 
 Each slice is a pull request with tests, updates the data model and `AI_HANDOFF.md`, and (where it migrates) ships an owner-applied, rehearsed Neon runbook.

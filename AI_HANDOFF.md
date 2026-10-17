@@ -44,6 +44,17 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-17: Claude, Phase 10 slices 1–2 (risk engine, assessments)
+
+- Slice 1: pure V1 risk engine (`packages/domain/src/risk/`), golden, invariant and replay tests.
+- Slice 2:
+  - risk tables in migration 0008, with an owner runbook rehearsed on disposable PostgreSQL 18 (16 entries, 69 tables);
+  - signals and assessments follow published findings in the same transaction;
+  - staff see the score in case detail;
+  - public bands stay off (`RISK_PUBLIC_BANDS=false`, O-12);
+  - the worker runs a 15-minute expiry sweep.
+- **Owner:** merge, apply 0008 on Neon, then deploy the API and worker.
+
 ### 2026-10-17: Claude, Phase 10 authorized; plan drafted
 
 - The owner authorized Phase 10. [docs/phase10-plan.md](docs/phase10-plan.md) proposes five slices and four owner decisions (O-12 public-band switch, deferred analysis feeders, admin-only `project:manage`, interim status sets). Waiting for the owner's go-ahead before slice 1.

@@ -246,6 +246,18 @@ Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplic
 
 ## 7. Risk (ARCHITECTURE §15, §22)
 
+**Phase 10 implementation (2026-10-17, slice 2; not yet applied to Neon).** `generated/0008_sleepy_white_tiger.sql` and `0008_risk_guards.sql` create the nine tables below except `risk_signal_suppressions` (slice 4): **16 ledger entries, 69 tables**. Differences from the planned columns:
+- `risk_signals` adds `source_type` (`finding` | `chain_analysis`), and is unique per `(source_type, source_ref, factor_code)`. A finding whose published severity changes gets a new signal; the old one is `superseded`.
+- `risk_signal_revisions` and `risk_assessment_inputs` carry `independently_approved` (severe findings) and `evidence_refs`. `strength` is not stored: V1 contributions come from the ruleset.
+- `risk_assessments` has `ceiling` and a CHECK that a null score means `not_assessed`. `trigger` is `signal_change` | `expiry` | `ruleset` | `manual_replay`.
+- `risk_assessment_factors` stores `reason` (why a factor did not apply) instead of `explanation_params`.
+- `risk_subject_state` has no `locked_by_job`: a recompute locks the row in its transaction.
+- Guards:
+  - append-only triggers on the five history tables;
+  - `current_assessment_forward()` refuses moving the pointer to a lower sequence or another subject;
+  - `reject_risk_delete()` refuses deleting signals, rulesets or the pointer.
+- **Deviation (recorded in the Phase 10 plan):** signals and assessments are written in the same transaction as the finding change, instead of an asynchronous `risk.recompute` job. The worker keeps the 15-minute `risk.expiry_sweep`.
+
 - `risk_rulesets`: `version` (PK), `engine_version`, `definition` (jsonb snapshot), `checksum`, `activated_at`, `retired_at`.
 - `risk_signals`: `id`, `subject_id`, `factor_code`, `tier` (`verified` | `analysis` | `disclosure` | `weak`), `provenance`, `source_type`, `source_ref`, `current_revision`, `status` (`active` | `expired` | `retracted` | `suppressed` | `suspended` | `superseded`), `created_at`.
 - `risk_signal_revisions` [append-only]: `signal_id`, `revision`, `status`, `strength`, `source_revision` (e.g. finding revision ID + status revision; verification IDs), `valid_until`, `reason`, `at`. PK `(signal_id, revision)`.

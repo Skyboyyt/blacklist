@@ -50,7 +50,7 @@ export function createServer(
   moderationRoutes(app, ctx);
   findingRoutes(app, ctx);
   redressRoutes(app, ctx);
-  researchRoutes(app, research);
+  researchRoutes(app, research, config.RISK_PUBLIC_BANDS === 'true');
   app.get('/healthz', { config: { security: { auth: 'public', mutation: false } } }, async () => {
     await ctx.runtime.checkConnection();
     return { status: 'ok' };

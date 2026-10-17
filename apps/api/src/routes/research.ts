@@ -26,7 +26,7 @@ const options = z.object({
   finality: z.enum(['pending', 'final']).default('pending'),
   verify: z.enum(['true', 'false']).default('false'),
 });
-export function researchRoutes(app: FastifyInstance, ctx: ResearchContext | undefined) {
+export function researchRoutes(app: FastifyInstance, ctx: ResearchContext | undefined, publicBands = false) {
   const limits = new Map<string, { start: number; cost: number }>();
   app.addHook('onRequest', async (req) => {
     if (
@@ -92,10 +92,17 @@ export function researchRoutes(app: FastifyInstance, ctx: ResearchContext | unde
       validateResearchIdentifier(chain, identifier, 'address');
       if (!ctx) return { kind: 'provider_unavailable', retryAfterSeconds: 30, reason: 'unconfigured' };
       return researchResultSchema(addressResearchSchema).parse(
-        await addressResearch(ctx, req.actor, chain, identifier, {
-          minFinality: query.finality,
-          crossVerify: query.verify === 'true',
-        }),
+        await addressResearch(
+          ctx,
+          req.actor,
+          chain,
+          identifier,
+          {
+            minFinality: query.finality,
+            crossVerify: query.verify === 'true',
+          },
+          publicBands,
+        ),
       );
     });
     app.get(`${prefix}/transactions/:chain/:identifier`, { config }, async (req) => {

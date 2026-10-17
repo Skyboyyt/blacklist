@@ -7,3 +7,4 @@ export * from './credential-intents.ts';
 export * from './chain-verification.ts';
 export * from './chain-facts.ts';
 export * from './moderation.ts';
+export * from './risk.ts';

@@ -1,3 +1,4 @@
+import { onFindingChanged } from '../risk/service.ts';
 import { schema, ne, eq, and, asc, desc, inArray, isNull, or, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { hasPermission, requirePermission } from '../access/policies.ts';
@@ -86,7 +87,8 @@ async function lockFinding(tx: Database, findingId: string) {
   return f;
 }
 
-async function setStatus(
+/** Status change with history; any change of the finding's public state also updates its risk signals. */
+export async function setStatus(
   tx: Database,
   f: Finding,
   to: string,
@@ -106,6 +108,7 @@ async function setStatus(
     publicationEventId: link.publicationEventId ?? null,
     publicNote: link.publicNote ?? null,
   });
+  await onFindingChanged(tx, f.id, `finding.${to}`, { decisionId: link.decisionId, toStatus: to });
 }
 
 /** Authors, approvers and suspension/reversal actors of a finding (moderation §1). */

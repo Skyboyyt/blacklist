@@ -22,3 +22,5 @@ export * from './moderation/redress.ts';
 export * from './risk/ruleset.ts';
 export * from './risk/engine.ts';
 export * from './risk/explanations.ts';
+export * from './risk/service.ts';
+export * from './risk/views.ts';

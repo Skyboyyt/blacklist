@@ -10,6 +10,7 @@ import { addressOf, type ChainSlug } from './subjects.ts';
 import { staffRefs, submitterPseudonym, type StaffRefView } from './refs.ts';
 import { defangUrl } from './labels.ts';
 import { moveReport } from './reports.ts';
+import { staffAssessment } from '../risk/views.ts';
 import { decideRedress, redressCaseFields, syncRedressStatus } from './redress.ts';
 import {
   createFindingFromReport,
@@ -268,7 +269,7 @@ async function detailOf(tx: Database, c: Case, r: Report | undefined) {
             : [],
       };
     }),
-    assessment: null,
+    assessment: await staffAssessment(tx, c.subjectId),
     submitterReason: r?.submitterReason ?? null,
     publicSummary: decision?.publicSummary ?? null,
     infoRequest: r?.status === 'needs_info' ? (lastRequest?.body ?? null) : null,

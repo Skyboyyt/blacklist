@@ -4,6 +4,7 @@ import {
   readResearchTransaction,
   publicFindings,
   publicRedress,
+  publicAssessment,
   type ResearchReadOptions,
   type ResearchContext,
   type Actor,
@@ -26,6 +27,7 @@ export async function addressResearch(
   chain: ChainSlugDto,
   input: string,
   options: ResearchReadOptions = {},
+  publicBands = false,
 ) {
   const read = await readResearchAddress(ctx, actor, chain, input, options);
   if (!read.result.ok) return unavailable(read.result.error.kind);
@@ -38,6 +40,13 @@ export async function addressResearch(
     published.subjectId,
     published.findings.map((f) => f.id),
   );
+  const disputeState = published.findings.some((f) => redress.underAppeal.has(f.id))
+    ? ('under_appeal' as const)
+    : ('none' as const);
+  const assessment = await publicAssessment(ctx.runtime.db, published.subjectId, {
+    publicBands,
+    disputeState,
+  });
   const findings = published.findings.map((f) =>
     redress.underAppeal.has(f.id) ? { ...f, disputeState: 'under_appeal' as const } : f,
   );
@@ -66,7 +75,7 @@ export async function addressResearch(
               : 'unknown',
       untrustedLabel: null,
       availability: {
-        assessment: 'unavailable',
+        assessment: publicBands ? 'available' : 'unavailable',
         findings: 'available',
         labels: 'unavailable',
         responses: 'available',
@@ -75,18 +84,7 @@ export async function addressResearch(
         history: 'available',
         disclosures: 'unavailable',
       },
-      assessment: {
-        band: 'not_assessed',
-        explanation: 'Risk assessment is not available. Blockchain data alone is not an assessment.',
-        factors: [],
-        confidence: 'low',
-        coverage:
-          'Chain account data, published moderator findings and published responses. Evidence and risk assessment are not connected.',
-        asOf: at,
-        rulesetVersion: 'unavailable',
-        disputeState: findings.some((f) => f.disputeState === 'under_appeal') ? 'under_appeal' : 'none',
-        suppressions: [],
-      },
+      assessment,
       facts: [
         {
           id: 'native-balance',

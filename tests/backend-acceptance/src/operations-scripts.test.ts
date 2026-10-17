@@ -17,4 +17,15 @@ describe('Neon apply scripts embed the committed migrations exactly', () => {
       expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
     }
   });
+  it('0008: both files verbatim, with matching ledger checksums', async () => {
+    const script = await read('docs/operations/2026-10-17-apply-0008-risk.sql');
+    for (const [path, name] of [
+      ['packages/db/migrations/generated/0008_sleepy_white_tiger.sql', '0008_sleepy_white_tiger.sql'],
+      ['packages/db/migrations/0008_risk_guards.sql', '0008_risk_guards.sql'],
+    ] as const) {
+      const source = await read(path);
+      expect(script).toContain(source.trimEnd());
+      expect(script).toContain(`('${name}', '${createHash('sha256').update(source).digest('hex')}')`);
+    }
+  });
 });
