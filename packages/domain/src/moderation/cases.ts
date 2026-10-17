@@ -1,4 +1,4 @@
-import { schema, eq, and, asc, desc, type Database } from '@blacklist/db';
+import { schema, eq, and, asc, desc, inArray, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { hasPermission, requirePermission, type Permission } from '../access/policies.ts';
 import { appendAudit } from '../audit/service.ts';
@@ -7,14 +7,13 @@ import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
 import { withStepup, type AssertionInput } from '../staff/webauthn.ts';
-import { addressOf, type ChainSlug } from './subjects.ts';
+import type { ChainSlug } from './subjects.ts';
 import { staffRefs, submitterPseudonym, type StaffRefView } from './refs.ts';
 import { defangUrl } from './labels.ts';
 import { moveReport } from './reports.ts';
 import { staffAssessment } from '../risk/views.ts';
 import { decideRedress, redressCaseFields, syncRedressStatus } from './redress.ts';
 import { decideProjectCase, projectCaseFields } from '../projects/submissions.ts';
-import { latestRevision } from '../projects/profiles.ts';
 import {
   createFindingFromReport,
   decideSuspension,
@@ -136,35 +135,82 @@ async function loadCase(tx: Database, actor: UserActor, caseId: string, lock = f
   return { c, report };
 }
 
-async function subjectView(
-  tx: Database,
-  c: Case,
-): Promise<{
+type SubjectView = {
   subject:
     | { kind: 'address'; chain: ChainSlug; address: string; displayAddress: string }
     | { kind: 'project'; slug: string; name: string };
   chain: ChainSlug | null;
-}> {
-  const a = c.subjectId ? await addressOf(tx, c.subjectId) : null;
-  if (a)
-    return {
-      subject: { kind: 'address', chain: a.chain, address: a.address, displayAddress: a.address },
-      chain: a.chain,
-    };
-  const [project] = c.subjectId
-    ? await tx.select().from(schema.projects).where(eq(schema.projects.subjectId, c.subjectId))
+};
+
+// Subjects for many cases in three queries, whatever the queue length (P10-07).
+async function subjectViews(tx: Database, cases: readonly Case[]): Promise<Map<string, SubjectView>> {
+  const ids = [...new Set(cases.flatMap((c) => (c.subjectId ? [c.subjectId] : [])))];
+  const addresses = ids.length
+    ? await tx
+        .select({
+          subjectId: schema.addresses.subjectId,
+          address: schema.addresses.address,
+          slug: schema.chains.slug,
+        })
+        .from(schema.addresses)
+        .innerJoin(schema.chains, eq(schema.chains.chainId, schema.addresses.chainId))
+        .where(inArray(schema.addresses.subjectId, ids))
     : [];
-  if (!project) throw new Error('case_subject_missing');
-  return {
-    subject: { kind: 'project', slug: project.slug, name: (await latestRevision(tx, project.id)).name },
-    chain: null,
-  };
+  const projects = ids.length
+    ? await tx.select().from(schema.projects).where(inArray(schema.projects.subjectId, ids))
+    : [];
+  const revisions = projects.length
+    ? await tx
+        .select({
+          projectId: schema.projectRevisions.projectId,
+          name: schema.projectRevisions.name,
+          revisionNumber: schema.projectRevisions.revisionNumber,
+        })
+        .from(schema.projectRevisions)
+        .where(
+          inArray(
+            schema.projectRevisions.projectId,
+            projects.map((p) => p.id),
+          ),
+        )
+    : [];
+  const names = new Map<string, { name: string; revisionNumber: number }>();
+  for (const r of revisions) {
+    const known = names.get(r.projectId);
+    if (!known || r.revisionNumber > known.revisionNumber) names.set(r.projectId, r);
+  }
+  const byAddress = new Map(addresses.map((a) => [a.subjectId, a]));
+  const byProject = new Map(projects.map((p) => [p.subjectId, p]));
+  const views = new Map<string, SubjectView>();
+  for (const c of cases) {
+    const a = c.subjectId ? byAddress.get(c.subjectId) : undefined;
+    if (a) {
+      const chain = a.slug as ChainSlug;
+      views.set(c.id, {
+        subject: { kind: 'address', chain, address: a.address, displayAddress: a.address },
+        chain,
+      });
+      continue;
+    }
+    const project = c.subjectId ? byProject.get(c.subjectId) : undefined;
+    if (!project) throw new Error('case_subject_missing');
+    const name = names.get(project.id)?.name;
+    if (name === undefined) throw new Error('project_without_revision');
+    views.set(c.id, { subject: { kind: 'project', slug: project.slug, name }, chain: null });
+  }
+  return views;
+}
+
+async function subjectView(tx: Database, c: Case): Promise<SubjectView> {
+  const view = (await subjectViews(tx, [c])).get(c.id);
+  if (!view) throw new Error('case_subject_missing');
+  return view;
 }
 
 function summaryOf(
   c: Case,
   r: Report | null | undefined,
-  subject: Awaited<ReturnType<typeof subjectView>>,
+  subject: SubjectView,
   refs: Map<string, StaffRefView>,
 ) {
   const common = {
@@ -389,8 +435,15 @@ export async function caseQueue(ctx: IdentityContext, actor: UserActor, q: Queue
       tx,
       visible.map(({ c }) => c.assignedToRef).filter((r): r is string => !!r),
     );
-    const items = [];
-    for (const { c, r } of visible) items.push(summaryOf(c, r, await subjectView(tx, c), refs));
+    const subjects = await subjectViews(
+      tx,
+      visible.map(({ c }) => c),
+    );
+    const items = visible.map(({ c, r }) => {
+      const subject = subjects.get(c.id);
+      if (!subject) throw new Error('case_subject_missing');
+      return summaryOf(c, r, subject, refs);
+    });
     const needle = q.query?.toLowerCase();
     const filtered = items.filter(
       (i) =>

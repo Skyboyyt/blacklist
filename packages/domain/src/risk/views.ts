@@ -40,6 +40,8 @@ export async function publicAssessment(
     publicBands: boolean;
     disputeState: 'none' | 'under_appeal' | 'suspended_pending_review';
     now?: Date;
+    /** Already loaded by the caller, to avoid a second read (P10-08). */
+    suppressions?: Awaited<ReturnType<typeof publicSuppressions>>['active'];
   },
 ) {
   const now = (options.now ?? new Date()).toISOString();
@@ -78,7 +80,7 @@ export async function publicAssessment(
     asOf: assessment.computedAt.toISOString(),
     rulesetVersion: assessment.rulesetVersion,
     disputeState: options.disputeState,
-    suppressions: (await publicSuppressions(db, subjectId)).active,
+    suppressions: options.suppressions ?? (await publicSuppressions(db, subjectId)).active,
   };
 }
 

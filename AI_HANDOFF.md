@@ -48,7 +48,8 @@ This file holds the **current state only**. Each session adds one short entry un
 
 - The owner authorized Phase 11 ("launch readiness"). [docs/phase11-plan.md](docs/phase11-plan.md) sets nine workstreams, each marked Claude, owner or paid; [docs/launch-checklist.md](docs/launch-checklist.md) is the exit document for the owner to sign.
 - Critical path: legal review (owner must engage counsel). No production environment exists; O-4 decides hosting and needs the owner's instruction.
-- Next for Claude, needing nothing from the owner: P10-06 to P10-08 (batched reads), then the monitoring, restore and recovery runbooks, the security review brief and the counsel pack.
+- Workstream 1: P10-07 and P10-08 fixed; P10-06 partly (profiles load four at a time). Tests: lint, typecheck and format clean; backend acceptance 34 files / 161 tests passed locally (Docker Postgres), then the project tests again after the extra assertion.
+- Next for Claude, needing nothing from the owner: the monitoring, restore and recovery runbooks, the security review brief and the counsel pack.
 
 ### 2026-10-17: Claude, Phase 10 slices 1–2 (risk engine, assessments)
 
