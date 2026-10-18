@@ -13,11 +13,16 @@ const bytes = z
   .max(2048);
 const word = z.string().regex(/^0x[\da-f]{64}$/u);
 const id = 'eip155:1';
-/** EIP-1967 storage slots: keccak256('eip1967.proxy.<name>') - 1. */
+/**
+ * EIP-1967 storage slots (keccak256('eip1967.proxy.<name>') - 1), and the older ZeppelinOS
+ * slots (keccak256('org.zeppelinos.proxy.<name>')) that proxies such as USDC still use.
+ */
 const PROXY_SLOTS = {
   implementation: '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc',
   admin: '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103',
   beacon: '0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50',
+  zosImplementation: '0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3',
+  zosAdmin: '0x10d6a54a4754c8869d6886b5f5d7fbfa5b4522237ea5c60d11bc4e7a1ff9390b',
 } as const;
 /** The low 20 bytes of a storage word, or null when the slot is empty. */
 const slotAddress = (value: string) =>
@@ -149,17 +154,21 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
       if (code === '0x')
         return { data: null, provenance: provenance(ref, options, query, 'contract_source', { code }) };
       const bytecodeHash = keccak256(code as `0x${string}`);
-      // Standard EIP-1967 slots at the same block. RPC still proves nothing about explorer
-      // source verification, and a non-standard proxy reads as 'none'.
+      // EIP-1967 and ZeppelinOS slots at the same block. RPC still proves nothing about
+      // explorer source verification, and any other proxy pattern reads as 'none'.
       const slot = (key: string): Promise<string> =>
         rpc.call('eth_getStorageAt', [ref.address, key, query.selector], word, options.signal);
-      const [implementationSlot, adminSlot, beaconSlot] = await Promise.all([
-        slot(PROXY_SLOTS.implementation),
-        slot(PROXY_SLOTS.admin),
-        slot(PROXY_SLOTS.beacon),
-      ]);
+      const [implementationSlot, adminSlot, beaconSlot, zosImplementationSlot, zosAdminSlot] =
+        await Promise.all([
+          slot(PROXY_SLOTS.implementation),
+          slot(PROXY_SLOTS.admin),
+          slot(PROXY_SLOTS.beacon),
+          slot(PROXY_SLOTS.zosImplementation),
+          slot(PROXY_SLOTS.zosAdmin),
+        ]);
       const implementation = slotAddress(implementationSlot),
-        beacon = slotAddress(beaconSlot);
+        beacon = slotAddress(beaconSlot),
+        zosImplementation = slotAddress(zosImplementationSlot);
       return {
         data: {
           chainId: ref.chainId,
@@ -168,10 +177,10 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
           deploymentTx: null,
           bytecodeHash,
           sourceVerification: null,
-          proxyType: implementation ? 'eip1967' : beacon ? 'beacon' : 'none',
+          proxyType: implementation ? 'eip1967' : beacon ? 'beacon' : zosImplementation ? 'other' : 'none',
           // A beacon proxy's implementation lives in the beacon contract, which is not read here.
-          implementation,
-          admin: slotAddress(adminSlot),
+          implementation: implementation ?? (beacon ? null : zosImplementation),
+          admin: implementation || beacon ? slotAddress(adminSlot) : slotAddress(zosAdminSlot),
           upgradeAuthority: null,
         },
         provenance: provenance(ref, options, query, 'contract_source', {
@@ -179,6 +188,8 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
           implementationSlot,
           adminSlot,
           beaconSlot,
+          zosImplementationSlot,
+          zosAdminSlot,
         }),
       };
     },

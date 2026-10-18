@@ -50,9 +50,11 @@ This file holds the **current state only**. Each session adds one short entry un
 - **Risk acceptance (owner, 2026-10-18):** the Infura key ID was visible in a screenshot shared in the chat. Claude advised rotation. The owner chose to keep it ("dont worry let use it").
   - Impact: limited to the free Infura quota, which could stop cross-verification; no Blacklist data or funds are reachable.
   - If automatic scoring stops confirming, rotate the key first.
-- Still to confirm with the owner:
-  - a wallet page shows "Not assessed" instead of "unavailable";
-  - the USDC contract shows the "Upgradeable contract" disclosure and is not flagged.
+- **Confirmed by the owner (screenshots, 11:43–11:46 UTC):**
+  - A wallet page shows "Not assessed" with the new coverage wording, plus an EIP-7702 "Delegated" chain fact.
+  - The real USDC is "Not assessed" with no factors (not flagged as an impersonation).
+  - But USDC showed "No capability disclosures": USDC is an older **ZeppelinOS** proxy, not EIP-1967.
+- **Fix (follow-up PR):** `evm-metadata.ts` also reads the ZeppelinOS implementation and admin slots (`proxyType: 'other'`), and the disclosure names the proxy style. Tests were added in `evm-metadata.test.ts` and `research-disclosures.integration.test.ts`.
 
 ### 2026-10-18: Claude, ratings switched on (staging) and automatic scoring (ADR 0021)
 
