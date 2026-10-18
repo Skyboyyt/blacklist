@@ -18,6 +18,7 @@ Maintained backend coverage runs all tests at repository root with backend-only 
 | `ALCHEMY_TOKEN_BALANCES_VERIFIED` | API only | `false`; Ethereum token discovery separately gated |
 | `ALCHEMY_ETHEREUM_API_KEY` | protected API runtime | Ethereum mainnet Free key; no value in source/browser/logs |
 | `HELIUS_RPC_API_KEY` | protected API runtime | Solana mainnet Free key; no value in source/browser/logs |
+| `INFURA_ETHEREUM_API_KEY` | protected API runtime, optional | Second Ethereum Free key (ADR 0021). When set, Alchemy is group `alchemy` and Infura `infura`, cross-verification works, and automatic scoring can create signals |
 | `RPC_API_REQUESTS_PER_MINUTE` | API only | 30 per key; requests/retries consume quota |
 | `RPC_API_TOTAL_REQUEST_BUDGET` | API only | 100 per `RPC_API_BUDGET_WINDOW_HOURS` window per process (also reset by a restart); not monthly billing protection |
 | `RPC_API_BUDGET_WINDOW_HOURS` | API only | 24 by default; set it so budget × windows per month fits the verified plan |

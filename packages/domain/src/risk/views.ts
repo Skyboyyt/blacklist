@@ -52,7 +52,8 @@ export async function publicAssessment(
       explanation: options.publicBands
         ? bandExplanation({ band: 'not_assessed' })
         : 'Risk bands are being calibrated and are not shown yet. Published findings below are reviewed by moderators.',
-      coverage: 'Published moderator findings only. Chain analysis is not connected.',
+      coverage:
+        'Published moderator findings, and automatic chain checks confirmed by two independent providers.',
       asOf: now,
       disputeState: options.disputeState,
     };

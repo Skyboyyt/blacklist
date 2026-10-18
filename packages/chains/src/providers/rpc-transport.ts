@@ -4,6 +4,8 @@ import type { ChainDataErrorKind } from '../ports.ts';
 
 const origins = new Set([
   'https://eth-mainnet.g.alchemy.com',
+  // Second Ethereum provider for cross-verification only (ADR 0021).
+  'https://mainnet.infura.io',
   'https://mainnet.helius-rpc.com',
   'https://api.mainnet-beta.solana.com',
 ]);
@@ -61,7 +63,9 @@ export function createRpcTransport(
   const credential =
     url.hostname === 'eth-mainnet.g.alchemy.com'
       ? decodeURIComponent(url.pathname.split('/v2/')[1] ?? '')
-      : (url.searchParams.get('api-key') ?? '');
+      : url.hostname === 'mainnet.infura.io'
+        ? decodeURIComponent(url.pathname.split('/v3/')[1] ?? '')
+        : (url.searchParams.get('api-key') ?? '');
   return {
     async call<S extends z.ZodType>(
       method: string,

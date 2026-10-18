@@ -830,6 +830,7 @@ Invariants (not calibration):
 ### 15.5 Expiry and recomputation
 
 - `risk.expiry_sweep` (every 15 minutes) recomputes subjects whose `next_review_at` has passed, **independent of page views**.
+- **Automatic analysis signals (ADR 0021):** created or retracted when an Ethereum address is researched. A signal needs a read two independent providers agreed on (chain-data §5.5). Retraction happens when a confirmed read shows the fact gone, when a delegate loses its published high/severe finding (at once, in the finding's transaction), or when the reviewed canonical-token list changes. An address nobody views is not fed.
 - Signal changes recompute the subject. Since Phase 10 this happens in the same transaction as the finding change, state-based and serialized per subject by locking `risk_subject_state` ([Phase 10 plan](docs/phase10-plan.md)); `risk.recompute` remains for stale views and ruleset batches.
 - Ruleset changes trigger a rate-limited batch.
 - Viewing a stale assessment (> 24 h) also enqueues a recompute; meanwhile the stored result is shown "as of".
@@ -1287,7 +1288,7 @@ Rev-2 changes are marked; superseded wording is retained for history.
 | O-9 | Message-signing-incapable wallets | **Resolved:** staff-assisted standing | — |
 | O-10 | TypeScript 7 vs 6 | **Resolved:** TypeScript 6.x (ADR 0007) | — |
 | O-11 | Node baseline | **Resolved:** Node 24 LTS (ADR 0007) | — |
-| O-12 | V1 ruleset calibration (§15.3), including band transitions | Open: owner sign-off after golden-set calibration | Phase 10 / before public bands |
+| O-12 | V1 ruleset calibration (§15.3), including band transitions | **Staging approved** (owner, 2026-10-18, proposal unchanged); production open until golden-set calibration | Phase 10 / before public bands in production |
 | O-13 | Independent audit checkpoint | Open, decided with O-4; recommended before launch | Before launch |
 | PRD P-1 … P-13 | Product decisions | See PRD §10 (P-1, P-2, P-4, P-5, P-11 decided) | Various |
 

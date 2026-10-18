@@ -13,6 +13,7 @@ import {
   publicAssessment,
   publicLabels,
   publicSuppressions,
+  feedChainAnalysis,
   type ResearchReadOptions,
   type ResearchContext,
   type Actor,
@@ -42,6 +43,8 @@ export async function addressResearch(
   if (!read.result.ok) return unavailable(read.result.error.kind);
   const { data, provenance } = read.result.value;
   if (!data) return { kind: 'not_found' as const };
+  // Automatic analysis signals first, so the assessment below already reflects them (ADR 0021).
+  await feedChainAnalysis(ctx, actor, chain, data);
   // Published moderator findings only (moderation §4.2); reports never appear here.
   const published = await publicFindings(ctx.runtime.db, read.ref.chainId, data.address);
   const redress = await publicRedress(

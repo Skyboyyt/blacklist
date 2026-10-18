@@ -11,7 +11,10 @@ import { V1_RULESET, rulesetChecksum, type RulesetDefinition } from './ruleset.t
 
 export type RiskTrigger = 'signal_change' | 'expiry' | 'ruleset' | 'manual_replay';
 const ACTIVE_RULESET: RulesetDefinition = V1_RULESET;
-/** V1 has no chain-analysis feeders until research is enabled (Phase 10 plan, decision 2). */
+/**
+ * Analysis signals exist only when two providers confirmed their facts (ADR 0021), so a
+ * subject with none is still "not assessed" rather than verified-and-clean.
+ */
 const COVERAGE = { findingsReviewed: true, chainFactsVerified: false } as const;
 
 async function ensureRuleset(tx: Database, ruleset: RulesetDefinition) {

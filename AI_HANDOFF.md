@@ -18,7 +18,7 @@ This file holds the **current state only**. Each session adds one short entry un
 | Deployment | Free staging services are public on explicit owner instruction (2026-10-13): Vercel web, Render API and worker, Neon PostgreSQL 18 staging database. **Not production-ready**; Phase 11 gates (legal, retention, recovery, monitoring) remain |
 | Authorized now | **Phase 11** (owner, 2026-10-17, "launch readiness"): integration, hardening and launch readiness; plan in [docs/phase11-plan.md](docs/phase11-plan.md); exit is the owner-signed [docs/launch-checklist.md](docs/launch-checklist.md). **Phase 10** (owner, 2026-10-17; merged and deployed): risk engine, assessments and jobs, projects, admin backend, notifications, band-only scoreboard; plan in [docs/phase10-plan.md](docs/phase10-plan.md); public bands only after O-12. **Phase 9a** (owner, 2026-10-16; merged and deployed): reports, moderation cases, finding revisions/approval/system publication, standing, responses, appeals, corrections on the existing Render/Neon. **Waiver:** Phase 9 work may merge before the Phase 7 independent security review. Also owner decisions of 2026-10-16 (ADR 0013 design, member password 12 / staff 8, invite-only sign-up, ADR 0018 provisional) and review follow-up fixes inside the approved design. **Phase 9b** (owner, 2026-10-17): ADR 0020 accepted for staging, test images only; plan in [docs/phase9b-plan.md](docs/phase9b-plan.md); built, waiting for the owner's setup (runbook). **Not authorized:** a production environment (O-4), paid resources, cloud migrations, provider activation |
 | Primary / reviewer | Claude / Codex |
-| Last agent | Claude: automatic capability disclosures on the address page; why the risk assessment shows as unavailable |
+| Last agent | Claude: O-12 approved for staging; automatic analysis scoring (ADR 0021) with Infura as the second Ethereum provider |
 | Last updated | 2026-10-18 |
 
 ## Open work, by owner
@@ -43,6 +43,38 @@ This file holds the **current state only**. Each session adds one short entry un
 2. Responses still pending in earlier review files (see review CR-11).
 
 ## Session log
+
+### 2026-10-18: Claude, ratings switched on (staging) and automatic scoring (ADR 0021)
+
+- **Owner decisions (2026-10-18):**
+  - "switch it on and make the automatic scoring";
+  - then, answering the two questions, "Approve for test site" (**O-12 staging only**, proposal unchanged) and "Approve Infura" (**second Ethereum provider**).
+  - Recorded in ADR 0021 (accepted for staging), the O-12 brief, AGENTS, ARCHITECTURE §15.5 and the O-12 row of the open-decisions table, and an amendment line on ADR 0018.
+- **Built:**
+  - Optional `INFURA_ETHEREUM_API_KEY` (config, Render API allow-list, local runner, `.env.example`, fixed origin `https://mainnet.infura.io`). When it is set, Alchemy is group `alchemy` and Infura `infura`, so cross-verification can return `agree`.
+  - Feeders in `packages/domain/src/risk/feeders.ts`, called from the address presenter before the assessment is read:
+    - `eoa.delegated_to_flagged`: an EIP-7702 delegate with a published high or severe finding.
+    - `token.symbol_impersonation`: a well-known symbol at a non-canonical address. The reviewed list is in `canonical-tokens.ts`; matching uses NFKC, strips invisible characters and maps Cyrillic and Greek lookalike letters.
+  - A signal is created only from a two-provider `agree` read. Single-source, inconclusive and conflicting reads change nothing.
+  - Retraction: on a confirmed changed or removed delegation; when the delegate loses its flagging finding (immediately, via `setStatus` → `onDelegateFindingChanged`); and when the canonical list now names the token.
+  - An active suppression makes a new signal `suppressed`.
+  - Coverage wording no longer says "Chain analysis is not connected".
+- **Owner next:** merge, then follow [the runbook](docs/operations/2026-10-18-risk-bands-and-automatic-scoring.md):
+  - `RISK_PUBLIC_BANDS=true`;
+  - a free Infura key in `INFURA_ETHEREUM_API_KEY`.
+- **Limits:**
+  - Ethereum only. Solana impersonation needs a Metaplex reader and a same-slot secondary.
+  - Addresses are fed only when viewed.
+  - Every Ethereum contract page now also does a single-source token read; watch `RPC_API_TOTAL_REQUEST_BUDGET`.
+  - The canonical list is short and reviewed by hand.
+  - Codex review of the feeders is still open.
+- **Tests:**
+  - New `risk-feeders.test.ts` (symbol rule): 2 tests.
+  - New `risk-feeders.integration.test.ts` (real API and Postgres, two synthetic providers in separate groups): 3 tests.
+    - Delegation is scored at Moderate with the victim wording; a repeat view writes nothing; suspending the delegate's finding retracts the signal.
+    - No signal from one provider, from a conflicting second provider, or for an unflagged delegate (with zero secondary calls).
+    - Fake USDT and a Cyrillic lookalike are scored; the canonical USDT and unrelated symbols are not.
+  - Results of the full suites are recorded below once run.
 
 ### 2026-10-18: Claude, automatic capability disclosures (owner request)
 

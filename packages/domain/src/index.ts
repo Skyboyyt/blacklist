@@ -24,6 +24,8 @@ export * from './risk/engine.ts';
 export * from './risk/explanations.ts';
 export * from './risk/service.ts';
 export * from './risk/views.ts';
+export * from './risk/feeders.ts';
+export * from './risk/canonical-tokens.ts';
 export * from './projects/profiles.ts';
 export * from './projects/submissions.ts';
 export * from './projects/scoreboard.ts';

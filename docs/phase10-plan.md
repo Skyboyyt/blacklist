@@ -13,7 +13,7 @@
 
 - No risk, project, label, suppression or notification tables exist. Public research shows `assessment: not_assessed` and the scoreboard and project pages answer "not available".
 - Published findings already exist with immutable revisions, status history and system publication (Phase 9a). They are the only active V1 risk inputs.
-- The analysis factors (`token.symbol_impersonation`, `eoa.delegated_to_flagged`) need verified chain facts. Chain research is off (`RESEARCH_ENABLED=false`, O-3), so their **feeders are deferred**; the rules themselves are implemented and tested.
+- The analysis factors (`token.symbol_impersonation`, `eoa.delegated_to_flagged`) need verified chain facts. Chain research is off (`RESEARCH_ENABLED=false`, O-3), so their **feeders are deferred**; the rules themselves are implemented and tested. **Update 2026-10-18:** feeders built for Ethereum ([ADR 0021](adr/0021-automatic-scoring-and-second-ethereum-provider.md)); they create signals only once a second independent provider is configured.
 
 ## Progress
 
