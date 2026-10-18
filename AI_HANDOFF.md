@@ -44,6 +44,16 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-18: Claude, staging switch-on of ratings and automatic scoring
+
+- PR #36 merged (`8978c71`). The owner redeployed the Render API, set `RISK_PUBLIC_BANDS=true`, and added `INFURA_ETHEREUM_API_KEY` (Infura Free, key name `blacklist-staging`, no secret or JWT requirement).
+- **Risk acceptance (owner, 2026-10-18):** the Infura key ID was visible in a screenshot shared in the chat. Claude advised rotation. The owner chose to keep it ("dont worry let use it").
+  - Impact: limited to the free Infura quota, which could stop cross-verification; no Blacklist data or funds are reachable.
+  - If automatic scoring stops confirming, rotate the key first.
+- Still to confirm with the owner:
+  - a wallet page shows "Not assessed" instead of "unavailable";
+  - the USDC contract shows the "Upgradeable contract" disclosure and is not flagged.
+
 ### 2026-10-18: Claude, ratings switched on (staging) and automatic scoring (ADR 0021)
 
 - **Owner decisions (2026-10-18):**
