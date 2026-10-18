@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readApiConfig } from '@blacklist/config';
 import { schema, eq } from '@blacklist/db';
 import { signIn, resolveSession, type UserActor } from '@blacklist/domain';
@@ -201,6 +201,28 @@ describe('Phase 9b: image evidence upload', () => {
         .where(eq(schema.evidenceItems.id, rejected));
       expect((await s.submit(report([file(rejected)]), a.cookie)).statusCode).toBe(400);
     } finally {
+      await s.close();
+    }
+  });
+
+  it('reports a storage refusal as unavailable and logs only a fixed reason code', async () => {
+    const s = await setup();
+    const logged: unknown[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      logged.push(...args);
+    });
+    try {
+      const m = await member(s.f);
+      s.storage.failNext(403);
+      const response = await s.upload(png, 'image/png', m.cookie);
+      expect(response.statusCode).toBe(503);
+      expect(response.json()).toMatchObject({ code: 'temporarily_unavailable' });
+      expect(logged).toContain('storage_put_403');
+      expect(JSON.stringify(logged)).not.toContain('X-Amz');
+      const items = await s.f.ctx.runtime.db.select().from(schema.evidenceItems);
+      expect(items.filter((i) => i.kind === 'image')).toHaveLength(0);
+    } finally {
+      spy.mockRestore();
       await s.close();
     }
   });

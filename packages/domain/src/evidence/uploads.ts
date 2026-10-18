@@ -5,7 +5,7 @@ import { requirePermission } from '../access/policies.ts';
 import { DomainError, refuse } from '../shared/errors.ts';
 import type { IdentityContext } from '../identity/types.ts';
 import { lockActor } from '../identity/sessions.ts';
-import type { EvidenceStorage } from './storage.ts';
+import { StorageError, type EvidenceStorage } from './storage.ts';
 
 // Image upload (ARCHITECTURE §14.3, ADR 0004, ADR 0020). The API never parses the file:
 // it checks the declared type and size, stores the bytes untouched in quarantine and
@@ -65,7 +65,9 @@ export async function uploadEvidenceImage(
   const key = storage.newKey('quarantine', id);
   // A crash after this put leaves an object with no row; the quarantine bucket's
   // lifecycle rule removes it (runbook). It is never reachable without a row.
-  const { versionId } = await storage.put('quarantine', key, bytes, contentType).catch(() => {
+  const { versionId } = await storage.put('quarantine', key, bytes, contentType).catch((error: unknown) => {
+    // The reason is a fixed code such as `storage_put_403`; never a URL, key or file content.
+    console.error(error instanceof StorageError ? error.message : 'storage_put_failed');
     throw new DomainError('temporarily_unavailable');
   });
   return ctx.runtime.transaction(async (tx) => {
