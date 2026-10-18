@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { schema, eq, and, lte, inArray, sql, type Database, type DatabaseRuntime } from '@blacklist/db';
-import type { EvidenceStorage } from './storage.ts';
+import { StorageError, type EvidenceStorage } from './storage.ts';
 import { MAX_IMAGE_BYTES } from './uploads.ts';
 
 // Worker orchestration for image evidence (ARCHITECTURE §14.3). The worker never parses an
@@ -254,7 +254,11 @@ export async function processPendingEvidence(
     const item = await claim(runtime, now());
     if (!item) break;
     await attempt(runtime, storage, processor, item).catch((error: unknown) => {
-      console.error(error instanceof ProcessorUnavailable ? error.message : 'evidence_processing_failed');
+      console.error(
+        error instanceof ProcessorUnavailable || error instanceof StorageError
+          ? error.message
+          : 'evidence_processing_failed',
+      );
     });
   }
   return ran;

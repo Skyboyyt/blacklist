@@ -11,7 +11,7 @@ export interface FakeStorage {
   readonly endpoint: string;
   readonly objects: Map<string, { body: Buffer; type: string | undefined }>;
   readonly requests: string[];
-  failNext(status: number): void;
+  failNext(status: number, code?: string): void;
   close(): Promise<void>;
 }
 
@@ -29,7 +29,7 @@ export const fakeCredentials = {
 export async function startFakeStorage(): Promise<FakeStorage> {
   const objects = new Map<string, { body: Buffer; type: string | undefined }>();
   const requests: string[] = [];
-  let failure: number | undefined;
+  let failure: { status: number; code: string | undefined } | undefined;
   const server: Server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://storage.invalid');
     requests.push(`${request.method} ${url.pathname}`);
@@ -42,9 +42,15 @@ export async function startFakeStorage(): Promise<FakeStorage> {
       return;
     }
     if (failure) {
-      response.writeHead(failure);
-      response.end();
+      const { status, code } = failure;
       failure = undefined;
+      response.writeHead(status, { 'content-type': 'application/xml' });
+      // Real S3 errors may echo the request (including the access key id); only <Code> may be used.
+      response.end(
+        code
+          ? `<?xml version="1.0"?><Error><Code>${code}</Code><Message>x</Message><CanonicalRequest>X-Amz-Credential=${fakeCredentials.accessKeyId}</CanonicalRequest></Error>`
+          : '',
+      );
       return;
     }
     const chunks: Buffer[] = [];
@@ -73,8 +79,8 @@ export async function startFakeStorage(): Promise<FakeStorage> {
     endpoint: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
     objects,
     requests,
-    failNext: (status) => {
-      failure = status;
+    failNext: (status, code) => {
+      failure = { status, code };
     },
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
