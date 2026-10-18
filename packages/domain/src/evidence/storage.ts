@@ -33,6 +33,17 @@ export interface EvidenceStorage {
 
 export class StorageError extends Error {}
 
+/**
+ * A failed storage response as a fixed code, e.g. `storage_put_403_SignatureDoesNotMatch`.
+ * Only the S3 `<Code>` word is kept: error bodies can also echo the canonical request,
+ * which names the access key id, so nothing else from the body is ever used.
+ */
+async function failure(operation: string, response: Response) {
+  const body = await response.text().catch(() => '');
+  const code = /<Code>([A-Za-z]{1,64})<\/Code>/.exec(body.slice(0, 4096))?.[1];
+  return new StorageError(`storage_${operation}_${response.status}${code ? `_${code}` : ''}`);
+}
+
 export function createEvidenceStorage(
   config: EvidenceStorageConfig,
   clock = () => new Date(),
@@ -67,8 +78,8 @@ export function createEvidenceStorage(
         body: bytes,
         headers: { 'content-type': contentType },
       });
+      if (!response.ok) throw await failure('put', response);
       await response.body?.cancel();
-      if (!response.ok) throw new StorageError(`storage_put_${response.status}`);
       return { versionId: response.headers.get('x-amz-version-id') };
     },
     async get(role, key, maxBytes) {
@@ -77,10 +88,7 @@ export function createEvidenceStorage(
         await response.body?.cancel();
         return null;
       }
-      if (!response.ok || !response.body) {
-        await response.body?.cancel();
-        throw new StorageError(`storage_get_${response.status}`);
-      }
+      if (!response.ok || !response.body) throw await failure('get', response);
       const chunks: Uint8Array[] = [];
       let total = 0;
       for await (const chunk of response.body) {
@@ -101,9 +109,8 @@ export function createEvidenceStorage(
     },
     async remove(role, key) {
       const response = await call(sign('DELETE', role, key, 300), { method: 'DELETE' });
+      if (!response.ok && response.status !== 404) throw await failure('delete', response);
       await response.body?.cancel();
-      if (!response.ok && response.status !== 404)
-        throw new StorageError(`storage_delete_${response.status}`);
     },
   };
 }

@@ -213,12 +213,17 @@ describe('Phase 9b: image evidence upload', () => {
     });
     try {
       const m = await member(s.f);
-      s.storage.failNext(403);
+      s.storage.failNext(403, 'SignatureDoesNotMatch');
       const response = await s.upload(png, 'image/png', m.cookie);
       expect(response.statusCode).toBe(503);
       expect(response.json()).toMatchObject({ code: 'temporarily_unavailable' });
-      expect(logged).toContain('storage_put_403');
+      expect(logged).toContain('storage_put_403_SignatureDoesNotMatch');
+      // The error body echoed the access key id; it must never reach the logs.
       expect(JSON.stringify(logged)).not.toContain('X-Amz');
+      expect(JSON.stringify(logged)).not.toContain('FAKEACCESSKEY01');
+      s.storage.failNext(403);
+      await s.upload(png, 'image/png', m.cookie);
+      expect(logged).toContain('storage_put_403');
       const items = await s.f.ctx.runtime.db.select().from(schema.evidenceItems);
       expect(items.filter((i) => i.kind === 'image')).toHaveLength(0);
     } finally {
