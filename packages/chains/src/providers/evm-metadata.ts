@@ -13,6 +13,15 @@ const bytes = z
   .max(2048);
 const word = z.string().regex(/^0x[\da-f]{64}$/u);
 const id = 'eip155:1';
+/** EIP-1967 storage slots: keccak256('eip1967.proxy.<name>') - 1. */
+const PROXY_SLOTS = {
+  implementation: '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc',
+  admin: '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103',
+  beacon: '0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50',
+} as const;
+/** The low 20 bytes of a storage word, or null when the slot is empty. */
+const slotAddress = (value: string) =>
+  BigInt(value) === 0n ? null : evmAdapter.parseAddress('0x' + value.slice(-40));
 export function createEvmMetadataReader(providerId: string, independenceGroup: string, rpc: RpcTransport) {
   const state = createEvmStateReader(rpc);
   async function read(ref: ChainAddress, options: ProviderCallOptions) {
@@ -50,7 +59,7 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
           providerId,
           independenceGroup,
           capability,
-          method: capability === 'token_metadata' ? 'eth_call' : 'eth_getCode',
+          method: capability === 'token_metadata' ? 'eth_call' : 'eth_getCode+eth_getStorageAt',
           subject: ref.address,
           params: { address: ref.address, blockHash: read.block.hash, requireCanonical: 'true' },
           commitment: options.commitment,
@@ -60,7 +69,7 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
           fetchedAt,
           normalizedFields,
           decoderVersion: 'evm-rpc-v1',
-          comparisonSpecVersion: capability === 'token_metadata' ? 'evm-token-v1' : 'evm-contract-v1',
+          comparisonSpecVersion: capability === 'token_metadata' ? 'evm-token-v1' : 'evm-contract-v2',
         }),
       ],
     };
@@ -140,7 +149,17 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
       if (code === '0x')
         return { data: null, provenance: provenance(ref, options, query, 'contract_source', { code }) };
       const bytecodeHash = keccak256(code as `0x${string}`);
-      // RPC proves bytecode presence, not explorer source verification or proxy control.
+      // Standard EIP-1967 slots at the same block. RPC still proves nothing about explorer
+      // source verification, and a non-standard proxy reads as 'none'.
+      const slot = (key: string): Promise<string> =>
+        rpc.call('eth_getStorageAt', [ref.address, key, query.selector], word, options.signal);
+      const [implementationSlot, adminSlot, beaconSlot] = await Promise.all([
+        slot(PROXY_SLOTS.implementation),
+        slot(PROXY_SLOTS.admin),
+        slot(PROXY_SLOTS.beacon),
+      ]);
+      const implementation = slotAddress(implementationSlot),
+        beacon = slotAddress(beaconSlot);
       return {
         data: {
           chainId: ref.chainId,
@@ -149,12 +168,18 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
           deploymentTx: null,
           bytecodeHash,
           sourceVerification: null,
-          proxyType: null,
-          implementation: null,
-          admin: null,
+          proxyType: implementation ? 'eip1967' : beacon ? 'beacon' : 'none',
+          // A beacon proxy's implementation lives in the beacon contract, which is not read here.
+          implementation,
+          admin: slotAddress(adminSlot),
           upgradeAuthority: null,
         },
-        provenance: provenance(ref, options, query, 'contract_source', { bytecodeHash }),
+        provenance: provenance(ref, options, query, 'contract_source', {
+          bytecodeHash,
+          implementationSlot,
+          adminSlot,
+          beaconSlot,
+        }),
       };
     },
   };

@@ -58,3 +58,69 @@ describe('EVM token metadata', () => {
     expect(result.data).toMatchObject({ standard: 'erc20', decimals: 18, totalSupplyRaw: '1000' });
   });
 });
+
+describe('EVM contract proxy detection (EIP-1967)', () => {
+  const IMPLEMENTATION = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
+  const ADMIN = '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103';
+  const BEACON = '0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50';
+  const empty = '0x' + '0'.repeat(64);
+  const holding = (hex: string) => '0x' + '0'.repeat(24) + hex.repeat(40);
+  function rpcWithSlots(slots: Record<string, string>, fail?: ProviderFault): RpcTransport {
+    return {
+      call: vi.fn(async (method: string, params: readonly unknown[]) => {
+        if (method === 'eth_chainId') return '0x1';
+        if (method === 'eth_getBlockByNumber' || method === 'eth_getBlockByHash') return block;
+        if (method === 'eth_getCode') return '0x6080';
+        if (method === 'eth_getStorageAt') {
+          if (fail) throw fail;
+          const [, slot, selector] = params as [string, string, { blockHash: string }];
+          // Every slot is read at the same block as the bytecode.
+          expect(selector.blockHash).toBe(block.hash);
+          return slots[slot] ?? empty;
+        }
+        throw new Error('unexpected_method');
+      }),
+    } as unknown as RpcTransport;
+  }
+
+  it('reports an EIP-1967 proxy with its implementation and admin', async () => {
+    const reader = createEvmMetadataReader(
+      'alchemy',
+      'unknown-upstream',
+      rpcWithSlots({ [IMPLEMENTATION]: holding('3'), [ADMIN]: holding('4') }),
+    );
+    const result = await reader.contract(ref, options);
+    expect(result.data).toMatchObject({
+      proxyType: 'eip1967',
+      implementation: '0x' + '3'.repeat(40),
+      admin: '0x' + '4'.repeat(40),
+    });
+  });
+
+  it('reports a beacon proxy, and a contract with empty slots as not a proxy', async () => {
+    const beacon = await createEvmMetadataReader(
+      'alchemy',
+      'unknown-upstream',
+      rpcWithSlots({ [BEACON]: holding('5') }),
+    ).contract(ref, options);
+    expect(beacon.data).toMatchObject({
+      proxyType: 'beacon',
+      implementation: null,
+      admin: null,
+    });
+    const plain = await createEvmMetadataReader('alchemy', 'unknown-upstream', rpcWithSlots({})).contract(
+      ref,
+      options,
+    );
+    expect(plain.data).toMatchObject({ proxyType: 'none', implementation: null, admin: null });
+  });
+
+  it('surfaces a failed slot read instead of claiming the contract is not a proxy', async () => {
+    const reader = createEvmMetadataReader(
+      'alchemy',
+      'unknown-upstream',
+      rpcWithSlots({}, new ProviderFault('rate_limited')),
+    );
+    await expect(reader.contract(ref, options)).rejects.toMatchObject({ kind: 'rate_limited' });
+  });
+});

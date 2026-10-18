@@ -93,6 +93,7 @@ describe('metadata and transaction source fault coverage', () => {
   });
   it('reads anchored ERC20 integer metadata and bytecode without claiming explorer verification', async () => {
     const rpc = transport((m, params) => {
+      if (m === 'eth_getStorageAt') return '0x' + '0'.repeat(64);
       if (m !== 'eth_call') return evm(m);
       const call = params[0] as { data: string };
       if (call.data === '0x313ce567') return '0x' + 18n.toString(16).padStart(64, '0');
@@ -109,7 +110,8 @@ describe('metadata and transaction source fault coverage', () => {
       nameOnchain: '<script>untrusted</script>',
     });
     const contract = await source.fetchContractInfo(er, final);
-    expect(contract.data).toMatchObject({ sourceVerification: null, deployer: null, proxyType: null });
+    // Empty EIP-1967 slots: read, and not a standard proxy.
+    expect(contract.data).toMatchObject({ sourceVerification: null, deployer: null, proxyType: 'none' });
     expect(contract.provenance.receipts?.[0]?.fieldsDigest).toMatch(/^[a-f\d]{64}$/u);
     for (const method of ['fetchTokenInfo', 'fetchContractInfo'] as const)
       expect(

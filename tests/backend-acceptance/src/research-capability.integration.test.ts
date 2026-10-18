@@ -37,6 +37,7 @@ function appFor(mode: 'ok' | 'no_code' | 'timeout' | 'rate_limited' | 'absent' |
       else if (method === 'eth_getBlockByNumber' || method === 'eth_getBlockByHash') value = block;
       else if (method === 'eth_getCode') value = mode === 'no_code' ? '0x' : '0x6000';
       else if (method === 'eth_getBalance') value = '0x2a';
+      else if (method === 'eth_getStorageAt') value = '0x' + '0'.repeat(64);
       else if (method === 'eth_getTransactionCount') value = '0x1';
       else if (method === 'eth_getTransactionByHash')
         value =

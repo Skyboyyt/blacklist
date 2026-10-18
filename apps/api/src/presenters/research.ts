@@ -18,6 +18,7 @@ import {
   type Actor,
 } from '@blacklist/domain';
 import { publicResearchSource, publicResearchProvenance } from './source.ts';
+import { capabilityDisclosures } from './disclosures.ts';
 
 const unavailable = (kind: string) => ({
   kind: 'provider_unavailable' as const,
@@ -63,7 +64,9 @@ export async function addressResearch(
   const findings = published.findings.map((f) =>
     redress.underAppeal.has(f.id) ? { ...f, disputeState: 'under_appeal' as const } : f,
   );
+  const disclosures = await capabilityDisclosures(ctx, actor, chain, data.address, data.kind, options);
   const at = provenance.fetchedAt.toISOString();
+  const adapter = ctx.chains.adapterFor(read.ref.chainId);
   const snapshot =
     provenance.snapshot.kind === 'evm_block'
       ? `Block ${provenance.snapshot.blockNumber}`
@@ -77,7 +80,7 @@ export async function addressResearch(
       provenance: publicResearchProvenance(chain, provenance),
       degraded: provenance.degraded,
       address: data.address,
-      displayAddress: ctx.chains.adapterFor(read.ref.chainId).formatAddress(data.address),
+      displayAddress: adapter.formatAddress(data.address),
       kind:
         data.kind === 'contract' || data.kind === 'program'
           ? 'contract'
@@ -95,7 +98,7 @@ export async function addressResearch(
         transfers: 'unavailable',
         evidence: 'unavailable',
         history: 'available',
-        disclosures: 'unavailable',
+        disclosures: disclosures.available ? 'available' : 'unavailable',
       },
       assessment,
       facts: [
@@ -126,8 +129,22 @@ export async function addressResearch(
           source: publicResearchSource(chain, provenance),
           observedAt: at,
         },
+        // EIP-7702: the wallet runs this contract's code. Often a victim of a drainer, never a verdict.
+        ...(data.delegateAddress
+          ? [
+              {
+                id: 'eip7702-delegate',
+                label: 'Delegated code (EIP-7702)',
+                value: adapter.formatAddress(data.delegateAddress),
+                provenance: 'chain_fact' as const,
+                finality: provenance.finality,
+                source: publicResearchSource(chain, provenance),
+                observedAt: at,
+              },
+            ]
+          : []),
       ],
-      disclosures: [],
+      disclosures: disclosures.items,
       labels,
       findings,
       responses: redress.responses,

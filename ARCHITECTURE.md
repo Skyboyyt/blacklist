@@ -651,7 +651,7 @@ Every section shows its provenance and "as of" time. Unavailable data is shown a
 | Native + fungible balances | `balances` | `chain_fact` (as of block) |
 | Recent transactions (bounded, paged) with movement level and authorization basis | `address_history` + normalization | `chain_fact` |
 | Token / contract details | `token_metadata`; explorer source | `chain_fact`; explorer = `external_source` |
-| Capability disclosures (mint/freeze authority, permanent delegate, transfer hook/fee, upgradeable proxy) | analysis | `platform_analysis` (context, no score) |
+| Capability disclosures (mint/freeze authority, permanent delegate, transfer hook/fee, upgradeable proxy) | `token_metadata` / `contract_source`, read automatically on the address page | `chain_fact` (explorer verification: `external_source`); context, no score |
 | Public labels, project attributions | staff-managed | per label |
 | Published findings, responses, appeal status | moderation | `moderator_finding` / response |
 | Assessment (band, explanation; numeric display per P-11) | risk engine | per factor |
