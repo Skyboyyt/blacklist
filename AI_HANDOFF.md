@@ -74,7 +74,8 @@ This file holds the **current state only**. Each session adds one short entry un
     - Delegation is scored at Moderate with the victim wording; a repeat view writes nothing; suspending the delegate's finding retracts the signal.
     - No signal from one provider, from a conflicting second provider, or for an unflagged delegate (with zero secondary calls).
     - Fake USDT and a Cyrillic lookalike are scored; the canonical USDT and unrelated symbols are not.
-  - Results of the full suites are recorded below once run.
+  - `pnpm check` exit 0: contracts 83, processor 24, chains 74, backend-acceptance 86, web 438, plus format, lint, types and the Next build.
+  - `pnpm test:backend` (Docker Postgres 18) exit 0: 39 files, 182 tests.
 
 ### 2026-10-18: Claude, automatic capability disclosures (owner request)
 
