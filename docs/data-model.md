@@ -260,6 +260,11 @@ Unique `(evidence_item_id, role)`. `sha256` is **not** unique (staff-only duplic
 
 **Phase 10 implementation (2026-10-17, slice 2; not yet applied to Neon).** `generated/0008_sleepy_white_tiger.sql` and `0008_risk_guards.sql` create the nine tables below except `risk_signal_suppressions` (slice 4): **16 ledger entries, 69 tables**. Differences from the planned columns:
 - `risk_signals` adds `source_type` (`finding` | `chain_analysis`), and is unique per `(source_type, source_ref, factor_code)`. A finding whose published severity changes gets a new signal; the old one is `superseded`.
+- `chain_analysis` signals (ADR 0021), always tier `analysis` and provenance `platform_analysis`:
+  - `source_ref` is `eip7702:<wallet>:<delegate>` for `eoa.delegated_to_flagged`, or `symbol:<token>` for `token.symbol_impersonation` (lower-case Ethereum addresses).
+  - The revision's `source_revision` is `verified@<block hash>[:<symbol>]` from the two-provider read.
+  - `evidence_refs` holds the delegate's published finding IDs (empty for impersonation).
+  - Retraction appends a `retracted` revision; nothing is deleted. No migration was needed.
 - `risk_signal_revisions` and `risk_assessment_inputs` carry `independently_approved` (severe findings) and `evidence_refs`. `strength` is not stored: V1 contributions come from the ruleset.
 - `risk_assessments` has `ceiling` and a CHECK that a null score means `not_assessed`. `trigger` is `signal_change` | `expiry` | `ruleset` | `manual_replay`.
 - `risk_assessment_factors` stores `reason` (why a factor did not apply) instead of `explanation_params`.

@@ -45,7 +45,7 @@ export function coverageText(assessment: Pick<Assessment, 'coverage'>): string {
       : 'Moderator findings were not available.',
     assessment.coverage.chainFactsVerified
       ? 'Verified chain data was included.'
-      : 'Chain analysis is not connected, so only published findings count.',
+      : 'Automatic chain checks count only after two independent providers confirm them.',
   ];
   return parts.join(' ');
 }

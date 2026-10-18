@@ -5,9 +5,11 @@ export function publicResearchSource(chain: ChainSlugDto, provenance: ResearchPr
   const known =
     provenance.providerId === 'alchemy-ethereum'
       ? 'Alchemy Ethereum RPC'
-      : provenance.providerId === 'helius-solana'
-        ? 'Helius Solana RPC'
-        : `${chain === 'ethereum' ? 'Ethereum' : 'Solana'} RPC`;
+      : provenance.providerId === 'infura-ethereum'
+        ? 'Infura Ethereum RPC'
+        : provenance.providerId === 'helius-solana'
+          ? 'Helius Solana RPC'
+          : `${chain === 'ethereum' ? 'Ethereum' : 'Solana'} RPC`;
   return `${known} (${provenance.finality === 'final' ? 'finalized' : 'pending'}; ${provenance.verification.replaceAll('_', ' ')})`;
 }
 export function publicResearchProvenance(chain: ChainSlugDto, value: ResearchProvenance) {

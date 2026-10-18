@@ -4,7 +4,7 @@
 |---|---|
 | Prepared by | Claude, 2026-10-17 |
 | Decision owner | Project owner |
-| Status | **Open**: waiting for the owner's decision |
+| Status | **Approved for staging** (owner, 2026-10-18: "Approve for test site"), proposal unchanged. Production calibration stays open (launch checklist) |
 | Technical source | ARCHITECTURE §15.3 (V1 ruleset), `packages/domain/src/risk/ruleset.ts` |
 
 ## What you are deciding

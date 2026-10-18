@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **Accepted provisionally (owner, 2026-10-16): single-source display providers; research stays off until the provider verification table is met** |
+| Status | **Accepted provisionally (owner, 2026-10-16): single-source display providers; research stays off until the provider verification table is met.** Amended by [ADR 0021](0021-automatic-scoring-and-second-ethereum-provider.md) (2026-10-18): Infura as an independent second Ethereum provider; Alchemy group `alchemy` when it is configured |
 | Proposed by | Codex, 2026-10-14 (Europe/London) |
 | Scope | O-3 capability, archival, independence, cost and terms evaluation; no live deployment |
 

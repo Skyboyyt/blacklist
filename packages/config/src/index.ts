@@ -120,6 +120,13 @@ const apiSchema = shared.extend({
     .max(512)
     .regex(/^[A-Za-z0-9_-]+$/u)
     .optional(),
+  /** Optional second Ethereum provider: confirms facts behind automatic scoring (ADR 0021). */
+  INFURA_ETHEREUM_API_KEY: z
+    .string()
+    .min(8)
+    .max(512)
+    .regex(/^[A-Za-z0-9_-]+$/u)
+    .optional(),
   RPC_API_REQUESTS_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(30),
   RPC_API_TOTAL_REQUEST_BUDGET: z.coerce.number().int().min(1).max(10000).default(100),
   /** The total budget is spent per window and then restored (default one day). */

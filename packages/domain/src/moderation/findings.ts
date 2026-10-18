@@ -1,4 +1,5 @@
 import { onFindingChanged } from '../risk/service.ts';
+import { onDelegateFindingChanged } from '../risk/feeders.ts';
 import { schema, ne, eq, and, asc, desc, inArray, isNull, or, type Database } from '@blacklist/db';
 import type { UserActor } from '../access/types.ts';
 import { hasPermission, requirePermission } from '../access/policies.ts';
@@ -109,6 +110,9 @@ export async function setStatus(
     publicNote: link.publicNote ?? null,
   });
   await onFindingChanged(tx, f.id, `finding.${to}`, { decisionId: link.decisionId, toStatus: to });
+  // Wallets delegating to this address lose their automatic signal once it is unflagged (ADR 0021).
+  const subject = await addressOf(tx, f.subjectId);
+  if (subject) await onDelegateFindingChanged(tx, subject.chain, subject.address);
 }
 
 /** Authors, approvers and suspension/reversal actors of a finding (moderation §1). */

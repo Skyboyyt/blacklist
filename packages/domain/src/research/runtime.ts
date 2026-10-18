@@ -27,6 +27,18 @@ export function createResearch(runtime: DatabaseRuntime, config: ApiConfig): Res
       limits,
     ),
   );
+  // A documented independent secondary turns on cross-verification (ADR 0021). Without it,
+  // Alchemy stays `unknown-upstream` and nothing can be confirmed by a second provider.
+  const infura = config.INFURA_ETHEREUM_API_KEY
+    ? retryingTransport(
+        budgetedTransport(
+          createRpcTransport(
+            `https://mainnet.infura.io/v3/${encodeURIComponent(config.INFURA_ETHEREUM_API_KEY)}`,
+          ),
+          limits,
+        ),
+      )
+    : null;
   const solana = retryingTransport(
     budgetedTransport(
       createRpcTransport(
@@ -40,12 +52,13 @@ export function createResearch(runtime: DatabaseRuntime, config: ApiConfig): Res
     chains: createChainDataService([
       createEvmRpcSource(
         'alchemy-ethereum',
-        'unknown-upstream',
+        infura ? 'alchemy' : 'unknown-upstream',
         ethereum,
         false,
         config.ALCHEMY_INDEXED_HISTORY_VERIFIED === 'true',
         config.ALCHEMY_TOKEN_BALANCES_VERIFIED === 'true',
       ),
+      ...(infura ? [createEvmRpcSource('infura-ethereum', 'infura', infura)] : []),
       createSolanaRpcSource('helius-solana', 'unknown-upstream', solana),
     ]),
   };
