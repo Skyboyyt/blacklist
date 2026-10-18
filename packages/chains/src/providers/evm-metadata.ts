@@ -158,14 +158,12 @@ export function createEvmMetadataReader(providerId: string, independenceGroup: s
       // explorer source verification, and any other proxy pattern reads as 'none'.
       const slot = (key: string): Promise<string> =>
         rpc.call('eth_getStorageAt', [ref.address, key, query.selector], word, options.signal);
-      const [implementationSlot, adminSlot, beaconSlot, zosImplementationSlot, zosAdminSlot] =
-        await Promise.all([
-          slot(PROXY_SLOTS.implementation),
-          slot(PROXY_SLOTS.admin),
-          slot(PROXY_SLOTS.beacon),
-          slot(PROXY_SLOTS.zosImplementation),
-          slot(PROXY_SLOTS.zosAdmin),
-        ]);
+      // One at a time: the budgeted transport refuses calls beyond its concurrency limit.
+      const implementationSlot = await slot(PROXY_SLOTS.implementation),
+        adminSlot = await slot(PROXY_SLOTS.admin),
+        beaconSlot = await slot(PROXY_SLOTS.beacon),
+        zosImplementationSlot = await slot(PROXY_SLOTS.zosImplementation),
+        zosAdminSlot = await slot(PROXY_SLOTS.zosAdmin);
       const implementation = slotAddress(implementationSlot),
         beacon = slotAddress(beaconSlot),
         zosImplementation = slotAddress(zosImplementationSlot);

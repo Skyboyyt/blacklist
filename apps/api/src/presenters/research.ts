@@ -44,7 +44,7 @@ export async function addressResearch(
   const { data, provenance } = read.result.value;
   if (!data) return { kind: 'not_found' as const };
   // Automatic analysis signals first, so the assessment below already reflects them (ADR 0021).
-  await feedChainAnalysis(ctx, actor, chain, data);
+  await feedChainAnalysis(ctx, actor, chain, data, options);
   // Published moderator findings only (moderation §4.2); reports never appear here.
   const published = await publicFindings(ctx.runtime.db, read.ref.chainId, data.address);
   const redress = await publicRedress(

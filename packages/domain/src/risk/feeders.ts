@@ -1,5 +1,5 @@
 import { schema, eq, and, inArray, sql, type Database } from '@blacklist/db';
-import type { AccountInfo } from '@blacklist/chains';
+import type { AccountInfo, ReadOptions } from '@blacklist/chains';
 import type { Actor } from '../access/index.ts';
 import { readResearchAddress, readResearchToken, type ResearchContext } from '../research/service.ts';
 import { addressSubject, normalizeAddress } from '../moderation/subjects.ts';
@@ -239,7 +239,12 @@ async function feedDelegation(
 }
 
 /** `token.symbol_impersonation`: an ERC-20 using a well-known token's symbol at another address. */
-async function feedImpersonation(ctx: ResearchContext, actor: Actor | null, token: string) {
+async function feedImpersonation(
+  ctx: ResearchContext,
+  actor: Actor | null,
+  token: string,
+  options: ReadOptions,
+) {
   const ref = `symbol:${token}`;
   const [live] = await liveSignals(ctx.runtime.db, IMPERSONATION, ref);
   // The reviewed list now names this address as canonical: a code fact, no read needed.
@@ -248,7 +253,8 @@ async function feedImpersonation(ctx: ResearchContext, actor: Actor | null, toke
     return;
   }
   if (live) return;
-  const single = await readResearchToken(ctx, actor, 'ethereum', token, { minFinality: 'final' });
+  // The page's own read options, so the token details page reuses this cached read.
+  const single = await readResearchToken(ctx, actor, 'ethereum', token, options);
   if (!single.result.ok || !impersonatedSymbol(token, single.result.value.data?.symbolOnchain ?? null))
     return;
   const read = await readResearchToken(ctx, actor, 'ethereum', token, VERIFIED);
@@ -275,12 +281,13 @@ export async function feedChainAnalysis(
   actor: Actor | null,
   chain: string,
   account: AccountInfo,
+  options: ReadOptions = {},
 ) {
   if (chain !== 'ethereum') return;
   const address = normalizeAddress('ethereum', account.address);
   if (account.kind === 'eoa' || account.kind === 'eoa_delegated')
     await feedDelegation(ctx, actor, address, account);
-  else if (account.kind === 'contract') await feedImpersonation(ctx, actor, address);
+  else if (account.kind === 'contract') await feedImpersonation(ctx, actor, address, options);
 }
 
 /**

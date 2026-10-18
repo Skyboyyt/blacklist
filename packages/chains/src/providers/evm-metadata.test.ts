@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ChainAddress } from '@blacklist/core';
 import { createEvmMetadataReader } from './evm-metadata.ts';
 import { ProviderFault, type RpcTransport } from './rpc-transport.ts';
+import { budgetedTransport } from './policy.ts';
 
 const block = { number: '0x10', hash: '0x' + 'a'.repeat(64), timestamp: '0x5' };
 const ref = { chainId: 'eip155:1', address: '0x' + '2'.repeat(40) } as unknown as ChainAddress;
@@ -128,6 +129,20 @@ describe('EVM contract proxy detection (EIP-1967)', () => {
       implementation: '0x' + '6'.repeat(40),
       admin: '0x' + '7'.repeat(40),
     });
+  });
+
+  it('stays within the budgeted transport concurrency limit', async () => {
+    // The production transport refuses calls beyond its concurrency limit instead of queuing.
+    const reader = createEvmMetadataReader(
+      'alchemy',
+      'unknown-upstream',
+      budgetedTransport(rpcWithSlots({ [IMPLEMENTATION]: holding('3') }), {
+        perMinute: 120,
+        total: 1000,
+        concurrency: 2,
+      }),
+    );
+    expect((await reader.contract(ref, options)).data).toMatchObject({ proxyType: 'eip1967' });
   });
 
   it('surfaces a failed slot read instead of claiming the contract is not a proxy', async () => {
