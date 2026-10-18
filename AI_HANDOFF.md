@@ -66,6 +66,7 @@ This file holds the **current state only**. Each session adds one short entry un
   - New `research-disclosures.integration.test.ts` (real API and Postgres, synthetic RPC): 4 tests.
   - `capabilities.test.ts` now expects `proxyType: 'none'` instead of `null`, because the slots are read now.
   - `pnpm check` exit 0: contracts 83, processor 24, chains 74, backend-acceptance 84, web 438, plus format, lint, types and the Next build.
+  - `pnpm test:backend` (Docker Postgres 18) exit 0: 38 files, 179 tests.
 
 ### 2026-10-18: Claude, Phase 9b switched on in staging
 
