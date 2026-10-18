@@ -115,6 +115,21 @@ describe('EVM contract proxy detection (EIP-1967)', () => {
     expect(plain.data).toMatchObject({ proxyType: 'none', implementation: null, admin: null });
   });
 
+  it('reports an older ZeppelinOS-style proxy (USDC) with its implementation and admin', async () => {
+    const ZOS_IMPLEMENTATION = '0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3';
+    const ZOS_ADMIN = '0x10d6a54a4754c8869d6886b5f5d7fbfa5b4522237ea5c60d11bc4e7a1ff9390b';
+    const result = await createEvmMetadataReader(
+      'alchemy',
+      'unknown-upstream',
+      rpcWithSlots({ [ZOS_IMPLEMENTATION]: holding('6'), [ZOS_ADMIN]: holding('7') }),
+    ).contract(ref, options);
+    expect(result.data).toMatchObject({
+      proxyType: 'other',
+      implementation: '0x' + '6'.repeat(40),
+      admin: '0x' + '7'.repeat(40),
+    });
+  });
+
   it('surfaces a failed slot read instead of claiming the contract is not a proxy', async () => {
     const reader = createEvmMetadataReader(
       'alchemy',

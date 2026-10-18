@@ -8,6 +8,13 @@ import {
 } from '@blacklist/domain';
 import { publicResearchSource } from './source.ts';
 
+const PROXY_NAME = {
+  eip1967: 'a standard EIP-1967 proxy',
+  eip1822: 'an EIP-1822 proxy',
+  beacon: 'a standard beacon proxy',
+  other: 'an older ZeppelinOS-style proxy',
+} as const;
+
 /**
  * Capability disclosures read automatically from the chain (ADR 0005 item 4). They are
  * context only: zero contribution, never risk factors, and a single provider is enough
@@ -56,7 +63,7 @@ export async function capabilityDisclosures(
     const read = await readResearchContract(ctx, actor, chain, address, options);
     if (!read.result.ok || !read.result.value.data) return { available: false, items: [] };
     const { data, provenance } = read.result.value;
-    if (data.proxyType !== 'eip1967' && data.proxyType !== 'beacon') return { available: true, items: [] };
+    if (data.proxyType === 'none' || data.proxyType === null) return { available: true, items: [] };
     const control = data.admin ? ` The upgrade admin recorded on chain is ${data.admin}.` : '';
     return {
       available: true,
@@ -65,7 +72,7 @@ export async function capabilityDisclosures(
           id: 'upgradeable-proxy',
           code: 'upgradeable_proxy',
           label: 'Upgradeable contract',
-          explanation: `This is a standard ${data.proxyType === 'beacon' ? 'beacon' : 'EIP-1967'} proxy: the code it runs can be replaced by whoever controls upgrades.${control} Many legitimate projects use upgradeable contracts.`,
+          explanation: `This is ${PROXY_NAME[data.proxyType]}: the code it runs can be replaced by whoever controls upgrades.${control} Many legitimate projects use upgradeable contracts.`,
           provenance: 'chain_fact',
           source: publicResearchSource(chain, provenance),
           observedAt: provenance.fetchedAt.toISOString(),

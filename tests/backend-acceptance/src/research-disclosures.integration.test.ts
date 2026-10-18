@@ -126,6 +126,18 @@ describe('automatic capability disclosures (zero contribution)', () => {
     expect(proxy.assessment.factors).toEqual([]);
     expect(proxy.assessment.band).toBe('not_assessed');
 
+    // USDC-style ZeppelinOS proxy slots are disclosed too.
+    const zos = await research(
+      {
+        code: '0x6080',
+        slots: { '0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3': holding('7') },
+      },
+      'ethereum',
+      evm('2'),
+    );
+    expect(zos.disclosures.map((d) => d.code)).toEqual(['upgradeable_proxy']);
+    expect(zos.disclosures[0]?.explanation).toContain('ZeppelinOS');
+
     const plain = await research({ code: '0x6080' }, 'ethereum', evm('1'));
     expect(plain.availability?.disclosures).toBe('available');
     expect(plain.disclosures).toEqual([]);
