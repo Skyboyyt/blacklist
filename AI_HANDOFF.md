@@ -44,6 +44,19 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-18: Claude, Phase 9b switched on in staging
+
+- The owner followed the 9b runbook:
+  - Neon 0011 applied (ledger 22, tables 80);
+  - Backblaze B2 set up with no card, three private buckets (`blacklist-stg-quarantine-rrqq`, `blacklist-stg-evidence-ffee`, `blacklist-stg-derivatives-rrqq`) and lifecycle rules;
+  - `blacklist-staging-evidence` live on Render Free with no secrets;
+  - API and worker settings added.
+- The first uploads failed with `storage_put_403`. PRs #33 and #34 added fixed reason codes to the logs, including the S3 `<Code>` word only. After a fresh key was **copy-pasted** (not retyped from a phone), **the upload worked**: Backblaze accepts our SigV4 presigned requests.
+- Still to confirm with the owner:
+  - the staff "Download cleaned image" step;
+  - whether an image over 5 MB passes Vercel (R-9b-1);
+  - the owner deleting the key copy from their phone.
+
 ### 2026-10-17: Claude, Phase 9b built (image evidence)
 
 - **Built on the working branch:**
