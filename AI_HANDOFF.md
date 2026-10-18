@@ -55,6 +55,10 @@ This file holds the **current state only**. Each session adds one short entry un
   - The real USDC is "Not assessed" with no factors (not flagged as an impersonation).
   - But USDC showed "No capability disclosures": USDC is an older **ZeppelinOS** proxy, not EIP-1967.
 - **Fix (follow-up PR):** `evm-metadata.ts` also reads the ZeppelinOS implementation and admin slots (`proxyType: 'other'`), and the disclosure names the proxy style. Tests were added in `evm-metadata.test.ts` and `research-disclosures.integration.test.ts`.
+- **After PR #37, USDC showed "Disclosure data is unavailable":** provider rate limits.
+  - A contract page makes about 30 to 40 provider requests, against the 30-per-minute default.
+  - Fix: the fake-token check now reads with the page's options, so the page's `/token` request reuses the cached read. That saves about 7 requests per contract page; the integration test counts calls.
+  - The runbook now recommends `RPC_API_REQUESTS_PER_MINUTE=120` and `RPC_API_TOTAL_REQUEST_BUDGET=3000` for staging.
 
 ### 2026-10-18: Claude, ratings switched on (staging) and automatic scoring (ADR 0021)
 

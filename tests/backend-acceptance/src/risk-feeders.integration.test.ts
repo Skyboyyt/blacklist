@@ -310,6 +310,14 @@ describe('ADR 0021: automatic analysis scoring', () => {
     try {
       await unrelated.research(evm('f3'));
       expect(unrelated.calls.secondary).toEqual([]);
+      // The page's own token-details request reuses the check's cached read (provider budget).
+      const before = unrelated.calls.primary.length;
+      const token = await unrelated.app.inject({
+        method: 'GET',
+        url: `/api/v1/addresses/ethereum/${evm('f3')}/token`,
+      });
+      expect(token.json()).toMatchObject({ kind: 'found' });
+      expect(unrelated.calls.primary.length).toBe(before);
     } finally {
       await unrelated.app.close();
     }

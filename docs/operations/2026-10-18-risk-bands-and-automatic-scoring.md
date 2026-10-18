@@ -40,6 +40,21 @@ To switch ratings off again, set it back to `false`. Nothing is deleted either w
 2. Under **Blockchain facts**, the source line should mention `agree` only on pages where an automatic check ran. Ordinary pages stay `single source`, which is expected.
 3. If the API fails to start after adding the key, the logs show `Invalid configuration fields: INFURA_ETHEREUM_API_KEY`. The key was copied wrongly: paste it again.
 
+## Provider limits
+
+An Ethereum contract page makes roughly 30 provider requests:
+- address, contract and token reads;
+- the fake-token check;
+- history and balances.
+
+The defaults (`RPC_API_REQUESTS_PER_MINUTE=30`, `RPC_API_TOTAL_REQUEST_BUDGET=100` per 24 hours) are too low for that. When a limit is hit, sections show "unavailable".
+
+For staging on the free plans, set these on the Render **API**:
+- `RPC_API_REQUESTS_PER_MINUTE=120`
+- `RPC_API_TOTAL_REQUEST_BUDGET=3000`
+
+These are well inside the Alchemy and Infura free quotas. They are per key and per process, and reset every `RPC_API_BUDGET_WINDOW_HOURS` (24 by default) and on restart. Never add a payment method to raise them.
+
 ## What the automatic checks do
 
 | Check | When it scores | Band it adds |
