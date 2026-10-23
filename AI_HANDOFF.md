@@ -44,6 +44,12 @@ This file holds the **current state only**. Each session adds one short entry un
 
 ## Session log
 
+### 2026-10-23: Claude, owner's cross-project standards added to CLAUDE.md
+
+- The owner asked for their development and UI/UX standards to be kept in CLAUDE.md in every repository.
+- CLAUDE.md now carries them in a new section that applies inside AGENTS.md and [docs/design/frontend.md](docs/design/frontend.md); those documents win on any difference (dependencies, deployment, Git, status wording).
+- Documentation only: no code, dependencies, schema or behaviour changed. No tests were run (none are affected). Opened as a PR rather than pushed to `main` (AGENTS.md §8).
+
 ### 2026-10-18: Claude, staging switch-on of ratings and automatic scoring
 
 - PR #36 merged (`8978c71`). The owner redeployed the Render API, set `RISK_PUBLIC_BANDS=true`, and added `INFURA_ETHEREUM_API_KEY` (Infura Free, key name `blacklist-staging`, no secret or JWT requirement).
